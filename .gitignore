@@ -1,0 +1,57 @@
+# Dependências e caches
+node_modules/
+**/node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+
+# Temporários do módulo Lotação (código-fonte da pasta é versionado; tmp não)
+Gestão de Lotação/tmp/
+Gestao de Lotacao/tmp/
+
+# Ambiente e secrets — nunca versionar
+.env
+.env.*
+!.env.example
+!.env*.example
+*.pem
+*.p12
+*.key
+*credentials*
+*service_role*
+supabase/.temp/
+js/siga-config.local.js
+**/*.local.js
+!js/siga-config.example.js
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs e dumps
+*.log
+logs/
+*.sql.bak
+backups/
+dump/
+
+# Builds / cobertura
+dist/
+build/
+.coverage/
+coverage/
+.vercel/
+.next/
+out/
+
+# Dados locais sensíveis (exportações manuais)
+*.local.json
+local-data/
+exports/

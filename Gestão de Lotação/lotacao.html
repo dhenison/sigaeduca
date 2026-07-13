@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão de Lotação & CRM - 2026</title>
+    
+    <!-- CSS stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SheetJS (XLSX) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF CDN & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+    <!-- MOBILE HEADER -->
+    <header class="mobile-header">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div style="font-weight:700; font-size:1.1rem; letter-spacing:-0.025em;">Gestão de Lotação</div>
+        <div style="width:24px;"></div> <!-- Spacer -->
+    </header>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon">
+                <i class="fas fa-school"></i>
+            </div>
+            <span class="sidebar-brand-text">Gestão Lotação</span>
+        </div>
+        
+        <button class="sidebar-toggle-btn">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="dashboard">
+                    <i class="fas fa-chart-pie"></i>
+                    <span class="sidebar-link-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="tabela">
+                    <i class="fas fa-table"></i>
+                    <span class="sidebar-link-text">Mapa de Lotações</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="cadastroProf">
+                    <i class="fas fa-user-tie"></i>
+                    <span class="sidebar-link-text">Cadastro de Professores</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="disciplinas">
+                    <i class="fas fa-book"></i>
+                    <span class="sidebar-link-text">Disciplinas</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="fichaLotacao">
+                    <i class="fas fa-file-signature"></i>
+                    <span class="sidebar-link-text">Ficha de Lotação</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="fichaDesistencia">
+                    <i class="fas fa-file-excel"></i>
+                    <span class="sidebar-link-text">Ficha de Desistência</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="relatorios">
+                    <i class="fas fa-file-invoice"></i>
+                    <span class="sidebar-link-text">Relatórios</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <a href="../painelprincipal.html" class="sidebar-link sidebar-back-link" id="btn-voltar-siga" title="Voltar ao SIGA EDUCA">
+                <i class="fas fa-arrow-left"></i>
+                <span class="sidebar-link-text">Voltar ao SIGA EDUCA</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-title-container">
+                <h1 class="header-title">EE DR ROMILDO VELOSO E SILVA</h1>
+                <span class="header-subtitle">URE: 22A URE - XINGUARA | MUNICÍPIO: OURILÂNDIA DO NORTE | ANO: 2026</span>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle-btn" title="Alternar Modo Escuro/Claro">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Content -->
+        <section class="app-content">
+            
+            <!-- ==========================================
+                 1. DASHBOARD VIEW
+                 ========================================== -->
+            <div class="page-view" id="dashboardView">
+                <div class="stats-grid">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-info">
+                            <span class="stat-label">Total de Turmas</span>
+                            <span class="stat-value" id="dashTotalTurmas">0</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-users-rectangle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-danger">
+                        <div class="stat-info">
+                            <span class="stat-label">Disciplinas sem Professor</span>
+                            <span class="stat-value" id="dashDisciplinasSemProf">0</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-slash"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-success">
+                        <div class="stat-info">
+                            <span class="stat-label">Carga Horária Loteada</span>
+                            <span class="stat-value" id="dashChAlocada">0h</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-info">
+                        <div class="stat-info">
+                            <span class="stat-label">Professores Ativos</span>
+                            <span class="stat-value" id="dashProfessores">0</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid-container">
+                    <!-- Left: Charts -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="content-card">
+                            <div class="content-card-title">Carga Horária por Turno</div>
+                            <div style="height: 280px; position: relative;">
+                                <canvas id="chartShifts"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right: Info Panel & Distribution -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="content-card">
+                            <div class="content-card-title">Divisão de Lotação</div>
+                            <div style="height: 180px; position: relative;">
+                                <canvas id="chartAllocation"></canvas>
+                            </div>
+                            <div style="text-align: center; margin-top: 1rem; font-weight: 700; font-size: 0.9rem;" id="dashAllocationRateText">
+                                Taxa de Lotação: 0%
+                            </div>
+                            <div class="progress-bar-wrapper">
+                                <div class="progress-bar-fill" id="dashAllocationProgressBar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="content-card">
+                            <div class="content-card-title">Maiores Cargas Horárias</div>
+                            <div style="height: 180px; position: relative;">
+                                <canvas id="chartTopTeachers"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 2. MAPA DE LOTAÇÕES (TABELA CRM)
+                 ========================================== -->
+            <div class="page-view" id="tabelaView">
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label class="filter-label" for="searchInput">Busca Rápida</label>
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por Professor, Turma ou Disciplina...">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterTurno">Turno</label>
+                        <select id="filterTurno" class="form-control">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterTurma">Turma</label>
+                        <select id="filterTurma" class="form-control">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterModal">Modalidade</label>
+                        <select id="filterModal" class="form-control">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterDisciplina">Disciplina</label>
+                        <select id="filterDisciplina" class="form-control">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterStatus">Status</label>
+                        <select id="filterStatus" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="lotado">Lotado</option>
+                            <option value="vago">Vago (Sem professor)</option>
+                        </select>
+                    </div>
+                    <button class="btn-filter-clear" id="btnClearFilters">
+                        <i class="fas fa-filter-circle-xmark"></i> Limpar
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Oferta</th>
+                                <th>Modal</th>
+                                <th>Turno</th>
+                                <th>Turma</th>
+                                <th>Alunos</th>
+                                <th>Código</th>
+                                <th>Disciplina</th>
+                                <th>CH</th>
+                                <th>Professor / Lotação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaCorpo">
+                            <!-- Injected by JavaScript -->
+                        </tbody>
+                    </table>
+                    
+                    <div class="pagination-container">
+                        <span class="pagination-info" id="paginationInfo">Mostrando 1 a 15 de 631 registros</span>
+                        <div class="pagination-buttons" id="paginationButtons">
+                            <!-- Page buttons -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ==========================================
+                 CADASTRO DE PROFESSORES
+                 ========================================== -->
+            <div class="page-view" id="cadastroProfView">
+                <div class="filter-bar" style="grid-template-columns: 3fr auto;">
+                    <div class="filter-group">
+                        <label class="filter-label" for="searchCadInput">Buscar Professor Cadastrado</label>
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchCadInput" class="form-control" placeholder="Buscar por Nome, Matrícula, Cargo ou Vínculo...">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="abrirModalCadastroProf()" style="height: 38px;">
+                        <i class="fas fa-plus"></i> Novo Professor
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Matrícula</th>
+                                <th>DV</th>
+                                <th>Nome Completo</th>
+                                <th>Cargo</th>
+                                <th>Vínculo</th>
+                                <th>Setor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cadProfCorpo">
+                            <!-- Injected by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 NEW TABS. DISCIPLINAS VIEW
+                 ========================================== -->
+            <div class="page-view" id="disciplinasView">
+                <div class="content-card" style="max-width: 900px; margin: 0 auto 1.5rem;">
+                    <div class="content-card-title">Consulta de Disciplinas por Turma</div>
+                    <div class="filter-group" style="max-width: 400px;">
+                        <label class="filter-label" for="disciplinasTurmaSelect">Selecionar Turma</label>
+                        <select id="disciplinasTurmaSelect" class="form-control">
+                            <!-- Populated dynamically by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div id="disciplinasTurmaContainer" class="content-card" style="max-width: 900px; margin: 0 auto 1.5rem; display: none;">
+                    <!-- Header resembling the PDF model -->
+                    <div class="disciplinas-header-block" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; background-color: var(--bg-main); padding: 1.25rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); line-height: 1.5;">
+                        <div class="info-item">
+                            <span class="info-label" style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Escola</span>
+                            <span class="info-value" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">EE DR ROMILDO VELOSO E SILVA</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label" style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Cód MEC / Município</span>
+                            <span class="info-value" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">15120902 - OURILÂNDIA DO NORTE</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label" style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Curso</span>
+                            <span class="info-value" id="dispCurso" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label" style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Série / Turno</span>
+                            <span class="info-value" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);"><span id="dispSerie">-</span> / <span id="dispTurno">-</span></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label" style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Turma</span>
+                            <span class="info-value" id="dispTurma" style="font-size: 0.95rem; font-weight: 800; color: var(--primary);">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label" style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Ano Letivo</span>
+                            <span class="info-value" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">2026</span>
+                        </div>
+                    </div>
+
+                    <!-- Title -->
+                    <div style="text-align: center; font-size: 1.2rem; font-weight: 800; margin-bottom: 1.25rem; text-transform: uppercase; color: var(--text-primary);">
+                        Componentes Curriculares / Lotação
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%;">Código</th>
+                                    <th style="width: 40%;">Disciplina</th>
+                                    <th style="width: 10%; text-align: center;">CH Semanal</th>
+                                    <th style="width: 40%;">Professor Alocado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="disciplinasTurmaCorpo">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 3. FICHA DE LOTAÇÃO
+                 ========================================== -->
+            <div class="page-view" id="fichaLotacaoView">
+                <div class="content-card" style="max-width: 900px; margin: 0 auto 1.5rem;">
+                    <div class="content-card-title">Gerar Ficha de Lotação</div>
+                    <div style="display: flex; gap: 1rem; align-items: end;">
+                        <div class="filter-group" style="flex-grow: 1;">
+                            <label class="filter-label" for="lotacaoProfSelect">Selecionar Professor</label>
+                            <select id="lotacaoProfSelect" class="form-control">
+                                <!-- Option list populated by js -->
+                            </select>
+                        </div>
+                        <div class="filter-group" style="width: 180px;">
+                            <label class="filter-label" for="lotacaoDataGeral">Data Inicial Geral</label>
+                            <input type="text" id="lotacaoDataGeral" class="form-control" placeholder="DD/MM/AAAA" value="09/07/2026">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Official Form Wrapper -->
+                                <!-- Ficha Avulsa Inputs -->
+                <div id="fichaAvulsaInputs" class="content-card" style="max-width: 900px; margin: 0 auto 1.5rem; display: none;">
+                    <div class="content-card-title" style="font-size: 1rem; color: var(--primary);">Dados da Ficha Avulsa</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="filter-label" for="avulsaNome">Nome do Professor</label>
+                            <input type="text" id="avulsaNome" class="form-control" placeholder="Ex: MARIA SILVA">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="filter-label" for="avulsaMatricula">Matrícula</label>
+                            <input type="text" id="avulsaMatricula" class="form-control" placeholder="Ex: 123456">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="filter-label" for="avulsaDV">V (DV)</label>
+                            <input type="text" id="avulsaDV" class="form-control" placeholder="Ex: 1" maxlength="1">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="filter-label" for="avulsaCargo">Cargo</label>
+                            <select id="avulsaCargo" class="form-control">
+                                <option value="PROFESSOR">PROFESSOR</option>
+                                <option value="PROFESSORA">PROFESSORA</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="filter-label" for="avulsaVinculo">Vínculo</label>
+                            <select id="avulsaVinculo" class="form-control">
+                                <option value="EFETIVO">EFETIVO</option>
+                                <option value="TEMPORÁRIO">TEMPORÁRIO</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="lotacaoContainer" style="display: none;">
+                    <div class="form-actions-bar">
+                        <button class="btn btn-secondary" onclick="imprimirFicha()">
+                            <i class="fas fa-print"></i> Imprimir Ficha Timbrada
+                        </button>
+                    </div>
+                    
+                    <div id="fichaLotacaoPrintArea">
+                        <!-- Filled dynamically by JavaScript in app.js -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 4. FICHA DE DESISTÊNCIA / SUBSTITUIÇÃO
+                 ========================================== -->
+            <div class="page-view" id="fichaDesistenciaView">
+                <div class="content-card" style="max-width: 900px; margin: 0 auto 1.5rem;">
+                    <div class="content-card-title">Fluxo de Substituição / Baixa de Carga Horária</div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="filter-group">
+                            <label class="filter-label" for="desistenciaProfSelect">1. Professor Desistente</label>
+                            <select id="desistenciaProfSelect" class="form-control">
+                                <!-- Option list populated by js -->
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label" for="substitutoSelect">2. Vincular Professor Substituto</label>
+                            <select id="substitutoSelect" class="form-control">
+                                <!-- Option list populated by js -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="substitutoManualInputs" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="filter-group">
+                            <label class="filter-label" for="substitutoNome">Nome do Substituto</label>
+                            <input type="text" id="substitutoNome" class="form-control" placeholder="Digite o nome se for novo...">
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label" for="substitutoMatricula">Matrícula do Substituto</label>
+                            <input type="text" id="substitutoMatricula" class="form-control" placeholder="Matrícula...">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                        <button class="btn btn-danger" onclick="processarBaixaSubstituicao()">
+                            <i class="fas fa-exchange-alt"></i> Processar Baixa / Substituição
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Official Form Wrapper -->
+                <div id="desistenciaContainer" style="display: none;">
+                    <div class="form-actions-bar">
+                        <button class="btn btn-secondary" onclick="imprimirFicha()">
+                            <i class="fas fa-print"></i> Imprimir Ficha de Desistência
+                        </button>
+                    </div>
+                    
+                    <div id="fichaDesistenciaPrintArea">
+                        <!-- Filled dynamically by JavaScript in app.js -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 5. RELATÓRIOS & EXPORTAÇÕES
+                 ========================================== -->
+            <div class="page-view" id="relatoriosView">
+                <div class="stats-grid">
+                    <div class="stat-card stat-info" style="cursor:pointer;" onclick="exportarExcelCompleto()">
+                        <div class="stat-info">
+                            <span class="stat-label">Exportação Completa</span>
+                            <span class="stat-value" style="font-size: 1.25rem;">Gerar Excel (XLSX)</span>
+                        </div>
+                        <div class="stat-icon" style="background-color: var(--success-light); color: var(--success);">
+                            <i class="fas fa-file-excel"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-primary" style="cursor:pointer;" onclick="exportarPDFCompleto()">
+                        <div class="stat-info">
+                            <span class="stat-label">Exportação Timbrada</span>
+                            <span class="stat-value" style="font-size: 1.25rem;">Gerar PDF do Mapa</span>
+                        </div>
+                        <div class="stat-icon" style="background-color: var(--danger-light); color: var(--danger);">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid-container">
+                    <!-- Left: Sem Professor -->
+                    <div class="content-card">
+                        <div class="content-card-title">
+                            <span>Turmas Sem Professor</span>
+                            <span class="badge badge-danger" id="repSemProfCount">0</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="custom-table" style="font-size: 0.8rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Oferta</th>
+                                        <th>Turno</th>
+                                        <th>Turma</th>
+                                        <th>Disciplina</th>
+                                        <th>CH</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="repSemProfBody">
+                                    <!-- JS content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: CH por Professor -->
+                    <div class="content-card">
+                        <div class="content-card-title">Ranking de Carga Horária</div>
+                        <div class="table-responsive">
+                            <table class="custom-table" style="font-size: 0.8rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Matrícula</th>
+                                        <th>Professor</th>
+                                        <th>Carga Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="repProfBody">
+                                    <!-- JS content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Relatório Detalhado por Docente -->
+                <div class="content-card" style="margin-top: 1.5rem;">
+                    <div class="content-card-title">
+                        <span>Relatório Detalhado de Lotação por Docente</span>
+                        <button class="btn btn-secondary btn-sm" id="btnPrintRepDocente" onclick="imprimirRelatorioDocente()" style="display:none;">
+                            <i class="fas fa-print"></i> Imprimir Relatório do Docente
+                        </button>
+                    </div>
+                    <div class="filter-group" style="margin-bottom: 1.5rem;">
+                        <label class="filter-label" for="repDocenteSelect">Selecionar Professor</label>
+                        <select id="repDocenteSelect" class="form-control">
+                            <!-- Populated dynamically by JS -->
+                        </select>
+                    </div>
+                    
+                    <div id="repDocenteContainer" style="display: none; border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--border-radius-md); background-color: var(--bg-main);">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem;">
+                            <div>
+                                <h3 id="repDocenteNome" style="font-weight:700; font-size:1.1rem; text-transform:uppercase;">-</h3>
+                                <div style="font-size:0.875rem; color:var(--text-secondary);">Matrícula: <span id="repDocenteMatricula">-</span></div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div class="badge badge-success" style="font-size:1rem; padding:0.5rem 1rem;" id="repDocenteChTotal">0h</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">Carga Horária Total</div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="custom-table" style="font-size: 0.8rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Turma</th>
+                                        <th>Código</th>
+                                        <th>Disciplina</th>
+                                        <th>Turno</th>
+                                        <th>CH</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="repDocenteTableBody">
+                                    <!-- Filled dynamically by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </section>
+    </main>
+
+    <!-- ==========================================
+         MODAL WINDOW (DYNAMIC PROMPTS)
+         ========================================== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Título do Modal</h3>
+                <button class="modal-close-btn" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Injected dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modalCancel">Cancelar</button>
+                <button class="btn btn-primary" id="modalConfirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preloaded Database from python extract -->
+    <script src="data.js"></script>
+    
+    <!-- Application Logic controller -->
+    <script src="app.js"></script>
+</body>
+</html>

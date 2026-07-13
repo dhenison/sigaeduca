@@ -1,0 +1,831 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Conselho de Classe - SIGA EDUCA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#64de8b",
+                        "on-surface": "#121c2a",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#d9e3f6",
+                        "surface-container-high": "#dee9fc",
+                        "on-primary-container": "#003a1a",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container": "#e6eeff",
+                        "background": "#f8f9ff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#006d37",
+                        "on-error": "#ffffff",
+                        "tertiary": "#795900",
+                        "tertiary-fixed": "#ffdf9f",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-tertiary-fixed": "#261a00",
+                        "secondary-container": "#2170e4",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "outline": "#6e7a6e",
+                        "tertiary-container": "#c39200",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "secondary-fixed": "#d8e2ff",
+                        "text-secondary": "#6B7280",
+                        "on-surface-variant": "#3e4a3f",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-background": "#121c2a",
+                        "on-tertiary-container": "#412f00",
+                        "secondary": "#0058be",
+                        "on-primary-fixed-variant": "#005228",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#81fba5",
+                        "primary-container": "#2eaf62",
+                        "surface-container-highest": "#d9e3f6",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006d37",
+                        "outline-variant": "#bdcabc",
+                        "inverse-surface": "#27313f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-light": "#7EDC8A",
+                        "border-subtle": "#E5E7EB",
+                        "background-surface": "#FFFFFF",
+                        "on-secondary-container": "#fefcff",
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#64de8b",
+                        "on-primary-fixed": "#00210c",
+                        "surface-dim": "#d0dbed",
+                        "background-page": "#F7FAF8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-padding": "24px",
+                        "gutter": "16px",
+                        "section-gap": "32px",
+                        "container-margin": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["11px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }</script>
+<style>
+        html, html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(229, 231, 235, 0.5); }
+    </style>
+<style id="sidebar-styles">
+        /* Collapsible Sidebar Styles */
+        :root {
+            --sidebar-width: 260px;
+        }
+        body.sidebar-collapsed {
+            --sidebar-width: 72px;
+        }
+        
+        aside#sidebar {
+            width: var(--sidebar-width) !important;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            overflow: visible !important;
+        }
+        
+        @media (min-width: 1024px) {
+            main {
+                padding-left: var(--sidebar-width) !important;
+                transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+        }
+        
+        /* Hide elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-logo-text,
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-label,
+        body.sidebar-collapsed aside#sidebar .nav-chevron,
+        body.sidebar-collapsed aside#sidebar .nav-section-title,
+        body.sidebar-collapsed aside#sidebar .text-label-md,
+        body.sidebar-collapsed aside#sidebar .user-meta,
+        body.sidebar-collapsed aside#sidebar .logout-btn-text {
+            display: none !important;
+        }
+        
+        /* Center elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-header {
+            padding: 24px 0 16px !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-item {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+            border-left-width: 0px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-toggle {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .sidebar-user-info {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .p-4 {
+            padding: 12px 8px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .logout-btn {
+            padding: 8px 0 !important;
+            width: 40px !important;
+            margin: 0 auto !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar nav {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+        
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-menu {
+            display: none !important;
+        }
+        
+        /* Nav dropdown styling */
+        .nav-dropdown {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .nav-dropdown-toggle {
+            transition: all 0.2s ease;
+        }
+        .nav-dropdown-menu {
+            display: none;
+            padding-left: 8px;
+            margin-top: 4px;
+            border-left: 1px solid rgba(0, 109, 55, 0.15); /* primary brand tint */
+        }
+        .nav-dropdown.open .nav-dropdown-menu {
+            display: block !important;
+        }
+        .nav-dropdown.open .nav-chevron {
+            transform: rotate(180deg);
+        }
+        
+        /* Floating Collapse Toggle Button */
+        .sidebar-toggle-btn {
+            position: absolute;
+            bottom: 40px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #5c56e0; /* Blue/Indigo from screenshot */
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 2px 4px -1px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: all 0.2s ease;
+        }
+        .sidebar-toggle-btn:hover {
+            transform: scale(1.1);
+            background-color: #4943c7;
+        }
+        .sidebar-toggle-btn span {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            line-height: 1;
+            user-select: none;
+        }
+</style><style id="fouc-styles">
+        html {
+            visibility: hidden;
+            opacity: 0;
+        }
+        html.ready {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.15s ease-in-out;
+        }
+</style><script id="fouc-prevention">
+        (function() {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.documentElement.classList.add('ready');
+            });
+            // Fallback
+            window.addEventListener("load", () => {
+                document.documentElement.classList.add('ready');
+            });
+        })();
+</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="bg-background-page"><script id="sidebar-flicker-prevention">
+         (function() {
+             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+             if (isCollapsed) {
+                 document.body.classList.add('sidebar-collapsed');
+                 document.addEventListener('DOMContentLoaded', () => {
+                     const icon = document.getElementById('sidebar-collapse-icon');
+                     if (icon) icon.textContent = 'chevron_right';
+                 });
+             }
+         })();
+</script>
+<!-- SideNavBar -->
+<aside class="h-screen fixed left-0 top-0 flex flex-col bg-background-surface border-r border-border-subtle z-50" id="sidebar">
+<!-- Floating toggle button positioned exactly on the border -->
+<button class="sidebar-toggle-btn hidden lg:flex" id="sidebar-toggle" onclick="toggleSidebarCollapse()" title="Recuar Menu" type="button">
+<span class="material-symbols-outlined" id="sidebar-collapse-icon">chevron_left</span>
+</button>
+<div class="p-6 flex items-center gap-2 sidebar-header">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-white flex-shrink-0 sidebar-logo-icon">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div class="sidebar-logo-text">
+<h1 class="font-headline-sm text-primary leading-tight">SIGA EDUCA</h1>
+<p class="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Gestão Educacional</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto sidebar-scroll px-4 space-y-1 py-2">
+<!-- Active Item: Minha Escola -->
+<a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-container transition-colors" href="painelprincipal.html">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md">Minha Escola</span>
+</a>
+<!-- Dropdown: Administrativo -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+<span class="nav-dropdown-label">Administrativo</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="calendarioletivo.html">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-label-md">Calendário Letivo</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="turmas.html">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-label-md">Turmas</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="alunos.html">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md">Alunos</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="frequencia.html">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="text-label-md">Frequência</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="horariodeaula.html">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-label-md">Horário de Aula</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="agenda.html">
+<span class="material-symbols-outlined">event</span>
+<span class="text-label-md">Agenda</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="ocorrencias.html">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-label-md">Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="documentossecretaria.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Documentos Secretaria</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="usuarios.html">
+<span class="material-symbols-outlined">manage_accounts</span>
+<span class="text-label-md">Usuários</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="Gestão de Lotação/lotacao.html">
+<span class="material-symbols-outlined">apartment</span>
+<span class="text-label-md">Lotação</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Pedagógico -->
+<div class="nav-dropdown open">
+<button aria-expanded="true" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">school</span>
+<span class="nav-dropdown-label">Pedagógico</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="topodosaber.html">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="text-label-md">Projeto Olímpico</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="boletins.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Boletins</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 bg-primary-light/20 text-primary border-l-4 border-primary font-semibold transition-all rounded-lg" href="conselho.html">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">diversity_3</span>
+<span class="text-label-md">Conselho de Classe</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-md">Diagnóstico de Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="controlelivros.html">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-label-md">Controle de Livros</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="relatorios.html">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-label-md">Relatórios</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Sistema -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="nav-dropdown-label">Sistema</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="meuperfil.html">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-label-md">Meu Perfil</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="permissões.html">
+<span class="material-symbols-outlined">shield_person</span>
+<span class="text-label-md">Permissões</span>
+</a>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-border-subtle bg-surface-container-low sidebar-user-info">
+<a href="meuperfil.html" class="flex items-center gap-3 mb-4 rounded-lg hover:bg-white/60 transition-colors p-1 -m-1" title="Meu Perfil">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white font-bold flex items-center justify-center flex-shrink-0 sidebar-user-avatar" aria-hidden="true">U</div>
+<div class="overflow-hidden user-meta">
+<p class="text-body-md font-semibold truncate">João Silva</p>
+<p class="text-label-sm text-text-secondary truncate">Administrador</p>
+</div>
+</a>
+<button class="logout-btn w-full flex items-center justify-center gap-2 py-2 px-4 border border-border-subtle rounded-lg text-error font-semibold hover:bg-error/5 transition-colors" onclick="window.location.href='login.html'">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="text-label-md logout-btn-text">Sair</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="min-h-screen"><header class="siga-app-header h-16 w-full flex justify-between items-center px-4 sm:px-6 lg:px-8 bg-background/50 backdrop-blur-md sticky top-0 z-40 border-b border-transparent">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-on-surface leading-tight">Conselho de Classe</h2>
+<span class="text-label-sm text-text-secondary">Acompanhamento pedagógico e rendimento de turmas</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-border-subtle rounded-full text-body-md w-36 sm:w-56 md:w-64 focus:ring-2 focus:ring-primary-light focus:outline-none transition-all" placeholder="Buscar..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/50 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header><div class="p-8 max-w-[1440px] mx-auto space-y-8"><div class="flex-1 overflow-y-auto p-container-margin custom-scrollbar">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<nav class="flex gap-2 text-label-sm text-text-secondary mb-2">
+<span>SIGA EDUCA</span>
+<span>/</span>
+<span>Conselho de Classe</span>
+<span>/</span>
+<span class="text-primary font-bold">2º Trimestre 2024</span>
+</nav>
+<h2 class="font-headline-lg text-headline-lg text-on-background">Conselho de Classe: 3º Ano - Turma A</h2>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 border border-primary text-primary rounded-lg font-label-md text-label-md hover:bg-primary-light/10 transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span> Imprimir Relatório
+                    </button>
+<button class="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:brightness-90 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">save</span> Finalizar Conselho
+                    </button>
+</div>
+</div>
+<!-- Dashboard Bento Grid -->
+<div class="grid grid-cols-12 gap-6 mb-8">
+<!-- Main Metric Cards -->
+<div class="col-span-12 lg:col-span-3 space-y-6">
+<div class="bg-white p-card-padding rounded-xl border border-border-subtle shadow-sm">
+<p class="text-label-md text-text-secondary mb-1">Média Geral da Turma</p>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-primary">7.8</span>
+<span class="text-primary font-label-md text-label-md flex items-center">
+<span class="material-symbols-outlined text-[16px]">trending_up</span> +5.2%
+                            </span>
+</div>
+<p class="text-[11px] text-text-secondary mt-2">Comparado ao 1º Trimestre</p>
+</div>
+<div class="bg-white p-card-padding rounded-xl border border-border-subtle shadow-sm">
+<p class="text-label-md text-text-secondary mb-1">Frequência Média</p>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-secondary">92%</span>
+<span class="text-error font-label-md text-label-md flex items-center">
+<span class="material-symbols-outlined text-[16px]">trending_down</span> -2%
+                            </span>
+</div>
+<p class="text-[11px] text-text-secondary mt-2">Meta Institucional: 95%</p>
+</div>
+<div class="bg-white p-card-padding rounded-xl border border-border-subtle shadow-sm">
+<p class="text-label-md text-text-secondary mb-1">Alunos em Risco</p>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-error">04</span>
+<span class="text-text-secondary font-label-md text-label-md">/ 32</span>
+</div>
+<p class="text-[11px] text-text-secondary mt-2">Média abaixo de 6.0</p>
+</div>
+</div>
+<!-- Chart: Distribuição de Notas -->
+<div class="col-span-12 lg:col-span-6 bg-white p-card-padding rounded-xl border border-border-subtle shadow-sm flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-sm text-headline-sm">Distribuição de Desempenho</h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-primary-container"></span>
+<span class="text-label-sm text-text-secondary">Ótimo</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-tertiary-container"></span>
+<span class="text-label-sm text-text-secondary">Regular</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-error"></span>
+<span class="text-label-sm text-text-secondary">Crítico</span>
+</div>
+</div>
+</div>
+<div class="flex-1 flex items-end justify-between gap-4 px-4 pb-4 h-64">
+<div class="w-full group relative">
+<div class="bg-primary-container/20 rounded-t-lg w-full h-[85%] transition-all hover:bg-primary-container/40 flex items-end justify-center pb-2">
+<span class="font-bold text-primary text-label-md">18</span>
+</div>
+<p class="text-center text-label-sm text-text-secondary mt-3">8.5 - 10</p>
+</div>
+<div class="w-full group relative">
+<div class="bg-primary-container/10 rounded-t-lg w-full h-[60%] transition-all hover:bg-primary-container/30 flex items-end justify-center pb-2">
+<span class="font-bold text-primary text-label-md">10</span>
+</div>
+<p class="text-center text-label-sm text-text-secondary mt-3">7.0 - 8.4</p>
+</div>
+<div class="w-full group relative">
+<div class="bg-tertiary-container/20 rounded-t-lg w-full h-[30%] transition-all hover:bg-tertiary-container/40 flex items-end justify-center pb-2">
+<span class="font-bold text-tertiary text-label-md">04</span>
+</div>
+<p class="text-center text-label-sm text-text-secondary mt-3">6.0 - 6.9</p>
+</div>
+<div class="w-full group relative">
+<div class="bg-error/10 rounded-t-lg w-full h-[15%] transition-all hover:bg-error/20 flex items-end justify-center pb-2">
+<span class="font-bold text-error text-label-md">02</span>
+</div>
+<p class="text-center text-label-sm text-text-secondary mt-3">0 - 5.9</p>
+</div>
+</div>
+</div>
+<!-- Radar Map Placeholder / Stats summary -->
+<div class="col-span-12 lg:col-span-3 bg-white p-card-padding rounded-xl border border-border-subtle shadow-sm">
+<h3 class="font-headline-sm text-headline-sm mb-4">Competências</h3>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-label-md mb-1.5">
+<span class="text-on-surface">Cognitivo</span>
+<span class="text-primary font-bold">88%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full">
+<div class="bg-primary h-full rounded-full w-[88%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md mb-1.5">
+<span class="text-on-surface">Socioemocional</span>
+<span class="text-secondary font-bold">74%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full">
+<div class="bg-secondary h-full rounded-full w-[74%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-label-md mb-1.5">
+<span class="text-on-surface">Participação</span>
+<span class="text-tertiary font-bold">92%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full">
+<div class="bg-tertiary-container h-full rounded-full w-[92%]"></div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-6 border-t border-border-subtle">
+<div class="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low">
+<span class="material-symbols-outlined text-primary">lightbulb</span>
+<p class="text-label-sm text-text-secondary leading-tight">Turma demonstra alto engajamento em projetos práticos.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Attention List & Observations -->
+<div class="grid grid-cols-12 gap-6 items-stretch">
+<!-- Alunos em Atenção -->
+<div class="col-span-12 lg:col-span-7 bg-white rounded-xl border border-border-subtle shadow-sm flex flex-col h-full">
+<div class="p-card-padding border-b border-border-subtle flex justify-between items-center">
+<h3 class="font-headline-sm text-headline-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-error">priority_high</span> 
+                            Foco Pedagógico: Alunos com Baixo Desempenho
+                        </h3>
+<span class="bg-error-container text-on-error-container text-[11px] font-bold px-2 py-1 rounded-full">Ação Necessária</span>
+</div>
+<div class="flex-1 overflow-auto custom-scrollbar">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low sticky top-0">
+<tr>
+<th class="px-6 py-3 font-label-md text-label-md text-text-secondary uppercase tracking-wider">Aluno</th>
+<th class="px-6 py-3 font-label-md text-label-md text-text-secondary uppercase tracking-wider">Média</th>
+<th class="px-6 py-3 font-label-md text-label-md text-text-secondary uppercase tracking-wider">Faltas</th>
+<th class="px-6 py-3 font-label-md text-label-md text-text-secondary uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 font-label-md text-label-md text-text-secondary uppercase tracking-wider text-right">Ação</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-[12px]">RM</div>
+<span class="font-label-md text-on-surface">Ricardo Mendonça</span>
+</div>
+</td>
+<td class="px-6 py-4 font-bold text-error">4.5</td>
+<td class="px-6 py-4 text-text-secondary">12</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-error-container text-on-error-container">Crítico</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:underline text-label-sm font-bold">Ver Perfil</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-[12px]">AS</div>
+<span class="font-label-md text-on-surface">Ana Souza</span>
+</div>
+</td>
+<td class="px-6 py-4 font-bold text-error">5.2</td>
+<td class="px-6 py-4 text-text-secondary">08</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-error-container text-on-error-container">Alerta</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:underline text-label-sm font-bold">Ver Perfil</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-[12px]">LP</div>
+<span class="font-label-md text-on-surface">Lucas Pereira</span>
+</div>
+</td>
+<td class="px-6 py-4 font-bold text-tertiary">5.8</td>
+<td class="px-6 py-4 text-text-secondary">04</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant">Recuperação</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:underline text-label-sm font-bold">Ver Perfil</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-dim flex items-center justify-center font-bold text-on-surface-variant text-[12px]">MB</div>
+<span class="font-label-md text-on-surface">Maria Beatriz</span>
+</div>
+</td>
+<td class="px-6 py-4 font-bold text-tertiary">5.9</td>
+<td class="px-6 py-4 text-text-secondary">02</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant">Recuperação</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:underline text-label-sm font-bold">Ver Perfil</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 border-t border-border-subtle bg-surface-container-lowest text-center">
+<button class="text-primary font-bold text-label-md hover:underline">Ver Todos os 32 Alunos</button>
+</div>
+</div>
+<!-- Atas e Observações -->
+<div class="col-span-12 lg:col-span-5 flex flex-col gap-6">
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm flex flex-col flex-1">
+<div class="p-card-padding border-b border-border-subtle">
+<h3 class="font-headline-sm text-headline-sm">Registro de Atas e Deliberações</h3>
+</div>
+<div class="p-card-padding space-y-4 flex-1">
+<div>
+<label class="block font-label-md text-label-md text-text-secondary mb-2">Observações Gerais da Turma</label>
+<textarea class="w-full h-32 rounded-lg border-border-subtle focus:ring-primary/20 focus:border-primary text-body-md" placeholder="Digite aqui os pontos discutidos durante o conselho..."></textarea>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-text-secondary mb-2">Encaminhamentos Coletivos</label>
+<div class="space-y-2">
+<label class="flex items-center gap-3 p-3 border border-border-subtle rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+<input class="rounded text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-body-md text-on-surface">Reforço Escolar no contraturno para Matemática</span>
+</label>
+<label class="flex items-center gap-3 p-3 border border-border-subtle rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+<input class="rounded text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-body-md text-on-surface">Convocação de pais para reunião individual</span>
+</label>
+<label class="flex items-center gap-3 p-3 border border-border-subtle rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+<input class="rounded text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-body-md text-on-surface">Intervenção psicopedagógica para grupo focal</span>
+</label>
+</div>
+</div>
+</div>
+<div class="p-card-padding border-t border-border-subtle bg-surface-container-low">
+<button class="w-full py-2.5 bg-primary text-on-primary rounded-lg font-bold text-label-md shadow-sm hover:brightness-110 active:scale-[0.98] transition-all">
+                                Salvar Atas do Conselho
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div><button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-[28px]">add_comment</span>
+</button></div></main>
+<script>
+        // Simple micro-interactions for the cards
+        document.querySelectorAll('.bg-white').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.classList.add('shadow-md');
+                card.style.transform = 'translateY(-2px)';
+                card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.classList.remove('shadow-md');
+                card.style.transform = 'translateY(0px)';
+            });
+        });
+
+        // Add visual feedback to active navigation items
+        const navItems = document.querySelectorAll('nav a');
+        navItems.forEach(item => {
+            if (!item.classList.contains('bg-primary-light/20')) {
+                item.addEventListener('mouseenter', () => {
+                    item.style.paddingLeft = '16px';
+                    item.style.transition = 'all 0.2s ease';
+                });
+                item.addEventListener('mouseleave', () => {
+                    item.style.paddingLeft = '';
+                });
+            }
+        });
+    </script>
+<script id="sidebar-collapsible-script">
+        // Micro-interactions and small UI behaviors
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (el.getAttribute('href') === '#') e.preventDefault();
+            });
+        });
+
+        // Collapsible Sidebar and Dropdowns functions
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            const collapsed = document.body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
+            const icon = document.getElementById('sidebar-collapse-icon');
+            if (icon) {
+                icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+            }
+        }
+
+        // Dropdown functions
+        function toggleNavGroup(button) {
+            const group = button.closest('.nav-dropdown');
+            if (!group) return;
+
+            const shouldOpen = !group.classList.contains('open');
+            
+            // Auto-collapse other groups
+            document.querySelectorAll('.nav-dropdown').forEach(g => {
+                if (g !== group) {
+                    g.classList.remove('open');
+                    const btn = g.querySelector('.nav-dropdown-toggle');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            group.classList.toggle('open', shouldOpen);
+            button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        }
+</script></body></html>

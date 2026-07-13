@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Validar Documento - SIGA EDUCA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: "#006d37",
+        "primary-container": "#2eaf62",
+        "primary-light": "#7EDC8A",
+        "on-surface": "#121c2a",
+        "text-secondary": "#6B7280",
+        "border-subtle": "#E5E7EB",
+        "background-page": "#F7FAF8",
+        error: "#ba1a1a"
+      }
+    }
+  }
+};
+</script>
+<script src="js/siga-security.js"></script><script src="js/siga-db.js"></script>
+<script src="js/documentos-secretaria.js"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; background: #F7FAF8; color: #121C2A; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+</style>
+</head>
+<body class="bg-background-page min-h-screen">
+<div class="max-w-3xl mx-auto px-4 py-10 space-y-6">
+  <div class="text-center space-y-2">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-white mb-2">
+      <span class="material-symbols-outlined text-[28px]" style="font-variation-settings:'FILL' 1;">verified</span>
+    </div>
+    <h1 class="text-2xl font-bold text-on-surface">Validação de Documento</h1>
+    <p class="text-text-secondary text-sm">Confira a autenticidade de documentos emitidos pela secretaria escolar</p>
+  </div>
+
+  <div class="bg-white border border-border-subtle rounded-2xl p-6 shadow-sm space-y-4">
+    <label class="block text-[11px] font-bold text-text-secondary uppercase" for="val-protocolo">Protocolo</label>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input id="val-protocolo" type="text" placeholder="Ex: SEC-DEC-2026-0001"
+        class="flex-1 px-4 py-3 border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-mono"/>
+      <button type="button" onclick="validarDocumentoPublico()"
+        class="px-4 sm:px-6 py-3 bg-primary hover:bg-[#005228] text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">search</span>
+        Consultar
+      </button>
+    </div>
+  </div>
+
+  <div id="val-resultado" class="hidden"></div>
+</div>
+
+<script>
+function validarDocumentoPublico() {
+  var protocolo = (document.getElementById('val-protocolo').value || '').trim();
+  var box = document.getElementById('val-resultado');
+  if (!protocolo) {
+    box.classList.remove('hidden');
+    box.innerHTML = '<div class="bg-red-50 border border-red-200 text-error rounded-2xl p-5">Informe o protocolo do documento.</div>';
+    return;
+  }
+  var result = typeof consultarDocumentoPorProtocolo === 'function'
+    ? consultarDocumentoPorProtocolo(protocolo)
+    : null;
+
+  if (!result || !result.encontrado) {
+    box.classList.remove('hidden');
+    box.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-2xl p-6 space-y-2">' +
+      '<p class="font-bold text-error flex items-center gap-2"><span class="material-symbols-outlined">cancel</span>Documento não encontrado</p>' +
+      '<p class="text-sm text-text-secondary">Nenhum registro corresponde ao protocolo <b class="font-mono">' + protocolo + '</b>.</p>' +
+      '</div>';
+    return;
+  }
+
+  var doc = result.documento;
+  var escola = result.escola || {};
+  var isReq = String(doc.tipo || '').indexOf('Requerimento') === 0;
+  var statusHtml = isReq
+    ? ('<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">' + (doc.status || 'pendente') + '</span>')
+    : (result.valido
+      ? '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Válido' + (result.dataValidadeBr ? ' até ' + result.dataValidadeBr : '') + '</span>'
+      : '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-error">Expirado' + (result.dataValidadeBr ? ' em ' + result.dataValidadeBr : '') + '</span>');
+
+  box.classList.remove('hidden');
+  box.innerHTML =
+    '<div class="bg-white border border-border-subtle rounded-2xl p-6 shadow-sm space-y-5">' +
+      '<div class="flex items-start justify-between gap-4 flex-wrap">' +
+        '<div>' +
+          '<p class="text-[11px] font-bold text-text-secondary uppercase">Protocolo</p>' +
+          '<p class="font-mono font-bold text-primary text-lg">' + doc.protocolo + '</p>' +
+        '</div>' + statusHtml +
+      '</div>' +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">' +
+        '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Tipo</p><p class="font-semibold mt-0.5">' + (doc.tipo || '—') + '</p></div>' +
+        '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Escola</p><p class="font-semibold mt-0.5">' + (escola.nome || '—') + '</p></div>' +
+        '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Estudante</p><p class="font-semibold mt-0.5">' + (doc.alunoNome || (doc.tipo === 'Declaração de Vaga' ? 'Não se aplica' : '—')) + '</p></div>' +
+        '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Turma</p><p class="font-semibold mt-0.5">' + (doc.alunoTurma || '—') + '</p></div>' +
+        '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Data de Emissão</p><p class="font-semibold mt-0.5">' + (typeof formatarDataBr === 'function' ? formatarDataBr(doc.dataEmissao) : doc.dataEmissao) + '</p></div>' +
+        '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Responsável</p><p class="font-semibold mt-0.5">' + (doc.responsavel || 'Secretaria') + '</p></div>' +
+      '</div>' +
+      (doc.solicitante || doc.motivo
+        ? '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t border-border-subtle pt-4">' +
+            '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Solicitante</p><p class="mt-0.5">' + (doc.solicitante || '—') + '</p></div>' +
+            '<div><p class="text-[11px] font-bold text-text-secondary uppercase">Motivo</p><p class="mt-0.5">' + (doc.motivo || '—') + '</p></div>' +
+          '</div>'
+        : '') +
+      '<p class="text-xs text-text-secondary border-t border-border-subtle pt-4">' +
+        'Consulta pública de autenticidade. Em caso de dúvida, contate a secretaria da escola emissora.' +
+      '</p>' +
+    '</div>';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  var params = new URLSearchParams(window.location.search);
+  var protocolo = params.get('protocolo');
+  if (protocolo) {
+    document.getElementById('val-protocolo').value = protocolo;
+    validarDocumentoPublico();
+  }
+  document.getElementById('val-protocolo').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') validarDocumentoPublico();
+  });
+});
+</script>
+</body>
+</html>

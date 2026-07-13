@@ -1,0 +1,1195 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIGA EDUCA - Calendário Escolar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#64de8b",
+                        "on-surface": "#121c2a",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#d9e3f6",
+                        "surface-container-high": "#dee9fc",
+                        "on-primary-container": "#003a1a",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container": "#e6eeff",
+                        "background": "#f8f9ff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#006d37",
+                        "on-error": "#ffffff",
+                        "tertiary": "#795900",
+                        "tertiary-fixed": "#ffdf9f",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-tertiary-fixed": "#261a00",
+                        "secondary-container": "#2170e4",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "outline": "#6e7a6e",
+                        "tertiary-container": "#c39200",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "secondary-fixed": "#d8e2ff",
+                        "text-secondary": "#6B7280",
+                        "on-surface-variant": "#3e4a3f",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-background": "#121c2a",
+                        "on-tertiary-container": "#412f00",
+                        "secondary": "#0058be",
+                        "on-primary-fixed-variant": "#005228",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#81fba5",
+                        "primary-container": "#2eaf62",
+                        "surface-container-highest": "#d9e3f6",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006d37",
+                        "outline-variant": "#bdcabc",
+                        "inverse-surface": "#27313f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-light": "#7EDC8A",
+                        "border-subtle": "#E5E7EB",
+                        "background-surface": "#FFFFFF",
+                        "on-secondary-container": "#fefcff",
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#64de8b",
+                        "on-primary-fixed": "#00210c",
+                        "surface-dim": "#d0dbed",
+                        "background-page": "#F7FAF8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-padding": "24px",
+                        "gutter": "16px",
+                        "section-gap": "32px",
+                        "container-margin": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["11px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }</script>
+<style>
+        html, html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .calendar-cell { min-height: 120px; min-width: 0; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+    </style>
+<style id="sidebar-styles">
+        /* Collapsible Sidebar Styles */
+        :root {
+            --sidebar-width: 260px;
+        }
+        body.sidebar-collapsed {
+            --sidebar-width: 72px;
+        }
+        
+        aside#sidebar {
+            width: var(--sidebar-width) !important;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            overflow: visible !important;
+        }
+        
+        @media (min-width: 1024px) {
+            main {
+                padding-left: var(--sidebar-width) !important;
+                transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+        }
+        
+        /* Hide elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-logo-text,
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-label,
+        body.sidebar-collapsed aside#sidebar .nav-chevron,
+        body.sidebar-collapsed aside#sidebar .nav-section-title,
+        body.sidebar-collapsed aside#sidebar .text-label-md,
+        body.sidebar-collapsed aside#sidebar .user-meta,
+        body.sidebar-collapsed aside#sidebar .logout-btn-text {
+            display: none !important;
+        }
+        
+        /* Center elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-header {
+            padding: 24px 0 16px !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-item {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+            border-left-width: 0px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-toggle {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .sidebar-user-info {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .p-4 {
+            padding: 12px 8px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .logout-btn {
+            padding: 8px 0 !important;
+            width: 40px !important;
+            margin: 0 auto !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar nav {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+        
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-menu {
+            display: none !important;
+        }
+        
+        /* Nav dropdown styling */
+        .nav-dropdown {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .nav-dropdown-toggle {
+            transition: all 0.2s ease;
+        }
+        .nav-dropdown-menu {
+            display: none;
+            padding-left: 8px;
+            margin-top: 4px;
+            border-left: 1px solid rgba(0, 109, 55, 0.15); /* primary brand tint */
+        }
+        .nav-dropdown.open .nav-dropdown-menu {
+            display: block !important;
+        }
+        .nav-dropdown.open .nav-chevron {
+            transform: rotate(180deg);
+        }
+        
+        /* Floating Collapse Toggle Button */
+        .sidebar-toggle-btn {
+            position: absolute;
+            bottom: 40px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #5c56e0; /* Blue/Indigo from screenshot */
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 2px 4px -1px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: all 0.2s ease;
+        }
+        .sidebar-toggle-btn:hover {
+            transform: scale(1.1);
+            background-color: #4943c7;
+        }
+        .sidebar-toggle-btn span {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            line-height: 1;
+            user-select: none;
+        }
+</style><style id="fouc-styles">
+        html {
+            visibility: hidden;
+            opacity: 0;
+        }
+        html.ready {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.15s ease-in-out;
+        }
+</style><script id="fouc-prevention">
+        (function() {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.documentElement.classList.add('ready');
+            });
+            // Fallback
+            window.addEventListener("load", () => {
+                document.documentElement.classList.add('ready');
+            });
+        })();
+</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="bg-background-page"><script id="sidebar-flicker-prevention">
+         (function() {
+             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+             if (isCollapsed) {
+                 document.body.classList.add('sidebar-collapsed');
+                 document.addEventListener('DOMContentLoaded', () => {
+                     const icon = document.getElementById('sidebar-collapse-icon');
+                     if (icon) icon.textContent = 'chevron_right';
+                 });
+             }
+         })();
+</script>
+<!-- Predicted SideNavBar -->
+<aside class="h-screen fixed left-0 top-0 flex flex-col bg-background-surface border-r border-border-subtle z-50" id="sidebar">
+<!-- Floating toggle button positioned exactly on the border -->
+<button class="sidebar-toggle-btn hidden lg:flex" id="sidebar-toggle" onclick="toggleSidebarCollapse()" title="Recuar Menu" type="button">
+<span class="material-symbols-outlined" id="sidebar-collapse-icon">chevron_left</span>
+</button>
+<div class="p-6 flex items-center gap-2 sidebar-header">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-white flex-shrink-0 sidebar-logo-icon">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div class="sidebar-logo-text">
+<h1 class="font-headline-sm text-primary leading-tight">SIGA EDUCA</h1>
+<p class="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Gestão Educacional</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto sidebar-scroll px-4 space-y-1 py-2">
+<!-- Active Item: Minha Escola -->
+<a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-container transition-colors" href="painelprincipal.html">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md">Minha Escola</span>
+</a>
+<!-- Dropdown: Administrativo -->
+<div class="nav-dropdown open">
+<button aria-expanded="true" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+<span class="nav-dropdown-label">Administrativo</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 bg-primary-light/20 text-primary border-l-4 border-primary font-semibold transition-all rounded-lg" href="calendarioletivo.html">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="text-label-md">Calendário Letivo</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="turmas.html">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-label-md">Turmas</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="alunos.html">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md">Alunos</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="frequencia.html">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="text-label-md">Frequência</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="horariodeaula.html">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-label-md">Horário de Aula</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="agenda.html">
+<span class="material-symbols-outlined">event</span>
+<span class="text-label-md">Agenda</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="ocorrencias.html">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-label-md">Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="documentossecretaria.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Documentos Secretaria</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="usuarios.html">
+<span class="material-symbols-outlined">manage_accounts</span>
+<span class="text-label-md">Usuários</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="Gestão de Lotação/lotacao.html">
+<span class="material-symbols-outlined">apartment</span>
+<span class="text-label-md">Lotação</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Pedagógico -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">school</span>
+<span class="nav-dropdown-label">Pedagógico</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="topodosaber.html">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="text-label-md">Projeto Olímpico</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="boletins.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Boletins</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="conselho.html">
+<span class="material-symbols-outlined">diversity_3</span>
+<span class="text-label-md">Conselho de Classe</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-md">Diagnóstico de Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="controlelivros.html">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-label-md">Controle de Livros</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="relatorios.html">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-label-md">Relatórios</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Sistema -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="nav-dropdown-label">Sistema</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="meuperfil.html">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-label-md">Meu Perfil</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="permissões.html">
+<span class="material-symbols-outlined">shield_person</span>
+<span class="text-label-md">Permissões</span>
+</a>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-border-subtle bg-surface-container-low sidebar-user-info">
+<a href="meuperfil.html" class="flex items-center gap-3 mb-4 rounded-lg hover:bg-white/60 transition-colors p-1 -m-1" title="Meu Perfil">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white font-bold flex items-center justify-center flex-shrink-0 sidebar-user-avatar" aria-hidden="true">U</div>
+<div class="overflow-hidden user-meta">
+<p class="text-body-md font-semibold truncate">João Silva</p>
+<p class="text-label-sm text-text-secondary truncate">Administrador</p>
+</div>
+</a>
+<button class="logout-btn w-full flex items-center justify-center gap-2 py-2 px-4 border border-border-subtle rounded-lg text-error font-semibold hover:bg-error/5 transition-colors" onclick="window.location.href='login.html'">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="text-label-md logout-btn-text">Sair</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="min-h-screen"><header class="siga-app-header h-16 w-full flex justify-between items-center px-4 sm:px-6 lg:px-8 bg-background/50 backdrop-blur-md sticky top-0 z-40 border-b border-transparent">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-on-surface leading-tight">Calendário Escolar</h2>
+<span class="text-label-sm text-text-secondary">Agenda e planejamento do ano escolar</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-border-subtle rounded-full text-body-md w-36 sm:w-56 md:w-64 focus:ring-2 focus:ring-primary-light focus:outline-none transition-all" placeholder="Buscar..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/50 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header><div class="p-8 max-w-[1440px] mx-auto space-y-8">
+<!-- Calendar Header Section -->
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-section-gap gap-4">
+<div class="flex items-center gap-4">
+<h3 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-3">Maio 2026 <span class="px-3 py-1 bg-primary-light/20 text-primary font-bold text-label-md rounded-full" id="calendar-header-badge">0 Dias Letivos</span></h3>
+<div class="flex items-center bg-white border border-border-subtle rounded-lg p-1 shadow-sm">
+<button class="p-1 hover:bg-surface-container rounded transition-colors" onclick="changeMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="px-3 py-1 font-label-md text-label-md hover:bg-surface-container rounded transition-colors" onclick="goToday()">Hoje</button>
+<button class="p-1 hover:bg-surface-container rounded transition-colors" onclick="changeMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+</div>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Calendar Grid (Bento Style Card) -->
+<div class="col-span-12 lg:col-span-9 bg-white border border-border-subtle rounded-2xl shadow-sm overflow-hidden">
+<div class="calendar-grid border-b border-border-subtle bg-surface-container-lowest">
+<div class="py-3 text-center font-label-md text-label-md text-text-secondary">Dom</div>
+<div class="py-3 text-center font-label-md text-label-md text-text-secondary">Seg</div>
+<div class="py-3 text-center font-label-md text-label-md text-text-secondary">Ter</div>
+<div class="py-3 text-center font-label-md text-label-md text-text-secondary">Qua</div>
+<div class="py-3 text-center font-label-md text-label-md text-text-secondary">Qui</div>
+<div class="py-3 text-center font-label-md text-label-md text-text-secondary">Sex</div>
+<div class="py-3 text-center font-label-md text-label-md text-text-secondary">Sáb</div>
+</div>
+<div class="calendar-grid" id="calendar-days-container">
+<!-- Renderizado dinamicamente via JS -->
+</div>
+</div>
+
+<!-- Bimestres Panel (full width, below calendar + sidebar) -->
+<div class="col-span-12 bg-white border border-border-subtle rounded-2xl shadow-sm p-6">
+    <h4 class="font-headline-sm text-headline-sm font-semibold mb-4 text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">event_note</span>
+        Divisão de Bimestres (Ano Letivo 2026)
+    </h4>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="bimestres-stats-container">
+        <!-- Renderizado dinamicamente via JS -->
+    </div>
+</div>
+
+<!-- Sidebar Legend & Upcoming (Right Side) -->
+<div class="col-span-12 lg:col-span-3 space-y-6">
+<!-- Resumo Card -->
+<div class="bg-white border border-border-subtle rounded-2xl shadow-sm p-card-padding">
+    <h4 class="font-headline-sm text-headline-sm mb-4">Resumo do Mês</h4>
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-[#dcfce7]/40 p-3 rounded-xl border border-[#bbf7d0]/40">
+            <p class="text-[10px] text-text-secondary uppercase font-bold mb-1">Dias Letivos</p>
+            <p class="text-2xl font-extrabold text-[#006d37]" id="total-dias-letivos">0</p>
+        </div>
+        <div class="bg-surface-container-low p-3 rounded-xl border border-border-subtle/30">
+            <p class="text-[10px] text-text-secondary uppercase font-bold mb-1">Total Dias</p>
+            <p class="text-2xl font-extrabold text-on-surface" id="total-dias-calendario">31</p>
+        </div>
+    </div>
+</div>
+
+<!-- Legend Card -->
+<div class="bg-white border border-border-subtle rounded-2xl shadow-sm p-card-padding">
+    <h4 class="font-headline-sm text-headline-sm mb-4 font-semibold">Legendas</h4>
+    <div class="space-y-3">
+        <div class="flex items-center gap-3">
+            <div class="w-6 h-6 bg-[#dcfce7]/60 border border-border-subtle border-t-2 border-t-[#22c55e] rounded-sm"></div>
+            <span class="font-label-md text-label-md text-on-surface">Dia Letivo</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="w-6 h-6 bg-[#fee2e2]/60 border border-border-subtle border-t-2 border-t-[#ef4444] rounded-sm"></div>
+            <span class="font-label-md text-label-md text-on-surface">Feriado, Ponto Facultativo ou Recesso</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="w-6 h-6 bg-[#dbeafe]/60 border border-border-subtle border-t-2 border-t-[#3b82f6] rounded-sm"></div>
+            <span class="font-label-md text-label-md text-on-surface">Dia Letivo com Evento</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="w-6 h-6 bg-[#fef9c3]/60 border border-border-subtle border-t-2 border-t-[#eab308] rounded-sm"></div>
+            <span class="font-label-md text-label-md text-on-surface">Sábado Letivo</span>
+        </div>
+    </div>
+</div>
+<!-- Upcoming Events -->
+<div class="bg-white border border-border-subtle rounded-2xl shadow-sm p-card-padding">
+    <div class="flex items-center justify-between mb-4">
+        <h4 class="font-headline-sm text-headline-sm font-semibold">Próximos Eventos</h4>
+        <a class="text-primary font-label-md text-label-md hover:underline" href="#">Ver Todos</a>
+    </div>
+    <div class="space-y-4" id="upcoming-events-container">
+        <!-- Renderizado dinamicamente via JS -->
+    </div>
+</div>
+<!-- Mini Calendar/DatePicker -->
+<div class="bg-primary/5 rounded-2xl p-card-padding border border-primary/10">
+<div class="flex items-center gap-3 mb-2">
+<div class="bg-primary-container p-2 rounded-lg text-white">
+<span class="material-symbols-outlined text-[20px]">lightbulb</span>
+</div>
+<h4 class="font-headline-sm text-label-md text-primary">Dica do SIGA</h4>
+</div>
+<p class="text-body-md text-label-md text-on-primary-container/80 italic">
+                            "Mantenha o calendário de avaliações atualizado para que pais e alunos possam se planejar com antecedência."
+                        </p>
+</div>
+</div>
+</div>
+</div></main>
+<script>
+        let calendarDays = {};
+        let currentYear = 2026;
+        let currentMonth = 5; // Maio (ajustado em init/goToday)
+
+        const monthNames = [
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+        ];
+        const monthAbbreviations = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
+        function formatLocalISO(date) {
+            const d = date instanceof Date ? date : new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function getReferenceToday() {
+            // Data de referência = "hoje" do sistema (ex.: 12/07/2026)
+            const now = new Date();
+            return {
+                date: now,
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                day: now.getDate(),
+                iso: formatLocalISO(now)
+            };
+        }
+
+        function initCalendar() {
+            calendarDays = window.getCalendarDays ? window.getCalendarDays() : {};
+            const today = getReferenceToday();
+            currentYear = today.year;
+            currentMonth = today.month;
+            updateCalendarHeader();
+            renderCalendarGrid();
+            updateCalendarStats();
+            renderUpcomingEvents();
+            renderBimestresStats();
+        }
+
+        function changeMonth(dir) {
+            currentMonth += dir;
+            if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear--;
+            } else if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            }
+            updateCalendarHeader();
+            renderCalendarGrid();
+            updateCalendarStats();
+            renderUpcomingEvents();
+        }
+
+        function goToday() {
+            const today = getReferenceToday();
+            currentYear = today.year;
+            currentMonth = today.month;
+            updateCalendarHeader();
+            renderCalendarGrid();
+            updateCalendarStats();
+            renderUpcomingEvents();
+            // Abre a chamada do dia de referência (Frequência)
+            window.location.href = 'frequencia.html?date=' + encodeURIComponent(today.iso) + '&from=calendario';
+        }
+
+        window.goToday = goToday;
+        window.changeMonth = changeMonth;
+
+        function updateCalendarHeader() {
+            const headerTitle = document.querySelector('h3.font-headline-lg');
+            if (headerTitle) {
+                headerTitle.innerHTML = `${monthNames[currentMonth - 1]} ${currentYear} <span class="px-3 py-1 bg-primary-light/20 text-primary font-bold text-label-md rounded-full" id="calendar-header-badge">0 Dias Letivos</span>`;
+            }
+        }
+
+        function renderCalendarGrid() {
+            const container = document.getElementById('calendar-days-container');
+            if (!container) return;
+            
+            let html = '';
+            
+            // Get first day of month (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+            const firstDayIndex = new Date(currentYear, currentMonth - 1, 1).getDay();
+            
+            // Number of days in current month
+            const numDays = new Date(currentYear, currentMonth, 0).getDate();
+            
+            // Number of days in previous month
+            const prevMonthNumDays = new Date(currentYear, currentMonth - 1, 0).getDate();
+            
+            // Get previous month days to show
+            const prevDays = [];
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                prevDays.push(prevMonthNumDays - i);
+            }
+            
+            // Render previous days
+            prevDays.forEach(day => {
+                html += `
+                    <div class="calendar-cell p-3 border-r border-b border-border-subtle bg-surface-container-low/30 opacity-40 select-none">
+                        <span class="font-label-md text-label-md text-text-secondary">${day}</span>
+                    </div>
+                `;
+            });
+            
+            // Render current month days
+            const todayIso = getReferenceToday().iso;
+            for (let d = 1; d <= numDays; d++) {
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayInfo = calendarDays[dateStr] || { type: 'letivo', label: 'Dia Letivo' };
+                const isToday = dateStr === todayIso;
+                
+                let cellClass = "hover:bg-surface-container/20 transition-colors cursor-pointer border-r border-b border-border-subtle";
+                let typeBadge = "";
+                
+                if (dayInfo.type === 'letivo') {
+                    cellClass += " bg-[#dcfce7]/60 hover:bg-[#dcfce7]/80 text-[#14532d] border-t-2 border-t-[#22c55e]";
+                } else if (dayInfo.type === 'feriado_recesso') {
+                    cellClass += " bg-[#fee2e2]/60 hover:bg-[#fee2e2]/80 text-[#7f1d1d] border-t-2 border-t-[#ef4444]";
+                    typeBadge = `<div class="mt-2 px-2 py-1 bg-[#fee2e2] text-[#7f1d1d] text-[10px] font-bold rounded border-l-2 border-l-[#ef4444] truncate">${dayInfo.label || 'Feriado/Recesso'}</div>`;
+                } else if (dayInfo.type === 'evento') {
+                    cellClass += " bg-[#dbeafe]/60 hover:bg-[#dbeafe]/80 text-[#1e3a8a] border-t-2 border-t-[#3b82f6]";
+                    typeBadge = `<div class="mt-2 px-2 py-1 bg-[#dbeafe] text-[#1e3a8a] text-[10px] font-bold rounded border-l-2 border-l-[#3b82f6] truncate">${dayInfo.label || 'Evento'}</div>`;
+                } else if (dayInfo.type === 'sabado') {
+                    cellClass += " bg-[#fef9c3]/60 hover:bg-[#fef9c3]/80 text-[#713f12] border-t-2 border-t-[#eab308]";
+                    typeBadge = `<div class="mt-2 px-2 py-1 bg-[#fef9c3] text-[#713f12] text-[10px] font-bold rounded border-l-2 border-l-[#eab308] truncate">${dayInfo.label || 'Sábado Letivo'}</div>`;
+                } else if (dayInfo.type === 'domingo') {
+                    cellClass += " bg-surface-container-low/30 text-text-secondary opacity-60";
+                } else if (dayInfo.type === 'sabado_nao_letivo') {
+                    cellClass += " bg-surface-container-low/30 text-text-secondary opacity-60";
+                } else if (dayInfo.type.startsWith('inicio_')) {
+                    cellClass += " bg-[#dbeafe]/60 hover:bg-[#dbeafe]/80 text-[#1e3a8a] border-t-2 border-t-[#3b82f6]";
+                    typeBadge = `<div class="mt-2 px-2 py-1 bg-[#dbeafe] text-[#1e3a8a] text-[10px] font-bold rounded border-l-2 border-l-[#3b82f6] truncate">${dayInfo.label}</div>`;
+                }
+
+                if (isToday) {
+                    cellClass += " ring-2 ring-inset ring-primary relative z-[1]";
+                    typeBadge += `<div class="mt-1 text-[10px] font-bold text-primary uppercase tracking-wide">Hoje · Chamada</div>`;
+                }
+                
+                // Remove border-r on Saturdays (index 6, 13, 20, 27, 34)
+                const gridIndex = prevDays.length + d - 1; // 0-based
+                if (gridIndex % 7 === 6) {
+                    cellClass = cellClass.replace('border-r', '');
+                }
+                
+                html += `
+                    <div class="calendar-cell p-3 ${cellClass}" onclick="openEditDayModal('${dateStr}', '${dayInfo.type}', '${(dayInfo.label || '').replace(/'/g, "\\'")}')">
+                        <span class="font-label-md text-label-md font-semibold ${isToday ? 'text-primary' : ''}">${d}</span>
+                        <div class="space-y-1">${typeBadge}</div>
+                    </div>
+                `;
+            }
+            
+            // Render next month days to fill grid
+            const totalCellsSoFar = prevDays.length + numDays;
+            const remainingCells = (7 - (totalCellsSoFar % 7)) % 7;
+            for (let nextD = 1; nextD <= remainingCells; nextD++) {
+                const isLastCol = (totalCellsSoFar + nextD - 1) % 7 === 6;
+                const cellBorders = isLastCol ? "border-b border-border-subtle" : "border-r border-b border-border-subtle";
+                html += `
+                    <div class="calendar-cell p-3 ${cellBorders} bg-surface-container-low/30 opacity-40 select-none">
+                        <span class="font-label-md text-label-md text-text-secondary">${nextD}</span>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function updateCalendarStats() {
+            let letivosMes = 0;
+            let totalDiasMes = new Date(currentYear, currentMonth, 0).getDate();
+            
+            const monthStr = String(currentMonth).padStart(2, '0');
+            const prefix = `${currentYear}-${monthStr}-`;
+            
+            for (let d = 1; d <= totalDiasMes; d++) {
+                const dateStr = `${prefix}${String(d).padStart(2, '0')}`;
+                const dayInfo = calendarDays[dateStr];
+                const date = new Date(currentYear, currentMonth - 1, d);
+                const dayOfWeek = date.getDay();
+                
+                let isLetivo = false;
+                if (dayInfo) {
+                    if (dayInfo.type === 'letivo' || dayInfo.type === 'evento' || dayInfo.type === 'sabado' || dayInfo.type.startsWith('inicio_')) {
+                        isLetivo = true;
+                    }
+                } else {
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                        isLetivo = true;
+                    }
+                }
+                if (isLetivo) {
+                    letivosMes++;
+                }
+            }
+            
+            const countEl = document.getElementById('total-dias-letivos');
+            if (countEl) countEl.textContent = letivosMes;
+            
+            const totalEl = document.getElementById('total-dias-calendario');
+            if (totalEl) totalEl.textContent = totalDiasMes;
+            
+            const badgeEl = document.getElementById('calendar-header-badge');
+            if (badgeEl) badgeEl.textContent = `${letivosMes} Dias Letivos`;
+        }
+
+        function renderUpcomingEvents() {
+            const container = document.getElementById('upcoming-events-container');
+            if (!container) return;
+            
+            let html = '';
+            const events = [];
+            
+            const yearStr = String(currentYear);
+            const monthStr = String(currentMonth).padStart(2, '0');
+            
+            for (const [dateStr, info] of Object.entries(calendarDays)) {
+                if (dateStr.startsWith(`${yearStr}-${monthStr}-`)) {
+                    const dayNum = parseInt(dateStr.split('-')[2]);
+                    if (info.type === 'evento' || info.type === 'feriado_recesso' || info.type === 'sabado' || info.type.startsWith('inicio_')) {
+                        events.push({
+                            day: dayNum,
+                            type: info.type,
+                            label: info.label || getDayTypeLabel(info.type)
+                        });
+                    }
+                }
+            }
+            
+            events.sort((a, b) => a.day - b.day);
+            
+            if (events.length === 0) {
+                html = `
+                    <div class="text-center py-6 text-text-secondary font-label-md text-label-md">
+                        Sem eventos ou feriados para este mês.
+                    </div>
+                `;
+            } else {
+                events.forEach(evt => {
+                    let icon = 'event';
+                    let detail = '';
+                    if (evt.type === 'feriado_recesso') {
+                        icon = 'gavel';
+                        detail = 'Feriado / Recesso';
+                    } else if (evt.type === 'evento') {
+                        icon = 'schedule';
+                        detail = 'Evento Escolar';
+                    } else if (evt.type === 'sabado') {
+                        icon = 'school';
+                        detail = 'Sábado Letivo';
+                    } else if (evt.type.startsWith('inicio_')) {
+                        icon = 'flag';
+                        detail = 'Início de Bimestre';
+                    }
+                    
+                    html += `
+                        <div class="flex gap-4 group cursor-pointer">
+                            <div class="flex flex-col items-center justify-center bg-surface-container-low rounded-lg w-12 h-12 border border-border-subtle group-hover:bg-primary/5 transition-colors">
+                                <span class="font-headline-sm text-label-md text-primary font-bold">${evt.day}</span>
+                                <span class="text-[9px] text-text-secondary uppercase font-semibold">${monthAbbreviations[currentMonth - 1]}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h5 class="font-label-md text-label-md text-on-surface truncate group-hover:text-primary transition-colors font-semibold">${evt.label}</h5>
+                                <div class="flex items-center gap-1 text-[11px] text-text-secondary">
+                                    <span class="material-symbols-outlined text-[14px]">${icon}</span>
+                                    <span class="">${detail}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function getDayTypeLabel(type) {
+            switch (type) {
+                case 'letivo': return 'Dia Letivo';
+                case 'feriado_recesso': return 'Feriado/Recesso';
+                case 'evento': return 'Dia Letivo com Evento';
+                case 'sabado': return 'Sábado Letivo';
+                case 'domingo': return 'Domingo (Não Letivo)';
+                case 'sabado_nao_letivo': return 'Sábado (Não Letivo)';
+                case 'inicio_1b': return 'Início do 1º Bimestre';
+                case 'inicio_2b': return 'Início do 2º Bimestre';
+                case 'inicio_3b': return 'Início do 3º Bimestre';
+                case 'inicio_4b': return 'Início do 4º Bimestre';
+                default: return '';
+            }
+        }
+
+        function getBimestreDates() {
+            let dates = {
+                1: '2026-02-02',
+                2: '2026-04-20',
+                3: '2026-07-20',
+                4: '2026-10-05'
+            };
+            
+            for (const [dateStr, info] of Object.entries(calendarDays)) {
+                if (info.type === 'inicio_1b') dates[1] = dateStr;
+                if (info.type === 'inicio_2b') dates[2] = dateStr;
+                if (info.type === 'inicio_3b') dates[3] = dateStr;
+                if (info.type === 'inicio_4b') dates[4] = dateStr;
+            }
+            
+            return dates;
+        }
+
+        function getDayBefore(dateStr) {
+            const d = new Date(dateStr + 'T12:00:00');
+            d.setDate(d.getDate() - 1);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function formatDateBr(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        function countLetivoDaysInRange(startStr, endStr) {
+            const start = new Date(startStr + 'T12:00:00');
+            const end = new Date(endStr + 'T12:00:00');
+            let count = 0;
+            
+            let current = new Date(start);
+            while (current <= end) {
+                const y = current.getFullYear();
+                const m = String(current.getMonth() + 1).padStart(2, '0');
+                const d = String(current.getDate()).padStart(2, '0');
+                const dateStr = `${y}-${m}-${d}`;
+                
+                const dayInfo = calendarDays[dateStr];
+                const dayOfWeek = current.getDay();
+                
+                let isLetivo = false;
+                if (dayInfo) {
+                    if (dayInfo.type === 'letivo' || dayInfo.type === 'evento' || dayInfo.type === 'sabado' || dayInfo.type.startsWith('inicio_')) {
+                        isLetivo = true;
+                    }
+                } else {
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                        isLetivo = true;
+                    }
+                }
+                
+                if (isLetivo) {
+                    count++;
+                }
+                
+                current.setDate(current.getDate() + 1);
+            }
+            return count;
+        }
+
+        function renderBimestresStats() {
+            const container = document.getElementById('bimestres-stats-container');
+            if (!container) return;
+            
+            const dates = getBimestreDates();
+            const end1 = getDayBefore(dates[2]);
+            const end2 = getDayBefore(dates[3]);
+            const end3 = getDayBefore(dates[4]);
+            const end4 = '2026-12-23'; // Fim do ano letivo
+            
+            const count1 = countLetivoDaysInRange(dates[1], end1);
+            const count2 = countLetivoDaysInRange(dates[2], end2);
+            const count3 = countLetivoDaysInRange(dates[3], end3);
+            const count4 = countLetivoDaysInRange(dates[4], end4);
+            
+            container.innerHTML = `
+                <div class="bg-[#dcfce7]/30 border border-[#bbf7d0]/50 p-4 rounded-xl flex flex-col justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-bold text-[#14532d] uppercase tracking-wider mb-3">1º Bimestre</p>
+                        <div class="space-y-1">
+                            <p class="text-[11px] text-text-secondary">Início</p>
+                            <p class="font-semibold text-sm text-[#14532d]">${formatDateBr(dates[1])}</p>
+                            <p class="text-[11px] text-text-secondary mt-2">Término</p>
+                            <p class="font-semibold text-sm text-[#14532d]">${formatDateBr(end1)}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-[#bbf7d0]/50 flex justify-between items-center">
+                        <span class="text-[11px] text-text-secondary uppercase font-semibold">Dias Letivos</span>
+                        <span class="text-xl font-black text-[#14532d]">${count1}</span>
+                    </div>
+                </div>
+                
+                <div class="bg-[#dbeafe]/30 border border-[#bfdbfe]/50 p-4 rounded-xl flex flex-col justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-bold text-[#1e3a8a] uppercase tracking-wider mb-3">2º Bimestre</p>
+                        <div class="space-y-1">
+                            <p class="text-[11px] text-text-secondary">Início</p>
+                            <p class="font-semibold text-sm text-[#1e3a8a]">${formatDateBr(dates[2])}</p>
+                            <p class="text-[11px] text-text-secondary mt-2">Término</p>
+                            <p class="font-semibold text-sm text-[#1e3a8a]">${formatDateBr(end2)}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-[#bfdbfe]/50 flex justify-between items-center">
+                        <span class="text-[11px] text-text-secondary uppercase font-semibold">Dias Letivos</span>
+                        <span class="text-xl font-black text-[#1e3a8a]">${count2}</span>
+                    </div>
+                </div>
+                
+                <div class="bg-[#fef9c3]/30 border border-[#fef08a]/50 p-4 rounded-xl flex flex-col justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-bold text-[#713f12] uppercase tracking-wider mb-3">3º Bimestre</p>
+                        <div class="space-y-1">
+                            <p class="text-[11px] text-text-secondary">Início</p>
+                            <p class="font-semibold text-sm text-[#713f12]">${formatDateBr(dates[3])}</p>
+                            <p class="text-[11px] text-text-secondary mt-2">Término</p>
+                            <p class="font-semibold text-sm text-[#713f12]">${formatDateBr(end3)}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-[#fef08a]/50 flex justify-between items-center">
+                        <span class="text-[11px] text-text-secondary uppercase font-semibold">Dias Letivos</span>
+                        <span class="text-xl font-black text-[#713f12]">${count3}</span>
+                    </div>
+                </div>
+                
+                <div class="bg-[#f3e8ff]/30 border border-[#e9d5ff]/50 p-4 rounded-xl flex flex-col justify-between shadow-sm">
+                    <div>
+                        <p class="text-xs font-bold text-[#581c87] uppercase tracking-wider mb-3">4º Bimestre</p>
+                        <div class="space-y-1">
+                            <p class="text-[11px] text-text-secondary">Início</p>
+                            <p class="font-semibold text-sm text-[#581c87]">${formatDateBr(dates[4])}</p>
+                            <p class="text-[11px] text-text-secondary mt-2">Término</p>
+                            <p class="font-semibold text-sm text-[#581c87]">${formatDateBr(end4)}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-[#e9d5ff]/50 flex justify-between items-center">
+                        <span class="text-[11px] text-text-secondary uppercase font-semibold">Dias Letivos</span>
+                        <span class="text-xl font-black text-[#581c87]">${count4}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openEditDayModal(dateStr, currentType, currentLabel) {
+            const modal = document.getElementById('modal-edit-day');
+            const parts = dateStr.split('-');
+            const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            
+            document.getElementById('edit-day-modal-title').textContent = `Editar Dia: ${formattedDate}`;
+            document.getElementById('edit-day-date').value = dateStr;
+            document.getElementById('edit-day-type').value = currentType;
+            document.getElementById('edit-day-label').value = currentLabel;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditDayModal() {
+            document.getElementById('modal-edit-day').classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCalendar();
+            
+            const form = document.getElementById('edit-day-form');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const dateStr = document.getElementById('edit-day-date').value;
+                    const type = document.getElementById('edit-day-type').value;
+                    const label = document.getElementById('edit-day-label').value.trim();
+                    
+                    let finalLabel = label;
+                    if (!finalLabel) {
+                        if (type === 'letivo') finalLabel = 'Dia Letivo';
+                        else if (type === 'feriado_recesso') finalLabel = 'Recesso / Feriado';
+                        else if (type === 'evento') finalLabel = 'Evento Escolar';
+                        else if (type === 'sabado') finalLabel = 'Sábado Letivo';
+                        else if (type === 'domingo') finalLabel = 'Domingo';
+                        else if (type === 'sabado_nao_letivo') finalLabel = 'Sábado Recesso';
+                        else if (type === 'inicio_1b') finalLabel = 'Início do 1º Bimestre';
+                        else if (type === 'inicio_2b') finalLabel = 'Início do 2º Bimestre';
+                        else if (type === 'inicio_3b') finalLabel = 'Início do 3º Bimestre';
+                        else if (type === 'inicio_4b') finalLabel = 'Início do 4º Bimestre';
+                    }
+                    
+                    if (type.startsWith('inicio_')) {
+                        // Clear old starts of the same bimestre
+                        Object.keys(calendarDays).forEach(k => {
+                            if (calendarDays[k].type === type && k !== dateStr) {
+                                calendarDays[k] = { type: 'letivo', label: 'Dia Letivo' };
+                            }
+                        });
+                    }
+                    
+                    calendarDays[dateStr] = { type, label: finalLabel };
+                    window.saveCalendarDays(calendarDays);
+                    
+                    closeEditDayModal();
+                    renderCalendarGrid();
+                    updateCalendarStats();
+                    renderUpcomingEvents();
+                    renderBimestresStats();
+                    
+                    if (typeof showToast === 'function') {
+                        showToast('Calendário atualizado com sucesso!');
+                    }
+                });
+            }
+        });
+    </script>
+<script id="sidebar-collapsible-script">
+        // Micro-interactions and small UI behaviors
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (el.getAttribute('href') === '#') e.preventDefault();
+            });
+        });
+
+        // Collapsible Sidebar and Dropdowns functions
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            const collapsed = document.body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
+            const icon = document.getElementById('sidebar-collapse-icon');
+            if (icon) {
+                icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+            }
+        }
+
+        // Dropdown functions
+        function toggleNavGroup(button) {
+            const group = button.closest('.nav-dropdown');
+            if (!group) return;
+
+            const shouldOpen = !group.classList.contains('open');
+            
+            // Auto-collapse other groups
+            document.querySelectorAll('.nav-dropdown').forEach(g => {
+                if (g !== group) {
+                    g.classList.remove('open');
+                    const btn = g.querySelector('.nav-dropdown-toggle');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            group.classList.toggle('open', shouldOpen);
+            button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        }
+</script>
+
+<!-- Modal Editar Dia -->
+<div id="modal-edit-day" class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-on-background/40 backdrop-blur-sm hidden">
+    <div class="bg-background-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border-subtle animate-in fade-in zoom-in duration-200" style="font-family: 'Inter', sans-serif;">
+        <div class="p-6 border-b border-border-subtle flex justify-between items-center bg-surface-container-low/30">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined">edit_calendar</span>
+                </div>
+                <h3 class="font-headline-sm text-on-surface font-semibold" id="edit-day-modal-title">Editar Dia</h3>
+            </div>
+            <button class="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-text-secondary" onclick="closeEditDayModal()">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <form class="p-6 space-y-4" id="edit-day-form">
+            <input type="hidden" id="edit-day-date" />
+            <div>
+                <label class="block text-label-md font-bold text-on-surface mb-1">Tipo de Marcação</label>
+                <select id="edit-day-type" class="w-full border border-border-subtle rounded-lg px-4 py-2.5 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all">
+                    <option value="letivo">Dia Letivo</option>
+                    <option value="feriado_recesso">Feriado, Ponto Facultativo ou Recesso</option>
+                    <option value="evento">Dia Letivo com Evento</option>
+                    <option value="sabado">Sábado Letivo</option>
+                    <option value="domingo">Domingo (Não Letivo)</option>
+                    <option value="sabado_nao_letivo">Sábado (Não Letivo)</option>
+                    <option value="inicio_1b">Início do 1º Bimestre</option>
+                    <option value="inicio_2b">Início do 2º Bimestre</option>
+                    <option value="inicio_3b">Início do 3º Bimestre</option>
+                    <option value="inicio_4b">Início do 4º Bimestre</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-label-md font-bold text-on-surface mb-1">Descrição / Nome do Evento (Opcional)</label>
+                <input type="text" id="edit-day-label" class="w-full border border-border-subtle rounded-lg px-4 py-2.5 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" placeholder="Ex: Feriado Nacional, Reunião, etc.">
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
+                <button type="button" class="px-5 py-2.5 text-label-md font-bold text-text-secondary hover:bg-surface-container-low rounded-lg transition-colors" onclick="closeEditDayModal()">Cancelar</button>
+                <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/20 hover:brightness-90 transition-all active:scale-95">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body></html>

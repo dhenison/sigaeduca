@@ -1,0 +1,1589 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Siga Educa - Controle de Frequência</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#64de8b",
+                        "on-surface": "#121c2a",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#d9e3f6",
+                        "surface-container-high": "#dee9fc",
+                        "on-primary-container": "#003a1a",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container": "#e6eeff",
+                        "background": "#f8f9ff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#006d37",
+                        "on-error": "#ffffff",
+                        "tertiary": "#795900",
+                        "tertiary-fixed": "#ffdf9f",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-tertiary-fixed": "#261a00",
+                        "secondary-container": "#2170e4",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "outline": "#6e7a6e",
+                        "tertiary-container": "#c39200",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "secondary-fixed": "#d8e2ff",
+                        "text-secondary": "#6B7280",
+                        "on-surface-variant": "#3e4a3f",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-background": "#121c2a",
+                        "on-tertiary-container": "#412f00",
+                        "secondary": "#0058be",
+                        "on-primary-fixed-variant": "#005228",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#81fba5",
+                        "primary-container": "#2eaf62",
+                        "surface-container-highest": "#d9e3f6",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006d37",
+                        "outline-variant": "#bdcabc",
+                        "inverse-surface": "#27313f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-light": "#7EDC8A",
+                        "border-subtle": "#E5E7EB",
+                        "background-surface": "#FFFFFF",
+                        "on-secondary-container": "#fefcff",
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#64de8b",
+                        "on-primary-fixed": "#00210c",
+                        "surface-dim": "#d0dbed",
+                        "background-page": "#F7FAF8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-padding": "24px",
+                        "gutter": "16px",
+                        "section-gap": "32px",
+                        "container-margin": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["11px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }</script>
+<style>
+        html, html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .custom-shadow {
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.03);
+        }
+    </style>
+<style id="sidebar-styles">
+        /* Collapsible Sidebar Styles */
+        :root {
+            --sidebar-width: 260px;
+        }
+        body.sidebar-collapsed {
+            --sidebar-width: 72px;
+        }
+        
+        aside#sidebar {
+            width: var(--sidebar-width) !important;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            overflow: visible !important;
+        }
+        
+        @media (min-width: 1024px) {
+            main {
+                padding-left: var(--sidebar-width) !important;
+                transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+        }
+        
+        /* Hide elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-logo-text,
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-label,
+        body.sidebar-collapsed aside#sidebar .nav-chevron,
+        body.sidebar-collapsed aside#sidebar .nav-section-title,
+        body.sidebar-collapsed aside#sidebar .text-label-md,
+        body.sidebar-collapsed aside#sidebar .user-meta,
+        body.sidebar-collapsed aside#sidebar .logout-btn-text {
+            display: none !important;
+        }
+        
+        /* Center elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-header {
+            padding: 24px 0 16px !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-item {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+            border-left-width: 0px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-toggle {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .sidebar-user-info {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .p-4 {
+            padding: 12px 8px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .logout-btn {
+            padding: 8px 0 !important;
+            width: 40px !important;
+            margin: 0 auto !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar nav {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+        
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-menu {
+            display: none !important;
+        }
+        
+        /* Nav dropdown styling */
+        .nav-dropdown {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .nav-dropdown-toggle {
+            transition: all 0.2s ease;
+        }
+        .nav-dropdown-menu {
+            display: none;
+            padding-left: 8px;
+            margin-top: 4px;
+            border-left: 1px solid rgba(0, 109, 55, 0.15); /* primary brand tint */
+        }
+        .nav-dropdown.open .nav-dropdown-menu {
+            display: block !important;
+        }
+        .nav-dropdown.open .nav-chevron {
+            transform: rotate(180deg);
+        }
+        
+        /* Floating Collapse Toggle Button */
+        .sidebar-toggle-btn {
+            position: absolute;
+            bottom: 40px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #5c56e0; /* Blue/Indigo from screenshot */
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 2px 4px -1px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: all 0.2s ease;
+        }
+        .sidebar-toggle-btn:hover {
+            transform: scale(1.1);
+            background-color: #4943c7;
+        }
+        .sidebar-toggle-btn span {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            line-height: 1;
+            user-select: none;
+        }
+</style><style id="fouc-styles">
+        html {
+            visibility: hidden;
+            opacity: 0;
+        }
+        html.ready {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.15s ease-in-out;
+        }
+</style><script id="fouc-prevention">
+        (function() {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.documentElement.classList.add('ready');
+            });
+            // Fallback
+            window.addEventListener("load", () => {
+                document.documentElement.classList.add('ready');
+            });
+        })();
+</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="bg-background-page"><script id="sidebar-flicker-prevention">
+         (function() {
+             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+             if (isCollapsed) {
+                 document.body.classList.add('sidebar-collapsed');
+                 document.addEventListener('DOMContentLoaded', () => {
+                     const icon = document.getElementById('sidebar-collapse-icon');
+                     if (icon) icon.textContent = 'chevron_right';
+                 });
+             }
+         })();
+</script>
+<!-- Sidebar Wrapper -->
+<aside class="h-screen fixed left-0 top-0 flex flex-col bg-background-surface border-r border-border-subtle z-50" id="sidebar">
+<!-- Floating toggle button positioned exactly on the border -->
+<button class="sidebar-toggle-btn hidden lg:flex" id="sidebar-toggle" onclick="toggleSidebarCollapse()" title="Recuar Menu" type="button">
+<span class="material-symbols-outlined" id="sidebar-collapse-icon">chevron_left</span>
+</button>
+<div class="p-6 flex items-center gap-2 sidebar-header">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-white flex-shrink-0 sidebar-logo-icon">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div class="sidebar-logo-text">
+<h1 class="font-headline-sm text-primary leading-tight">SIGA EDUCA</h1>
+<p class="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Gestão Educacional</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto sidebar-scroll px-4 space-y-1 py-2">
+<!-- Active Item: Minha Escola -->
+<a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-container transition-colors" href="painelprincipal.html">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md">Minha Escola</span>
+</a>
+<!-- Dropdown: Administrativo -->
+<div class="nav-dropdown open">
+<button aria-expanded="true" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+<span class="nav-dropdown-label">Administrativo</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="calendarioletivo.html">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-label-md">Calendário Letivo</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="turmas.html">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-label-md">Turmas</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="alunos.html">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md">Alunos</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 bg-primary-light/20 text-primary border-l-4 border-primary font-semibold transition-all rounded-lg" href="frequencia.html">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+<span class="text-label-md">Frequência</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="horariodeaula.html">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-label-md">Horário de Aula</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="agenda.html">
+<span class="material-symbols-outlined">event</span>
+<span class="text-label-md">Agenda</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="ocorrencias.html">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-label-md">Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="documentossecretaria.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Documentos Secretaria</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="usuarios.html">
+<span class="material-symbols-outlined">manage_accounts</span>
+<span class="text-label-md">Usuários</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="Gestão de Lotação/lotacao.html">
+<span class="material-symbols-outlined">apartment</span>
+<span class="text-label-md">Lotação</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Pedagógico -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">school</span>
+<span class="nav-dropdown-label">Pedagógico</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="topodosaber.html">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="text-label-md">Projeto Olímpico</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="boletins.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Boletins</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="conselho.html">
+<span class="material-symbols-outlined">diversity_3</span>
+<span class="text-label-md">Conselho de Classe</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-md">Diagnóstico de Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="controlelivros.html">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-label-md">Controle de Livros</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="relatorios.html">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-label-md">Relatórios</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Sistema -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="nav-dropdown-label">Sistema</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="meuperfil.html">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-label-md">Meu Perfil</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="permissões.html">
+<span class="material-symbols-outlined">shield_person</span>
+<span class="text-label-md">Permissões</span>
+</a>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-border-subtle bg-surface-container-low sidebar-user-info">
+<a href="meuperfil.html" class="flex items-center gap-3 mb-4 rounded-lg hover:bg-white/60 transition-colors p-1 -m-1" title="Meu Perfil">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white font-bold flex items-center justify-center flex-shrink-0 sidebar-user-avatar" aria-hidden="true">U</div>
+<div class="overflow-hidden user-meta">
+<p class="text-body-md font-semibold truncate">João Silva</p>
+<p class="text-label-sm text-text-secondary truncate">Administrador</p>
+</div>
+</a>
+<button class="logout-btn w-full flex items-center justify-center gap-2 py-2 px-4 border border-border-subtle rounded-lg text-error font-semibold hover:bg-error/5 transition-colors" onclick="window.location.href='login.html'">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="text-label-md logout-btn-text">Sair</span>
+</button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="min-h-screen"><header class="siga-app-header h-16 w-full flex justify-between items-center px-4 sm:px-6 lg:px-8 bg-background/50 backdrop-blur-md sticky top-0 z-40 border-b border-transparent">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-on-surface leading-tight">Controle de Frequência</h2>
+<span class="text-label-sm text-text-secondary">Diário de chamada e registro de presença dos alunos</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-border-subtle rounded-full text-body-md w-36 sm:w-56 md:w-64 focus:ring-2 focus:ring-primary-light focus:outline-none transition-all" placeholder="Buscar..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/50 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header><div class="p-8 max-w-[1440px] mx-auto space-y-8">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Controle de Frequência</h2>
+<p class="text-text-secondary font-body-md text-body-md mt-1">Gerencie a presença e ausência dos alunos de forma rápida e organizada.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 border border-border-subtle rounded-lg text-label-md font-label-md text-on-surface-variant hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-[18px]">print</span>
+                        Exportar Relatório
+                    </button>
+</div>
+</div>
+<!-- Filters Card -->
+<div class="bg-background-surface rounded-[16px] border border-border-subtle custom-shadow p-6 flex flex-col gap-4">
+    <div class="flex flex-wrap items-end gap-6">
+        <div class="space-y-2 flex-1 w-full sm:min-w-[200px] sm:w-auto">
+            <label class="font-label-sm text-label-sm text-text-secondary uppercase tracking-wider">Selecionar Turma</label>
+            <div class="relative">
+                <select id="filter-turma-select" class="w-full border-border-subtle rounded-lg py-2.5 pl-4 pr-10 appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md">
+                    <!-- Turmas populated dynamically -->
+                </select>
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">keyboard_arrow_down</span>
+            </div>
+        </div>
+        <div class="space-y-2 flex-1 w-full sm:min-w-[200px] sm:w-auto">
+            <label class="font-label-sm text-label-sm text-text-secondary uppercase tracking-wider">Dia da Frequência</label>
+            <div class="relative">
+                <input id="filter-date-input" class="w-full border-border-subtle rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md" type="date" value=""/>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Warning Banner Container -->
+    <div id="date-validation-warning" class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 text-red-800 hidden">
+        <span class="material-symbols-outlined text-red-600 mt-0.5">warning</span>
+        <div>
+            <h4 class="font-bold text-body-md">Data Não Letiva</h4>
+            <p class="text-label-sm text-red-700 mt-1" id="date-warning-message">Esta data é um domingo, feriado ou recesso. Não é possível realizar chamada neste dia.</p>
+        </div>
+    </div>
+    
+    <!-- Main Attendance Section -->
+    <div id="attendance-columns-container" class="gap-6">
+    <!-- Column 1: Chamada de Entrada -->
+    <div class="bg-background-surface rounded-2xl border border-border-subtle custom-shadow flex flex-col overflow-hidden relative" id="col-entrada">
+        <!-- Header -->
+        <div class="p-6 border-b border-border-subtle bg-surface-container-low/30 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">login</span>
+                <h3 class="font-headline-sm font-bold text-on-surface">Chamada de Entrada</h3>
+            </div>
+            <span class="px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase" id="badge-status-entrada">Pendente</span>
+        </div>
+        
+        <!-- Student List -->
+        <div class="p-6 flex-1 overflow-y-auto max-h-[600px] space-y-4" id="list-entrada-students">
+            <!-- Student rows with radio buttons -->
+        </div>
+        
+        <!-- Footer / Action -->
+        <div class="p-6 border-t border-border-subtle bg-surface-container-low/30 flex flex-col gap-3">
+            <div class="flex justify-between text-label-md text-text-secondary font-medium" id="stats-entrada">
+                <span>Presentes: 0</span>
+                <span>Faltas: 0</span>
+            </div>
+            <button onclick="consolidarEntrada()" id="btn-consolidar-entrada" class="w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/10">
+                <span class="material-symbols-outlined">done_all</span>
+                <span>Consolidar Entrada</span>
+            </button>
+            <button onclick="solicitarDesbloqueio('entrada')" id="btn-desbloquear-entrada" class="w-full py-3 border border-border-subtle text-on-surface font-bold text-label-md rounded-xl hover:bg-surface-container transition-all flex items-center justify-center gap-2 hidden">
+                <span class="material-symbols-outlined text-error">lock_open</span>
+                <span>Desbloquear Entrada (Coordenador)</span>
+            </button>
+        </div>
+        
+        <!-- Lock Overlay -->
+        <div id="overlay-entrada" class="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-20 flex items-center justify-center hidden">
+            <div class="bg-white/95 p-4 rounded-xl border border-border-subtle shadow-md flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary animate-pulse">lock</span>
+                <span class="text-body-md font-semibold text-on-surface">Edição Consolidada</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column 2: Chamada de Saída -->
+    <div class="bg-background-surface rounded-2xl border border-border-subtle custom-shadow flex flex-col overflow-hidden relative" id="col-saida">
+        <!-- Header -->
+        <div class="p-6 border-b border-border-subtle bg-surface-container-low/30 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">logout</span>
+                <h3 class="font-headline-sm font-bold text-on-surface">Chamada de Saída</h3>
+            </div>
+            <span class="px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase" id="badge-status-saida">Bloqueada</span>
+        </div>
+        
+        <!-- Student List -->
+        <div class="p-6 flex-1 overflow-y-auto max-h-[600px] space-y-4" id="list-saida-students">
+            <!-- Student rows with radio buttons -->
+        </div>
+        
+        <!-- Footer / Action -->
+        <div class="p-6 border-t border-border-subtle bg-surface-container-low/30 flex flex-col gap-3">
+            <div class="flex justify-between text-label-md text-text-secondary font-medium" id="stats-saida">
+                <span>Presentes: 0</span>
+                <span>Faltas: 0</span>
+            </div>
+            <button onclick="consolidarSaida()" id="btn-consolidar-saida" class="w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/10" disabled>
+                <span class="material-symbols-outlined">done_all</span>
+                <span>Consolidar Saída</span>
+            </button>
+            <button onclick="solicitarDesbloqueio('saida')" id="btn-desbloquear-saida" class="w-full py-3 border border-border-subtle text-on-surface font-bold text-label-md rounded-xl hover:bg-surface-container transition-all flex items-center justify-center gap-2 hidden">
+                <span class="material-symbols-outlined text-error">lock_open</span>
+                <span>Desbloquear Saída (Coordenador)</span>
+            </button>
+        </div>
+        
+        <!-- Lock/Block Overlays -->
+        <div id="overlay-saida-blocked" class="absolute inset-0 bg-surface-container-low/55 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-6 text-center">
+            <span class="material-symbols-outlined text-text-secondary text-4xl mb-2">lock</span>
+            <p class="font-bold text-on-surface">Aguardando Consolidação</p>
+            <p class="text-label-sm text-text-secondary mt-1">Consolide a Chamada de Entrada para habilitar a Chamada de Saída.</p>
+        </div>
+        
+        <div id="overlay-saida-locked" class="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-20 flex items-center justify-center hidden">
+            <div class="bg-white/95 p-4 rounded-xl border border-border-subtle shadow-md flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary animate-pulse">lock</span>
+                <span class="text-body-md font-semibold text-on-surface">Edição Consolidada</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column 3: Dia Consolidado -->
+    <div class="bg-background-surface rounded-2xl border border-border-subtle custom-shadow flex flex-col overflow-hidden relative" id="col-consolidado">
+        <!-- Header -->
+        <div class="p-6 border-b border-border-subtle bg-surface-container-low/30 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">fact_check</span>
+                <h3 class="font-headline-sm font-bold text-on-surface">Dia Consolidado</h3>
+            </div>
+            <span class="px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase" id="badge-status-consolidado">Pendente</span>
+        </div>
+        
+        <!-- Student List -->
+        <div class="p-6 flex-1 overflow-y-auto max-h-[600px] space-y-4" id="list-consolidado-students">
+            <!-- Consolidated rows -->
+        </div>
+        
+        <!-- Footer / Action -->
+        <div class="p-6 border-t border-border-subtle bg-surface-container-low/30 flex flex-col gap-3">
+            <div class="flex flex-col gap-1 text-label-md text-text-secondary font-medium" id="stats-consolidado">
+                <div class="flex justify-between">
+                    <span>Presentes Finais: <strong class="text-primary font-bold" id="consolidado-presencas">0</strong></span>
+                    <span>Ausentes Finais: <strong class="text-error font-bold" id="consolidado-faltas">0</strong></span>
+                </div>
+                <div class="text-[11px] text-error font-semibold mt-1 hidden" id="evasao-alert-footer">
+                    * Ocorrências de evasão foram geradas automaticamente.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Overlay -->
+        <div id="overlay-consolidado-pending" class="absolute inset-0 bg-surface-container-low/55 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-6 text-center">
+            <span class="material-symbols-outlined text-text-secondary text-4xl mb-2">hourglass_empty</span>
+            <p class="font-bold text-on-surface">Aguardando Consolidação</p>
+            <p class="text-label-sm text-text-secondary mt-1">Os dados consolidados serão exibidos assim que a Entrada e a Saída forem consolidadas.</p>
+        </div>
+    </div>
+</div>
+<!-- Dashboard Style Metrics Cards (Additional Context) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-10">
+<div class="bg-background-surface p-card-padding rounded-[16px] border border-border-subtle custom-shadow">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-label-sm text-text-secondary uppercase tracking-wider mb-1">Média de Presença (Mês)</p>
+<h3 id="freq-kpi-media" class="font-headline-lg text-headline-lg">—</h3>
+</div>
+<div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<span id="freq-kpi-media-trend" class="text-[12px] font-bold text-text-secondary">—</span>
+<span id="freq-kpi-media-hint" class="text-[12px] text-text-secondary">sem dados de frequência</span>
+</div>
+</div>
+<div class="bg-background-surface p-card-padding rounded-[16px] border border-border-subtle custom-shadow">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-label-sm text-text-secondary uppercase tracking-wider mb-1">Faltas Críticas</p>
+<h3 id="freq-kpi-criticas" class="font-headline-lg text-headline-lg">0 Alunos</h3>
+</div>
+<div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<span id="freq-kpi-criticas-trend" class="text-[12px] font-bold text-text-secondary">—</span>
+<span id="freq-kpi-criticas-hint" class="text-[12px] text-text-secondary">frequência abaixo de 75%</span>
+</div>
+</div>
+<div class="bg-background-surface p-card-padding rounded-[16px] border border-border-subtle custom-shadow">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-label-sm text-text-secondary uppercase tracking-wider mb-1">Justificativas Pendentes</p>
+<h3 id="freq-kpi-justificativas" class="font-headline-lg text-headline-lg">0 Casos</h3>
+</div>
+<div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<span id="freq-kpi-justificativas-trend" class="text-[12px] font-bold text-text-secondary">—</span>
+<span id="freq-kpi-justificativas-hint" class="text-[12px] text-text-secondary">faltas justificadas no período</span>
+</div>
+</div>
+</div>
+</div></main>
+<!-- Micro-interactions Script -->
+<script>
+let currentClass = "";
+let currentDate = "";
+let currentRecord = null;
+let allStudents = [];
+let filteredStudents = [];
+let calendarDays = {};
+
+function initFrequencia() {
+    // 1. Load data from local storage
+    calendarDays = window.getCalendarDays ? window.getCalendarDays() : {};
+    allStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
+
+    // 2. Load classes and populate filter
+    const classes = (typeof window.getClasses === 'function'
+        ? window.getClasses()
+        : JSON.parse(localStorage.getItem('siga_classes')) || []) || [];
+    const turmaSelect = document.getElementById('filter-turma-select');
+    if (turmaSelect) {
+        const active = classes.filter(c => String(c.status || 'Ativo').toLowerCase() !== 'inativo');
+        const list = active.length ? active : classes;
+        if (!list.length) {
+            turmaSelect.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
+        } else {
+            turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>' +
+                list.map(c => `<option value="${c.code}">${c.code} — ${c.serie || ''} (${c.turno || ''})</option>`).join('');
+        }
+    }
+
+    // 3. Default date: first weekday letivo in calendar, else 2026-05-14
+    const dateInput = document.getElementById('filter-date-input');
+    if (dateInput) {
+        dateInput.value = pickDefaultAttendanceDate();
+    }
+
+    // 4. Bind events (once)
+    if (turmaSelect && !turmaSelect.dataset.bound) {
+        turmaSelect.addEventListener('change', loadAttendanceData);
+        turmaSelect.dataset.bound = '1';
+    }
+    if (dateInput && !dateInput.dataset.bound) {
+        dateInput.addEventListener('change', loadAttendanceData);
+        dateInput.dataset.bound = '1';
+    }
+
+    // 5. Load initial
+    loadAttendanceData();
+    updateFrequenciaKpis();
+}
+
+function pickDefaultAttendanceDate() {
+    // 1) Data vinda do calendário (botão Hoje) ou link direto
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const fromUrl = params.get('date');
+        if (fromUrl && /^\d{4}-\d{2}-\d{2}$/.test(fromUrl)) return fromUrl;
+    } catch (e) { /* ignore */ }
+
+    // 2) Hoje (data de referência do sistema)
+    const now = new Date();
+    const todayIso = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+    return todayIso;
+}
+
+function updateFrequenciaKpis() {
+    const mediaEl = document.getElementById('freq-kpi-media');
+    const mediaTrend = document.getElementById('freq-kpi-media-trend');
+    const mediaHint = document.getElementById('freq-kpi-media-hint');
+    const critEl = document.getElementById('freq-kpi-criticas');
+    const critTrend = document.getElementById('freq-kpi-criticas-trend');
+    const critHint = document.getElementById('freq-kpi-criticas-hint');
+    const justEl = document.getElementById('freq-kpi-justificativas');
+    const justTrend = document.getElementById('freq-kpi-justificativas-trend');
+    const justHint = document.getElementById('freq-kpi-justificativas-hint');
+
+    const scopeStudents = currentClass
+        ? allStudents.filter(s => s.turma === currentClass && String(s.status || 'Ativo').toLowerCase() !== 'inativo')
+        : allStudents.filter(s => String(s.status || 'Ativo').toLowerCase() !== 'inativo');
+
+    const freqs = scopeStudents.map(s => Number(s.frequencia)).filter(n => !isNaN(n) && n >= 0);
+    if (mediaEl) {
+        if (freqs.length) {
+            const avg = freqs.reduce((a, b) => a + b, 0) / freqs.length;
+            mediaEl.textContent = avg.toFixed(1).replace('.', ',') + '%';
+            if (mediaTrend) {
+                mediaTrend.className = 'text-[12px] font-bold text-primary';
+                mediaTrend.textContent = freqs.length + ' aluno(s)';
+            }
+            if (mediaHint) mediaHint.textContent = currentClass ? 'média da turma selecionada' : 'média geral dos alunos';
+        } else {
+            mediaEl.textContent = '—';
+            if (mediaTrend) {
+                mediaTrend.className = 'text-[12px] font-bold text-text-secondary';
+                mediaTrend.textContent = '—';
+            }
+            if (mediaHint) mediaHint.textContent = 'sem dados de frequência';
+        }
+    }
+
+    const criticos = scopeStudents.filter(s => {
+        const f = Number(s.frequencia);
+        return !isNaN(f) && f < 75;
+    });
+    if (critEl) critEl.textContent = criticos.length + (criticos.length === 1 ? ' Aluno' : ' Alunos');
+    if (critTrend) {
+        critTrend.className = criticos.length
+            ? 'text-[12px] font-bold text-red-600'
+            : 'text-[12px] font-bold text-text-secondary';
+        critTrend.textContent = criticos.length ? 'Atenção' : 'Nenhum';
+    }
+    if (critHint) critHint.textContent = 'frequência abaixo de 75%';
+
+    // Justificativas: FJ nos registros de frequência do mês + ocorrências em análise
+    const monthPrefix = (currentDate || '').slice(0, 7); // YYYY-MM
+    let fjCount = 0;
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key || !key.startsWith('siga_attendance_')) continue;
+            const parts = key.split('_');
+            // siga_attendance_YYYY-MM-DD_CLASS
+            const datePart = parts[2];
+            const classPart = parts.slice(3).join('_');
+            if (monthPrefix && datePart && !String(datePart).startsWith(monthPrefix)) continue;
+            if (currentClass && classPart !== currentClass) continue;
+            const rec = JSON.parse(localStorage.getItem(key) || 'null');
+            if (!rec) continue;
+            ['entrada', 'saida'].forEach(phase => {
+                const records = (rec[phase] && rec[phase].records) || {};
+                Object.values(records).forEach(r => {
+                    if (r && r.status === 'FJ') fjCount++;
+                });
+            });
+        }
+    } catch (e) { /* ignore */ }
+
+    const occurrences = JSON.parse(localStorage.getItem('siga_occurrences') || '[]') || [];
+    const pendingOcc = occurrences.filter(o => {
+        const st = String(o.status || '').toLowerCase();
+        const type = String(o.type || '').toLowerCase();
+        const isPending = st.includes('análise') || st.includes('analise') || st === 'pendente' || st === 'em análise';
+        const isJust = type.includes('justif') || type.includes('atras') || type.includes('evas');
+        return isPending && isJust;
+    }).length;
+
+    const justTotal = fjCount + pendingOcc;
+    if (justEl) justEl.textContent = justTotal + (justTotal === 1 ? ' Caso' : ' Casos');
+    if (justTrend) {
+        justTrend.className = justTotal
+            ? 'text-[12px] font-bold text-amber-600'
+            : 'text-[12px] font-bold text-text-secondary';
+        justTrend.textContent = justTotal ? 'Revisão necessária' : 'Em dia';
+    }
+    if (justHint) {
+        justHint.textContent = justTotal
+            ? (fjCount ? `${fjCount} FJ no mês` : 'ocorrências em análise')
+            : 'nenhuma pendência';
+    }
+}
+
+function loadAttendanceData() {
+    const turmaSelect = document.getElementById('filter-turma-select');
+    const dateInput = document.getElementById('filter-date-input');
+    if (!turmaSelect || !dateInput) return;
+
+    currentClass = turmaSelect.value || '';
+    currentDate = dateInput.value || '';
+    allStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
+
+    if (!currentClass) {
+        filteredStudents = [];
+        currentRecord = null;
+        const listEntrada = document.getElementById('list-entrada-students');
+        const listSaida = document.getElementById('list-saida-students');
+        const listConsolidado = document.getElementById('list-consolidado-students');
+        const empty = `<p class="text-body-md text-text-secondary text-center py-6">Selecione uma turma para iniciar a chamada.</p>`;
+        if (listEntrada) listEntrada.innerHTML = empty;
+        if (listSaida) listSaida.innerHTML = empty;
+        if (listConsolidado) listConsolidado.innerHTML = empty;
+        document.getElementById('stats-entrada').innerHTML = '<span>Presentes: 0</span><span>Faltas: 0</span>';
+        document.getElementById('stats-saida').innerHTML = '<span>Presentes: --</span><span>Ausentes: --</span>';
+        document.getElementById('consolidado-presencas').textContent = '0';
+        document.getElementById('consolidado-faltas').textContent = '0';
+        document.getElementById('overlay-saida-blocked')?.classList.remove('hidden');
+        document.getElementById('overlay-consolidado-pending')?.classList.remove('hidden');
+        document.getElementById('btn-consolidar-entrada')?.classList.remove('hidden');
+        document.getElementById('btn-desbloquear-entrada')?.classList.add('hidden');
+        document.getElementById('overlay-entrada')?.classList.add('hidden');
+        updateFrequenciaKpis();
+        return;
+    }
+
+    // 1. Validate date against Calendar Letivo
+    const dateObj = new Date(currentDate + 'T00:00:00');
+    const dayOfWeek = dateObj.getDay(); // 0 = Sun, 6 = Sat
+
+    const dayInfo = calendarDays[currentDate];
+    let isValidSchoolDay = true;
+    let invalidReason = "";
+
+    if (dayInfo) {
+        if (dayInfo.type === 'domingo') {
+            isValidSchoolDay = false;
+            invalidReason = "Esta data é um domingo. Não é permitido registrar chamada em domingos.";
+        } else if (dayInfo.type === 'feriado_recesso') {
+            isValidSchoolDay = false;
+            invalidReason = `Esta data é um feriado, ponto facultativo ou recesso (${dayInfo.label}).`;
+        } else if (dayInfo.type === 'sabado_nao_letivo') {
+            isValidSchoolDay = false;
+            invalidReason = "Esta data é um sábado não letivo. Selecione um Sábado Letivo se houver aula.";
+        }
+    } else {
+        // Fallback for dates outside seeded calendar
+        if (dayOfWeek === 0) {
+            isValidSchoolDay = false;
+            invalidReason = "Esta data é um domingo. Não é permitido registrar chamada em domingos.";
+        } else if (dayOfWeek === 6) {
+            isValidSchoolDay = false;
+            invalidReason = "Esta data é um sábado não letivo. Selecione um Sábado Letivo se houver aula.";
+        }
+    }
+
+    const warningBanner = document.getElementById('date-validation-warning');
+    const warningMsg = document.getElementById('date-warning-message');
+    const columnsContainer = document.getElementById('attendance-columns-container');
+
+    if (!isValidSchoolDay) {
+        if (warningBanner && warningMsg) {
+            warningMsg.textContent = invalidReason;
+            warningBanner.classList.remove('hidden');
+        }
+        if (columnsContainer) {
+            columnsContainer.classList.add('opacity-30', 'pointer-events-none');
+        }
+        updateFrequenciaKpis();
+        return;
+    } else {
+        if (warningBanner) warningBanner.classList.add('hidden');
+        if (columnsContainer) columnsContainer.classList.remove('opacity-30', 'pointer-events-none');
+    }
+
+    // 2. Filter students by current class
+    filteredStudents = allStudents.filter(s => s.turma === currentClass);
+
+    // 3. Load or initialize record (only when there is a class)
+    const storageKey = `siga_attendance_${currentDate}_${currentClass}`;
+    let record = JSON.parse(localStorage.getItem(storageKey));
+
+    if (!record) {
+        record = {
+            entrada: {
+                consolidado: false,
+                records: {}
+            },
+            saida: {
+                consolidado: false,
+                records: {}
+            }
+        };
+        filteredStudents.forEach(s => {
+            record.entrada.records[s.id] = { status: 'P', justification: '' };
+            record.saida.records[s.id] = { status: 'P', justification: '' };
+        });
+        if (filteredStudents.length) {
+            localStorage.setItem(storageKey, JSON.stringify(record));
+        }
+    } else {
+        // Sync newly enrolled students into existing day record
+        filteredStudents.forEach(s => {
+            if (!record.entrada.records[s.id]) {
+                record.entrada.records[s.id] = { status: 'P', justification: '' };
+            }
+            if (!record.saida.records[s.id]) {
+                record.saida.records[s.id] = { status: 'P', justification: '' };
+            }
+        });
+    }
+
+    currentRecord = record;
+    renderAttendance();
+    updateFrequenciaKpis();
+}
+
+function renderAttendance() {
+    const listEntrada = document.getElementById('list-entrada-students');
+    const listSaida = document.getElementById('list-saida-students');
+    const listConsolidado = document.getElementById('list-consolidado-students');
+
+    if (!currentRecord) return;
+
+    // Clear list
+    listEntrada.innerHTML = '';
+    listSaida.innerHTML = '';
+    listConsolidado.innerHTML = '';
+
+    if (filteredStudents.length === 0) {
+        const emptyState = `<p class="text-body-md text-text-secondary text-center py-6">Nenhum aluno matriculado nesta turma.</p>`;
+        listEntrada.innerHTML = emptyState;
+        listSaida.innerHTML = emptyState;
+        listConsolidado.innerHTML = emptyState;
+        document.getElementById('stats-entrada').innerHTML = '<span>Presentes: <strong>0</strong></span> <span>Ausentes: <strong>0</strong></span>';
+        document.getElementById('stats-saida').innerHTML = '<span>Presentes: --</span> <span>Ausentes: --</span>';
+        document.getElementById('consolidado-presencas').textContent = '0';
+        document.getElementById('consolidado-faltas').textContent = '0';
+        document.getElementById('overlay-saida-blocked')?.classList.remove('hidden');
+        document.getElementById('overlay-consolidado-pending')?.classList.remove('hidden');
+        document.getElementById('btn-consolidar-entrada')?.classList.remove('hidden');
+        document.getElementById('btn-desbloquear-entrada')?.classList.add('hidden');
+        document.getElementById('overlay-entrada')?.classList.add('hidden');
+        document.getElementById('badge-status-entrada').textContent = 'Pendente';
+        document.getElementById('badge-status-saida').textContent = 'Bloqueada';
+        document.getElementById('badge-status-consolidado').textContent = 'Pendente';
+        return;
+    }
+    
+    // Render Entrada
+    filteredStudents.forEach(s => {
+        const rec = currentRecord.entrada.records[s.id] || { status: 'P', justification: '' };
+        const isP = rec.status === 'P';
+        const isF = rec.status === 'F';
+        const isFJ = rec.status === 'FJ';
+        
+        const row = document.createElement('div');
+        row.className = "flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all gap-2";
+        row.innerHTML = `
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary text-xs shrink-0">
+                    ${s.nome.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div class="min-w-0">
+                    <p class="font-semibold text-body-md text-on-surface truncate" title="${s.nome}">${s.nome}</p>
+                    <p class="text-[11px] text-text-secondary">Matrícula: #${s.id}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1">
+                <label class="cursor-pointer">
+                    <input type="radio" name="ent_${s.id}" class="hidden peer" value="P" ${isP ? 'checked' : ''} onchange="updateStatus('${s.id}', 'entrada', 'P')" ${currentRecord.entrada.consolidado ? 'disabled' : ''}>
+                    <div class="w-10 h-8 flex items-center justify-center rounded-l-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all font-bold text-xs">P</div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="ent_${s.id}" class="hidden peer" value="F" ${isF ? 'checked' : ''} onchange="updateStatus('${s.id}', 'entrada', 'F')" ${currentRecord.entrada.consolidado ? 'disabled' : ''}>
+                    <div class="w-10 h-8 flex items-center justify-center border-t border-b border-border-subtle bg-white text-text-secondary peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all font-bold text-xs">F</div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="ent_${s.id}" class="hidden peer" value="FJ" ${isFJ ? 'checked' : ''} onchange="updateStatus('${s.id}', 'entrada', 'FJ')" ${currentRecord.entrada.consolidado ? 'disabled' : ''}>
+                    <div class="w-10 h-8 flex items-center justify-center rounded-r-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition-all font-bold text-xs">FJ</div>
+                </label>
+            </div>
+        `;
+        if (isFJ && rec.justification) {
+            const labelDiv = document.createElement('div');
+            labelDiv.className = "text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium mt-1 inline-block self-start sm:self-auto sm:mt-0";
+            labelDiv.textContent = rec.justification;
+            row.appendChild(labelDiv);
+        }
+        listEntrada.appendChild(row);
+    });
+    
+    // Render Saída (only if Entrada consolidated)
+    if (currentRecord.entrada.consolidado) {
+        document.getElementById('overlay-saida-blocked').classList.add('hidden');
+        document.getElementById('btn-consolidar-saida').disabled = false;
+        
+        filteredStudents.forEach(s => {
+            const rec = currentRecord.saida.records[s.id] || { status: 'P', justification: '' };
+            const isP = rec.status === 'P';
+            const isF = rec.status === 'F';
+            const isFJ = rec.status === 'FJ';
+            
+            const row = document.createElement('div');
+            row.className = "flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all gap-2";
+            row.innerHTML = `
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary text-xs shrink-0">
+                        ${s.nome.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-body-md text-on-surface truncate" title="${s.nome}">${s.nome}</p>
+                        <p class="text-[11px] text-text-secondary">Matrícula: #${s.id}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="sai_${s.id}" class="hidden peer" value="P" ${isP ? 'checked' : ''} onchange="updateStatus('${s.id}', 'saida', 'P')" ${currentRecord.saida.consolidado ? 'disabled' : ''}>
+                        <div class="w-10 h-8 flex items-center justify-center rounded-l-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all font-bold text-xs">P</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="sai_${s.id}" class="hidden peer" value="F" ${isF ? 'checked' : ''} onchange="updateStatus('${s.id}', 'saida', 'F')" ${currentRecord.saida.consolidado ? 'disabled' : ''}>
+                        <div class="w-10 h-8 flex items-center justify-center border-t border-b border-border-subtle bg-white text-text-secondary peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all font-bold text-xs">F</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="sai_${s.id}" class="hidden peer" value="FJ" ${isFJ ? 'checked' : ''} onchange="updateStatus('${s.id}', 'saida', 'FJ')" ${currentRecord.saida.consolidado ? 'disabled' : ''}>
+                        <div class="w-10 h-8 flex items-center justify-center rounded-r-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition-all font-bold text-xs">FJ</div>
+                    </label>
+                </div>
+            `;
+            if (isFJ && rec.justification) {
+                const labelDiv = document.createElement('div');
+                labelDiv.className = "text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium mt-1 inline-block self-start sm:self-auto sm:mt-0";
+                labelDiv.textContent = rec.justification;
+                row.appendChild(labelDiv);
+            }
+            listSaida.appendChild(row);
+        });
+    } else {
+        document.getElementById('overlay-saida-blocked').classList.remove('hidden');
+        document.getElementById('btn-consolidar-saida').disabled = true;
+    }
+    
+    // Render Dia Consolidado
+    const hasEvasion = { val: false };
+    if (currentRecord.entrada.consolidado && currentRecord.saida.consolidado) {
+        document.getElementById('overlay-consolidado-pending').classList.add('hidden');
+        
+        let totalP = 0;
+        let totalF = 0;
+        
+        filteredStudents.forEach(s => {
+            const ent = currentRecord.entrada.records[s.id] || { status: 'P', justification: '' };
+            const sai = currentRecord.saida.records[s.id] || { status: 'P', justification: '' };
+            
+            let finalStatus = 'P';
+            let label = 'Presença';
+            let style = 'bg-[#dcfce7] text-[#14532d] border-[#bbf7d0]';
+            let detail = '';
+            
+            // Applying Rules
+            if (ent.status === 'P' && sai.status === 'P') {
+                finalStatus = 'P';
+                label = 'Presença';
+                totalP++;
+            } else if (ent.status === 'F' && sai.status === 'F') {
+                finalStatus = 'F';
+                label = 'Falta';
+                style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
+                totalF++;
+            } else if (ent.status === 'P' && sai.status === 'FJ') {
+                finalStatus = 'P';
+                label = 'Presença';
+                detail = `Saída Justificada: ${sai.justification}`;
+                totalP++;
+            } else if (ent.status === 'FJ' && sai.status === 'FJ') {
+                finalStatus = 'P';
+                label = 'Presença (FJ)';
+                detail = `Dia Justificado: ${ent.justification}`;
+                totalP++;
+            } else if (ent.status === 'FJ' && sai.status === 'P') {
+                finalStatus = 'P';
+                label = 'Presença';
+                detail = `Entrada Justificada: ${ent.justification}`;
+                totalP++;
+            } else if (ent.status === 'P' && sai.status === 'F') {
+                finalStatus = 'F';
+                label = 'Falta (Evasão)';
+                style = 'bg-red-100 text-red-800 border-red-300 ring-2 ring-red-500/20';
+                detail = 'Evasão Escolar Detectada';
+                totalF++;
+                hasEvasion.val = true;
+            } else if (ent.status === 'F' && sai.status === 'P') {
+                finalStatus = 'F';
+                label = 'Falta';
+                style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
+                detail = 'Falta na Entrada';
+                totalF++;
+            } else {
+                finalStatus = 'F';
+                label = 'Falta';
+                style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
+                totalF++;
+            }
+            
+            const row = document.createElement('div');
+            row.className = "flex items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all";
+            row.innerHTML = `
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary text-xs shrink-0">
+                        ${s.nome.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-body-md text-on-surface truncate" title="${s.nome}">${s.nome}</p>
+                        ${detail ? `<p class="text-[10px] text-text-secondary truncate font-medium">${detail}</p>` : `<p class="text-[10px] text-text-secondary">Consolidado</p>`}
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style} border">${label}</span>
+            `;
+            listConsolidado.appendChild(row);
+        });
+        
+        document.getElementById('consolidado-presencas').textContent = totalP;
+        document.getElementById('consolidado-faltas').textContent = totalF;
+        document.getElementById('badge-status-consolidado').textContent = 'Concluído';
+        document.getElementById('badge-status-consolidado').className = 'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase';
+    } else {
+        document.getElementById('overlay-consolidado-pending').classList.remove('hidden');
+        document.getElementById('badge-status-consolidado').textContent = 'Pendente';
+        document.getElementById('badge-status-consolidado').className = 'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
+    }
+    
+    if (hasEvasion.val) {
+        document.getElementById('evasao-alert-footer').classList.remove('hidden');
+    } else {
+        document.getElementById('evasao-alert-footer').classList.add('hidden');
+    }
+    
+    // Render overlays for locked/consolidated states
+    if (currentRecord.entrada.consolidado) {
+        document.getElementById('overlay-entrada').classList.remove('hidden');
+        document.getElementById('btn-consolidar-entrada').classList.add('hidden');
+        document.getElementById('btn-desbloquear-entrada').classList.remove('hidden');
+        document.getElementById('badge-status-entrada').textContent = 'Consolidada';
+        document.getElementById('badge-status-entrada').className = 'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase';
+    } else {
+        document.getElementById('overlay-entrada').classList.add('hidden');
+        document.getElementById('btn-consolidar-entrada').classList.remove('hidden');
+        document.getElementById('btn-desbloquear-entrada').classList.add('hidden');
+        document.getElementById('badge-status-entrada').textContent = 'Pendente';
+        document.getElementById('badge-status-entrada').className = 'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
+    }
+    
+    if (currentRecord.saida.consolidado) {
+        document.getElementById('overlay-saida-locked').classList.remove('hidden');
+        document.getElementById('btn-consolidar-saida').classList.add('hidden');
+        document.getElementById('btn-desbloquear-saida').classList.remove('hidden');
+        document.getElementById('badge-status-saida').textContent = 'Consolidada';
+        document.getElementById('badge-status-saida').className = 'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase';
+    } else {
+        document.getElementById('overlay-saida-locked').classList.add('hidden');
+        if (currentRecord.entrada.consolidado) {
+            document.getElementById('btn-consolidar-saida').classList.remove('hidden');
+            document.getElementById('badge-status-saida').textContent = 'Pendente';
+            document.getElementById('badge-status-saida').className = 'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
+        } else {
+            document.getElementById('btn-consolidar-saida').classList.add('hidden');
+            document.getElementById('badge-status-saida').textContent = 'Bloqueada';
+            document.getElementById('badge-status-saida').className = 'px-2.5 py-1 bg-surface-container text-text-secondary text-[11px] font-bold rounded-full uppercase';
+        }
+        document.getElementById('btn-desbloquear-saida').classList.add('hidden');
+    }
+    
+    // Update stats counters at bottom of each column
+    let countEntP = 0, countEntF = 0, countEntFJ = 0;
+    Object.keys(currentRecord.entrada.records).forEach(key => {
+        const val = currentRecord.entrada.records[key].status;
+        if (val === 'P') countEntP++;
+        else if (val === 'F') countEntF++;
+        else if (val === 'FJ') countEntFJ++;
+    });
+    document.getElementById('stats-entrada').innerHTML = `<span>Presentes: <strong>${countEntP}</strong></span> <span>Ausentes: <strong>${countEntF + countEntFJ}</strong> (${countEntFJ} Just.)</span>`;
+    
+    if (currentRecord.entrada.consolidado) {
+        let countSaiP = 0, countSaiF = 0, countSaiFJ = 0;
+        Object.keys(currentRecord.saida.records).forEach(key => {
+            const val = currentRecord.saida.records[key].status;
+            if (val === 'P') countSaiP++;
+            else if (val === 'F') countSaiF++;
+            else if (val === 'FJ') countSaiFJ++;
+        });
+        document.getElementById('stats-saida').innerHTML = `<span>Presentes: <strong>${countSaiP}</strong></span> <span>Ausentes: <strong>${countSaiF + countSaiFJ}</strong> (${countSaiFJ} Just.)</span>`;
+    } else {
+        document.getElementById('stats-saida').innerHTML = `<span>Presentes: --</span> <span>Ausentes: --</span>`;
+    }
+}
+
+function updateStatus(studentId, type, status) {
+    if (status === 'FJ') {
+        const student = filteredStudents.find(s => s.id === studentId);
+        document.getElementById('just-student-id').value = studentId;
+        document.getElementById('just-type').value = type;
+        document.getElementById('just-student-name').textContent = student ? student.nome : '';
+        document.getElementById('modal-justification').classList.remove('hidden');
+    } else {
+        currentRecord[type].records[studentId] = { status, justification: '' };
+        saveAttendance();
+        renderAttendance();
+    }
+}
+
+function selectJustification(reason) {
+    const studentId = document.getElementById('just-student-id').value;
+    const type = document.getElementById('just-type').value;
+    
+    currentRecord[type].records[studentId] = { status: 'FJ', justification: reason };
+    saveAttendance();
+    closeJustificationModal(true);
+    updateFrequenciaKpis();
+}
+
+function closeJustificationModal(didSelect) {
+    document.getElementById('modal-justification').classList.add('hidden');
+    if (!didSelect) {
+        const studentId = document.getElementById('just-student-id').value;
+        const type = document.getElementById('just-type').value;
+        const savedStatus = currentRecord[type].records[studentId]?.status || 'P';
+        
+        const groupName = type === 'entrada' ? `ent_${studentId}` : `sai_${studentId}`;
+        const radios = document.getElementsByName(groupName);
+        for (let radio of radios) {
+            if (radio.value === savedStatus) {
+                radio.checked = true;
+                break;
+            }
+        }
+    } else {
+        renderAttendance();
+    }
+}
+
+function saveAttendance() {
+    if (!currentClass || !currentDate || !currentRecord) return;
+    const storageKey = `siga_attendance_${currentDate}_${currentClass}`;
+    localStorage.setItem(storageKey, JSON.stringify(currentRecord));
+}
+
+function consolidarEntrada() {
+    if (!currentRecord || !currentClass) return;
+    currentRecord.entrada.consolidado = true;
+    currentRecord.saida.records = JSON.parse(JSON.stringify(currentRecord.entrada.records));
+
+    saveAttendance();
+    renderAttendance();
+    updateFrequenciaKpis();
+    if (typeof showToast === 'function') {
+        showToast('Chamada de Entrada consolidada com sucesso!');
+    }
+}
+
+function consolidarSaida() {
+    if (!currentRecord || !currentClass) return;
+    currentRecord.saida.consolidado = true;
+    saveAttendance();
+
+    let evasionCount = 0;
+    const occurrences = JSON.parse(localStorage.getItem('siga_occurrences')) || [];
+    const now = new Date();
+    const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    filteredStudents.forEach(s => {
+        const ent = currentRecord.entrada.records[s.id];
+        const sai = currentRecord.saida.records[s.id];
+
+        if (ent && sai && ent.status === 'P' && sai.status === 'F') {
+            // Evita duplicar a mesma evasão (aluno + data + turma)
+            const already = occurrences.some(o =>
+                (o.type === 'Evasão' || o.tipo === 'Evasão') &&
+                (o.date === currentDate || o.data === currentDate) &&
+                (o.turma === currentClass) &&
+                ((o.student || o.aluno) === s.nome || String(o.alunoId) === String(s.id))
+            );
+            if (already) return;
+
+            evasionCount++;
+            const newOcc = {
+                id: 'occ_evasao_' + String(s.id) + '_' + currentDate + '_' + Date.now().toString(36) + '_' + evasionCount,
+                student: s.nome,
+                aluno: s.nome,
+                alunoId: String(s.id),
+                type: 'Evasão',
+                tipo: 'Evasão',
+                date: currentDate,
+                data: currentDate,
+                hora: hora,
+                turma: currentClass,
+                prof: 'Sistema (Automático)',
+                usuario: 'Sistema (Automático)',
+                status: 'Em Análise',
+                desc: 'Evasão escolar detectada automaticamente na chamada de ' +
+                    currentDate.split('-').reverse().join('/') +
+                    ' (turma ' + currentClass + '): presença confirmada na entrada e falta na saída.',
+                descricao: 'Evasão escolar detectada automaticamente na chamada de ' +
+                    currentDate.split('-').reverse().join('/') +
+                    ' (turma ' + currentClass + '): presença confirmada na entrada e falta na saída.',
+                origem: 'automatica',
+                origemChamada: {
+                    data: currentDate,
+                    turma: currentClass,
+                    entrada: 'P',
+                    saida: 'F'
+                },
+                envolvidos: [],
+                tratamento: null,
+                dataRetorno: ''
+            };
+            occurrences.unshift(newOcc);
+
+            // Espelha na ficha do aluno
+            try {
+                const fichas = JSON.parse(localStorage.getItem('siga_student_occurrences') || '{}');
+                const key = s.nome;
+                if (!fichas[key]) fichas[key] = [];
+                fichas[key].unshift({
+                    id: newOcc.id,
+                    tipo: 'Evasão',
+                    data: currentDate,
+                    hora: hora,
+                    origem: 'automatica'
+                });
+                localStorage.setItem('siga_student_occurrences', JSON.stringify(fichas));
+            } catch (e) { /* ignore */ }
+        }
+    });
+
+    if (evasionCount > 0) {
+        localStorage.setItem('siga_occurrences', JSON.stringify(occurrences));
+        if (typeof showToast === 'function') {
+            showToast(`${evasionCount} ocorrência(s) de evasão gerada(s)! Abra em Ocorrências para visualizar, tratar e imprimir.`, 'error');
+        }
+    }
+
+    renderAttendance();
+    updateFrequenciaKpis();
+    if (typeof showToast === 'function') {
+        showToast('Chamada de Saída consolidada com sucesso!');
+    }
+}
+
+function solicitarDesbloqueio(type) {
+    document.getElementById('unlock-type').value = type;
+    document.getElementById('unlock-password').value = '';
+    document.getElementById('modal-unlock').classList.remove('hidden');
+}
+
+function closeUnlockModal() {
+    document.getElementById('modal-unlock').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Desbloqueio: senha do usuário logado (gestão/admin) — sem senha compartilhada no código
+    document.getElementById('unlock-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const type = document.getElementById('unlock-type').value;
+        const password = document.getElementById('unlock-password').value;
+        const sec = window.SigaSecurity;
+
+        if (!sec || typeof sec.verifyUnlockPassword !== 'function') {
+            alert('Módulo de segurança indisponível. Recarregue a página.');
+            return;
+        }
+        if (!sec.canAttemptUnlock()) {
+            alert('Apenas gestores/administradores autenticados podem desbloquear a chamada.');
+            return;
+        }
+
+        sec.verifyUnlockPassword(password).then(function (result) {
+            if (result && result.ok) {
+                currentRecord[type].consolidado = false;
+                if (type === 'entrada') {
+                    currentRecord.saida.consolidado = false;
+                }
+                saveAttendance();
+                closeUnlockModal();
+                renderAttendance();
+                updateFrequenciaKpis();
+                if (typeof showToast === 'function') {
+                    showToast('Chamada desbloqueada para edição!');
+                }
+                return;
+            }
+            var msg = 'Senha incorreta.';
+            if (result && result.reason === 'no_password') {
+                msg = 'Defina sua senha de acesso antes de desbloquear chamadas.';
+            } else if (result && result.reason === 'forbidden') {
+                msg = 'Acesso restrito a gestores e administradores.';
+            }
+            alert(msg);
+        });
+    });
+    
+    initFrequencia();
+});
+</script>
+<script id="sidebar-collapsible-script">
+        // Micro-interactions and small UI behaviors
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (el.getAttribute('href') === '#') e.preventDefault();
+            });
+        });
+
+        // Collapsible Sidebar and Dropdowns functions
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            const collapsed = document.body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
+            const icon = document.getElementById('sidebar-collapse-icon');
+            if (icon) {
+                icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+            }
+        }
+
+        // Dropdown functions
+        function toggleNavGroup(button) {
+            const group = button.closest('.nav-dropdown');
+            if (!group) return;
+
+            const shouldOpen = !group.classList.contains('open');
+            
+            // Auto-collapse other groups
+            document.querySelectorAll('.nav-dropdown').forEach(g => {
+                if (g !== group) {
+                    g.classList.remove('open');
+                    const btn = g.querySelector('.nav-dropdown-toggle');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            group.classList.toggle('open', shouldOpen);
+            button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        }
+</script>
+
+<!-- Modal Justificativa de Falta -->
+<div id="modal-justification" class="fixed inset-0 z-[10005] flex items-center justify-center p-4 bg-on-background/40 backdrop-blur-sm hidden">
+    <div class="bg-background-surface w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-border-subtle animate-in fade-in zoom-in duration-200" style="font-family: 'Inter', sans-serif;">
+        <div class="p-6 border-b border-border-subtle flex justify-between items-center bg-surface-container-low/30">
+            <h3 class="font-headline-sm text-on-surface font-semibold">Justificar Ausência</h3>
+            <button class="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-text-secondary" onclick="closeJustificationModal(false)">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="just-student-id" />
+            <input type="hidden" id="just-type" /> <!-- 'entrada' or 'saida' -->
+            <p class="text-body-md text-text-secondary">Selecione o motivo da falta justificada para <strong id="just-student-name" class="text-on-surface"></strong>:</p>
+            
+            <div class="space-y-2">
+                <button onclick="selectJustification('Atestado Médico')" class="w-full text-left px-4 py-3 border border-border-subtle hover:border-primary hover:bg-primary/5 rounded-xl text-body-md font-medium transition-all flex items-center gap-2 text-on-surface">
+                    <span class="material-symbols-outlined text-primary text-[20px]">medical_services</span>
+                    <span>Atestado Médico</span>
+                </button>
+                <button onclick="selectJustification('Liberado pela Coordenação')" class="w-full text-left px-4 py-3 border border-border-subtle hover:border-primary hover:bg-primary/5 rounded-xl text-body-md font-medium transition-all flex items-center gap-2 text-on-surface">
+                    <span class="material-symbols-outlined text-primary text-[20px]">shield_person</span>
+                    <span>Liberado pela Coordenação</span>
+                </button>
+                <button onclick="selectJustification('Liberado pelos Pais')" class="w-full text-left px-4 py-3 border border-border-subtle hover:border-primary hover:bg-primary/5 rounded-xl text-body-md font-medium transition-all flex items-center gap-2 text-on-surface">
+                    <span class="material-symbols-outlined text-primary text-[20px]">family_restroom</span>
+                    <span>Liberado pelos Pais</span>
+                </button>
+            </div>
+        </div>
+        <div class="p-6 border-t border-border-subtle bg-surface-container-low/30 flex justify-end">
+            <button onclick="closeJustificationModal(false)" class="px-5 py-2.5 text-label-md font-bold text-text-secondary hover:bg-surface-container-low rounded-lg transition-colors">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Desbloquear Chamada -->
+<div id="modal-unlock" class="fixed inset-0 z-[10006] flex items-center justify-center p-4 bg-on-background/40 backdrop-blur-sm hidden">
+    <div class="bg-background-surface w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-border-subtle animate-in fade-in zoom-in duration-200" style="font-family: 'Inter', sans-serif;">
+        <div class="p-6 border-b border-border-subtle flex justify-between items-center bg-surface-container-low/30">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-error/10 text-error rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined">lock_open</span>
+                </div>
+                <h3 class="font-headline-sm text-on-surface font-semibold">Desbloquear Chamada</h3>
+            </div>
+            <button class="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-text-secondary" onclick="closeUnlockModal()">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <form class="p-6 space-y-4" id="unlock-form">
+            <input type="hidden" id="unlock-type" /> <!-- 'entrada' or 'saida' -->
+            <p class="text-body-md text-text-secondary">Esta chamada foi consolidada e está bloqueada. Para editá-la novamente, insira a senha do seu usuário (gestor/administrador):</p>
+            
+            <div>
+                <label class="block text-label-md font-bold text-on-surface mb-1">Senha do Administrador</label>
+                <input type="password" id="unlock-password" class="w-full border border-border-subtle rounded-lg px-4 py-2.5 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" placeholder="Digite a senha..." required>
+            </div>
+            
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
+                <button type="button" class="px-5 py-2.5 text-label-md font-bold text-text-secondary hover:bg-surface-container-low rounded-lg transition-colors" onclick="closeUnlockModal()">Cancelar</button>
+                <button type="submit" class="px-6 py-2.5 bg-error text-white rounded-lg font-bold shadow-lg shadow-error/20 hover:brightness-90 transition-all active:scale-95">Desbloquear</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body></html>

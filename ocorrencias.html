@@ -1,0 +1,1455 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIGA EDUCA - Gestão de Ocorrências</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            "colors": {
+                "inverse-primary": "#64de8b","on-surface": "#121c2a","on-error-container": "#93000a",
+                "surface-variant": "#d9e3f6","surface-container-high": "#dee9fc","on-primary-container": "#003a1a",
+                "on-secondary-fixed": "#001a42","surface-container": "#e6eeff","background": "#f8f9ff",
+                "on-secondary": "#ffffff","primary": "#006d37","on-error": "#ffffff","tertiary": "#795900",
+                "tertiary-fixed": "#ffdf9f","on-tertiary-fixed-variant": "#5c4300","on-tertiary-fixed": "#261a00",
+                "secondary-container": "#2170e4","secondary-fixed-dim": "#adc6ff","surface-container-low": "#eff4ff",
+                "on-secondary-fixed-variant": "#004395","outline": "#6e7a6e","tertiary-container": "#c39200",
+                "tertiary-fixed-dim": "#f9bd22","secondary-fixed": "#d8e2ff","text-secondary": "#6B7280",
+                "on-surface-variant": "#3e4a3f","inverse-on-surface": "#eaf1ff","surface-bright": "#f8f9ff",
+                "on-background": "#121c2a","on-tertiary-container": "#412f00","secondary": "#0058be",
+                "on-primary-fixed-variant": "#005228","error-container": "#ffdad6","primary-fixed": "#81fba5",
+                "primary-container": "#2eaf62","surface-container-highest": "#d9e3f6","on-tertiary": "#ffffff",
+                "surface-tint": "#006d37","outline-variant": "#bdcabc","inverse-surface": "#27313f",
+                "surface-container-lowest": "#ffffff","primary-light": "#7EDC8A","border-subtle": "#E5E7EB",
+                "background-surface": "#FFFFFF","on-secondary-container": "#fefcff","surface": "#f8f9ff",
+                "error": "#ba1a1a","on-primary": "#ffffff","primary-fixed-dim": "#64de8b",
+                "on-primary-fixed": "#00210c","surface-dim": "#d0dbed","background-page": "#F7FAF8"
+            },
+            "borderRadius": {"DEFAULT": "0.25rem","lg": "0.5rem","xl": "0.75rem","full": "9999px"},
+            "spacing": {"card-padding": "24px","gutter": "16px","section-gap": "32px","container-margin": "24px","base": "4px"},
+            "fontFamily": {"sans": ["Inter","ui-sans-serif","system-ui","-apple-system","sans-serif"]},
+            "fontSize": {
+                "headline-md": ["20px",{"lineHeight":"1.4","fontWeight":"600"}],
+                "headline-lg-mobile": ["24px",{"lineHeight":"1.2","fontWeight":"700"}],
+                "body-lg": ["16px",{"lineHeight":"1.6","fontWeight":"400"}],
+                "label-sm": ["11px",{"lineHeight":"1.4","fontWeight":"600"}],
+                "body-md": ["14px",{"lineHeight":"1.6","fontWeight":"400"}],
+                "headline-sm": ["16px",{"lineHeight":"1.5","fontWeight":"600"}],
+                "headline-lg": ["32px",{"lineHeight":"1.2","letterSpacing":"-0.02em","fontWeight":"700"}],
+                "label-md": ["12px",{"lineHeight":"1.4","letterSpacing":"0.01em","fontWeight":"500"}]
+            }
+        },
+    },
+}</script>
+<style>
+html, body { overflow-x: hidden; background-color: #F7FAF8; font-family: 'Inter', sans-serif; color: #121C2A; }
+aside#sidebar .text-label-md { font-size: 12px !important; font-weight: 500 !important; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+.custom-shadow { box-shadow: 0px 4px 12px rgba(0,0,0,0.03); }
+:root { --sidebar-width: 260px; }
+body.sidebar-collapsed { --sidebar-width: 72px; }
+aside#sidebar { width: var(--sidebar-width) !important; transition: width 0.3s cubic-bezier(0.4,0,0.2,1) !important; overflow: visible !important; }
+@media (min-width: 1024px) { main { padding-left: var(--sidebar-width) !important; transition: padding-left 0.3s cubic-bezier(0.4,0,0.2,1) !important; } }
+body.sidebar-collapsed aside#sidebar .sidebar-logo-text,
+body.sidebar-collapsed aside#sidebar .nav-dropdown-label,
+body.sidebar-collapsed aside#sidebar .nav-chevron,
+body.sidebar-collapsed aside#sidebar .nav-section-title,
+body.sidebar-collapsed aside#sidebar .text-label-md,
+body.sidebar-collapsed aside#sidebar .user-meta,
+body.sidebar-collapsed aside#sidebar .logout-btn-text { display: none !important; }
+body.sidebar-collapsed aside#sidebar .sidebar-header { padding: 24px 0 16px !important; justify-content: center !important; }
+body.sidebar-collapsed aside#sidebar .nav-item { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; text-align: center !important; gap: 0 !important; border-left-width: 0px !important; }
+body.sidebar-collapsed aside#sidebar .nav-dropdown-toggle { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; gap: 0 !important; }
+body.sidebar-collapsed aside#sidebar .sidebar-user-info { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; gap: 0 !important; }
+body.sidebar-collapsed aside#sidebar .logout-btn { padding: 8px 0 !important; width: 40px !important; margin: 0 auto !important; justify-content: center !important; }
+body.sidebar-collapsed aside#sidebar nav { padding-left: 4px !important; padding-right: 4px !important; }
+body.sidebar-collapsed aside#sidebar .nav-dropdown-menu { display: none !important; }
+.nav-dropdown { display: block; margin-bottom: 4px; }
+.nav-dropdown-toggle { transition: all 0.2s ease; }
+.nav-dropdown-menu { display: none; padding-left: 8px; margin-top: 4px; border-left: 1px solid rgba(0,109,55,0.15); }
+.nav-dropdown.open .nav-dropdown-menu { display: block !important; }
+.nav-dropdown.open .nav-chevron { transform: rotate(180deg); }
+.sidebar-toggle-btn { position: absolute; bottom: 40px; right: -14px; width: 28px; height: 28px; border-radius: 50%; background-color: #5c56e0; color: #ffffff; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15); z-index: 999; transition: all 0.2s ease; }
+.sidebar-toggle-btn:hover { transform: scale(1.1); background-color: #4943c7; }
+.sidebar-toggle-btn span { font-size: 18px !important; font-weight: bold !important; line-height: 1; user-select: none; }
+.pill-analise { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.pill-tratado { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+.action-menu { display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 100; min-width: 160px; background: white; border: 1px solid #E5E7EB; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); overflow: hidden; }
+.action-menu.open { display: block; animation: menuIn 0.15s ease forwards; }
+@keyframes menuIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.chip-envolvido { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.chip-vitima { background: #FEE2E2; color: #991B1B; }
+.chip-parte { background: #FEF3C7; color: #92400E; }
+.treatment-panel { display: none; }
+.treatment-panel.active { display: block; }
+#occurrences-tbody tr { transition: background 0.15s ease; }
+#occurrences-tbody tr:hover { background: #f0fdf4; }
+</style>
+<style id="fouc-styles">html { visibility: hidden; opacity: 0; } html.ready { visibility: visible; opacity: 1; transition: opacity 0.15s ease-in-out; }</style>
+<script id="fouc-prevention">(function(){document.addEventListener("DOMContentLoaded",()=>{document.documentElement.classList.add('ready');});window.addEventListener("load",()=>{document.documentElement.classList.add('ready');});})();</script>
+<script src="js/siga-security.js"></script><script src="js/siga-db.js"></script>
+<script src="js/documentos-secretaria.js"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-background-page"><script id="sidebar-flicker-prevention">(function(){const isCollapsed=localStorage.getItem('sidebar-collapsed')==='true';if(isCollapsed){document.body.classList.add('sidebar-collapsed');document.addEventListener('DOMContentLoaded',()=>{const icon=document.getElementById('sidebar-collapse-icon');if(icon)icon.textContent='chevron_right';});}})();</script>
+
+<aside class="h-screen fixed left-0 top-0 flex flex-col bg-background-surface border-r border-border-subtle z-50" id="sidebar">
+<button class="sidebar-toggle-btn hidden lg:flex" id="sidebar-toggle" onclick="toggleSidebarCollapse()" title="Recuar Menu" type="button">
+<span class="material-symbols-outlined" id="sidebar-collapse-icon">chevron_left</span>
+</button>
+<div class="p-6 flex items-center gap-2 sidebar-header">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-white flex-shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">school</span>
+</div>
+<div class="sidebar-logo-text">
+<h1 class="font-headline-sm text-primary leading-tight">SIGA EDUCA</h1>
+<p class="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Gestao Educacional</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto sidebar-scroll px-4 space-y-1 py-2">
+<a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-container transition-colors" href="painelprincipal.html">
+<span class="material-symbols-outlined">dashboard</span><span class="text-label-md">Minha Escola</span>
+</a>
+<div class="nav-dropdown open">
+<button aria-expanded="true" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">admin_panel_settings</span><span class="nav-dropdown-label">Administrativo</span></span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="calendarioletivo.html"><span class="material-symbols-outlined">calendar_today</span><span class="text-label-md">Calendario Letivo</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="turmas.html"><span class="material-symbols-outlined">groups</span><span class="text-label-md">Turmas</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="alunos.html"><span class="material-symbols-outlined">person</span><span class="text-label-md">Alunos</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="frequencia.html"><span class="material-symbols-outlined">fact_check</span><span class="text-label-md">Frequencia</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="horariodeaula.html"><span class="material-symbols-outlined">schedule</span><span class="text-label-md">Horario de Aula</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="agenda.html"><span class="material-symbols-outlined">event</span><span class="text-label-md">Agenda</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 bg-primary-light/20 text-primary border-l-4 border-primary font-semibold transition-all rounded-lg" href="ocorrencias.html"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">warning</span><span class="text-label-md">Ocorrencias</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="documentossecretaria.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Documentos Secretaria</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="usuarios.html"><span class="material-symbols-outlined">manage_accounts</span><span class="text-label-md">Usuários</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="Gestão de Lotação/lotacao.html"><span class="material-symbols-outlined">apartment</span><span class="text-label-md">Lotação</span></a>
+</div>
+</div>
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">school</span><span class="nav-dropdown-label">Pedagogico</span></span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="topodosaber.html"><span class="material-symbols-outlined">emoji_events</span><span class="text-label-md">Projeto Olimpico</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="boletins.html"><span class="material-symbols-outlined">description</span><span class="text-label-md">Boletins</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="conselho.html"><span class="material-symbols-outlined">diversity_3</span><span class="text-label-md">Conselho de Classe</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="controlelivros.html"><span class="material-symbols-outlined">menu_book</span><span class="text-label-md">Controle de Livros</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="relatorios.html"><span class="material-symbols-outlined">assessment</span><span class="text-label-md">Relatorios</span></a>
+</div>
+</div>
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">settings</span><span class="nav-dropdown-label">Sistema</span></span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="meuperfil.html"><span class="material-symbols-outlined">account_circle</span><span class="text-label-md">Meu Perfil</span></a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="permissões.html"><span class="material-symbols-outlined">shield_person</span><span class="text-label-md">Permissões</span></a>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-border-subtle bg-surface-container-low sidebar-user-info">
+<a href="meuperfil.html" class="flex items-center gap-3 mb-4 rounded-lg hover:bg-white/60 transition-colors p-1 -m-1" title="Meu Perfil">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white font-bold flex items-center justify-center flex-shrink-0 sidebar-user-avatar" aria-hidden="true">JS</div>
+<div class="overflow-hidden user-meta">
+<p class="text-body-md font-semibold truncate">Joao Silva</p>
+<p class="text-label-sm text-text-secondary truncate">Administrador</p>
+</div>
+</a>
+<button class="logout-btn w-full flex items-center justify-center gap-2 py-2 px-4 border border-border-subtle rounded-lg text-error font-semibold hover:bg-error/5 transition-colors" onclick="window.location.href='login.html'">
+<span class="material-symbols-outlined text-[18px]">logout</span><span class="text-label-md logout-btn-text">Sair</span>
+</button>
+</div>
+</aside>
+
+<main class="min-h-screen">
+<header class="siga-app-header h-16 w-full flex justify-between items-center px-4 sm:px-6 lg:px-8 bg-background/50 backdrop-blur-md sticky top-0 z-40 border-b border-border-subtle/50">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-on-surface leading-tight">Gestao de Ocorrencias</h2>
+<span class="text-label-sm text-text-secondary">Registro e tratamento de ocorrencias disciplinares e pedagogicas</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-border-subtle rounded-full text-body-md w-36 sm:w-56 md:w-64 focus:ring-2 focus:ring-primary-light focus:outline-none transition-all" id="global-search" placeholder="Buscar..." type="text" oninput="renderTable()"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/50 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header>
+
+<!-- LIST VIEW -->
+<div class="p-8 max-w-[1440px] mx-auto space-y-6" id="list-view">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Ocorrencias</h2>
+<p class="text-body-md text-text-secondary mt-1">Monitore, registre e trate os eventos escolares com rastreabilidade completa.</p>
+</div>
+<button class="bg-primary hover:bg-[#005228] text-on-primary px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-semibold shadow-md active:scale-95 animate-in fade-in" onclick="openNovaOcorrenciaModal()">
+<span class="material-symbols-outlined">add_circle</span>Nova Ocorrencia
+</button>
+</div>
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="bg-white border border-border-subtle p-5 rounded-2xl custom-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[26px]">assignment</span></div>
+<div><p class="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Total Registradas</p><p class="text-2xl font-black text-on-surface mt-0.5" id="kpi-total">0</p></div>
+</div>
+<div class="bg-white border border-border-subtle p-5 rounded-2xl custom-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[26px]">pending</span></div>
+<div><p class="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Em Analise</p><p class="text-2xl font-black text-amber-700 mt-0.5" id="kpi-analise">0</p></div>
+</div>
+<div class="bg-white border border-border-subtle p-5 rounded-2xl custom-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[26px]">check_circle</span></div>
+<div><p class="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Tratadas</p><p class="text-2xl font-black text-emerald-700 mt-0.5" id="kpi-tratado">0</p></div>
+</div>
+<div class="bg-white border border-border-subtle p-5 rounded-2xl custom-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-red-100 text-red-700 rounded-xl flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-[26px]">report_problem</span></div>
+<div><p class="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Casos Graves</p><p class="text-2xl font-black text-red-700 mt-0.5" id="kpi-graves">0</p></div>
+</div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white border border-border-subtle p-4 rounded-2xl custom-shadow flex flex-wrap gap-3 items-end">
+<div class="flex-1 min-w-[180px]">
+<label class="block text-[10px] text-text-secondary uppercase font-bold mb-1">Tipo</label>
+<select class="w-full px-3 py-2 border border-border-subtle rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="filter-tipo" onchange="renderTable()">
+<option value="">Todos os tipos</option>
+<option>Atraso</option><option>Evasão</option><option>Indisciplina</option><option>Bullying</option>
+<option>Agressão Física</option><option>Liberado pela Coordenação</option>
+<option>Suspensão por uso de celular</option><option>Suspensão</option>
+</select>
+</div>
+<div class="w-full sm:w-44">
+<label class="block text-[10px] text-text-secondary uppercase font-bold mb-1">Turma</label>
+<select class="w-full px-3 py-2 border border-border-subtle rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="filter-turma" onchange="renderTable()">
+<option value="">Todas as turmas</option>
+</select>
+</div>
+<div class="w-full sm:w-44">
+<label class="block text-[10px] text-text-secondary uppercase font-bold mb-1">Status</label>
+<select class="w-full px-3 py-2 border border-border-subtle rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="filter-status" onchange="renderTable()">
+<option value="">Todos</option><option>Em Análise</option><option>Tratado</option>
+</select>
+</div>
+<div class="w-full sm:w-44">
+<label class="block text-[10px] text-text-secondary uppercase font-bold mb-1">Data</label>
+<input class="w-full px-3 py-2 border border-border-subtle rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="filter-data" type="date" onchange="renderTable()"/>
+</div>
+<button class="px-4 py-2 border border-border-subtle rounded-lg text-text-secondary hover:bg-surface-container-low transition-colors text-body-md flex items-center gap-1" onclick="clearFilters()">
+<span class="material-symbols-outlined text-[18px]">filter_list_off</span>Limpar
+</button>
+</div>
+
+<!-- Table -->
+<div class="bg-white border border-border-subtle rounded-2xl custom-shadow overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-border-subtle">
+<th class="px-6 py-4 font-label-md text-label-md text-text-secondary uppercase">Tipo</th>
+<th class="px-6 py-4 font-label-md text-label-md text-text-secondary uppercase">Aluno</th>
+<th class="px-6 py-4 font-label-md text-label-md text-text-secondary uppercase">Turma</th>
+<th class="px-6 py-4 font-label-md text-label-md text-text-secondary uppercase">Data / Hora</th>
+<th class="px-6 py-4 font-label-md text-label-md text-text-secondary uppercase">Usuario</th>
+<th class="px-6 py-4 font-label-md text-label-md text-text-secondary uppercase text-center">Status</th>
+<th class="px-6 py-4 font-label-md text-label-md text-text-secondary uppercase text-right">Acoes</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle" id="occurrences-tbody"></tbody>
+</table>
+</div>
+<div class="px-6 py-4 bg-surface-container-low flex items-center justify-between">
+<p class="text-label-md text-text-secondary" id="table-count">Nenhuma ocorrencia registrada</p>
+</div>
+</div>
+</div>
+
+<!-- TREATMENT VIEW -->
+<div class="p-8 max-w-[1000px] mx-auto space-y-6 treatment-panel" id="treatment-view">
+<div class="flex items-center gap-3 flex-1">
+<button class="w-10 h-10 flex items-center justify-center rounded-xl border border-border-subtle hover:bg-surface-container transition-colors" onclick="closeTreatmentView()">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex-1">
+<h2 class="font-headline-md text-on-surface font-bold">Tratamento de Ocorrencia</h2>
+<p class="text-label-sm text-text-secondary">Registre as acoes tomadas e atualize o status</p>
+</div>
+<button type="button" class="px-4 py-2.5 border border-border-subtle rounded-xl text-body-md font-semibold hover:bg-surface-container transition-colors flex items-center gap-2" onclick="imprimirOcorrencia(treatId)">
+<span class="material-symbols-outlined text-[18px]">print</span>Imprimir
+</button>
+</div>
+<div class="bg-white border border-border-subtle rounded-2xl p-6 custom-shadow" id="treatment-summary"></div>
+<div class="bg-white border border-border-subtle rounded-2xl p-6 custom-shadow space-y-5">
+<h3 class="font-headline-sm text-on-surface font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">medical_services</span>Registro do Tratamento
+</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-2">Aluno Advertido?</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="t-advertido" value="Sim" class="w-4 h-4 accent-green-700"><span class="text-body-md">Sim</span></label>
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="t-advertido" value="Não" class="w-4 h-4 accent-green-700" checked><span class="text-body-md">Não</span></label>
+</div>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-2">Aluno Suspenso?</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="t-suspenso" value="Sim" class="w-4 h-4 accent-green-700"><span class="text-body-md">Sim</span></label>
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="t-suspenso" value="Não" class="w-4 h-4 accent-green-700" checked><span class="text-body-md">Não</span></label>
+</div>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-2">Responsavel Comunicado?</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="t-responsavel" value="Sim" class="w-4 h-4 accent-green-700"><span class="text-body-md">Sim</span></label>
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="t-responsavel" value="Não" class="w-4 h-4 accent-green-700" checked><span class="text-body-md">Não</span></label>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-2">Descricao do Tratamento <span class="text-error">*</span></label>
+<textarea class="w-full px-4 py-3 border border-border-subtle rounded-xl text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none" id="t-descricao" rows="4" placeholder="Descreva as acoes tomadas, encaminhamentos feitos, proximos passos..."></textarea>
+</div>
+<div class="flex justify-end gap-3 pt-2">
+<button class="px-6 py-2.5 border border-border-subtle rounded-xl text-body-md font-semibold hover:bg-surface-container transition-colors" onclick="closeTreatmentView()">Cancelar</button>
+<button class="px-6 py-2.5 bg-primary hover:bg-[#005228] text-white rounded-xl font-semibold flex items-center gap-2 transition-all shadow-md active:scale-95" onclick="saveTreatment()">
+<span class="material-symbols-outlined text-[18px]">save</span>Salvar Tratamento
+</button>
+</div>
+</div>
+</div>
+</main>
+
+<!-- MODAL: NOVA / EDITAR OCORRENCIA -->
+<div class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden" id="modal-ocorrencia">
+<div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeNovaOcorrenciaModal()"></div>
+<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto z-10">
+<div class="flex items-center justify-between p-6 border-b border-border-subtle sticky top-0 bg-white z-10 rounded-t-2xl">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-on-surface font-bold" id="modal-occ-title">Nova Ocorrência</h3>
+<p class="text-[11px] text-text-secondary">Preencha os dados abaixo com atenção</p>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors" onclick="closeNovaOcorrenciaModal()">
+<span class="material-symbols-outlined text-text-secondary">close</span>
+</button>
+</div>
+<form class="p-6 space-y-5" id="form-ocorrencia" onsubmit="submitOcorrencia(event)">
+<input type="hidden" id="occ-edit-id"/>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="md:col-span-2">
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5" for="occ-tipo">Tipo de Ocorrencia <span class="text-error">*</span></label>
+<select class="w-full px-4 py-2.5 border border-border-subtle rounded-xl text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="occ-tipo" required onchange="toggleDataRetornoField()">
+<option value="">Selecione o tipo...</option>
+<option>Atraso</option><option>Evasão</option><option>Indisciplina</option><option>Bullying</option>
+<option>Agressão Física</option><option>Liberado pela Coordenação</option>
+<option>Suspensão por uso de celular</option><option>Suspensão</option>
+</select>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5" for="occ-turma">Turma <span class="text-error">*</span></label>
+<select class="w-full px-4 py-2.5 border border-border-subtle rounded-xl text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="occ-turma" required onchange="loadAlunosByTurma()">
+<option value="">Selecione a turma...</option>
+</select>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5" for="occ-aluno">Aluno Principal <span class="text-error">*</span></label>
+<select class="w-full px-4 py-2.5 border border-border-subtle rounded-xl text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none disabled:bg-surface-container-low disabled:cursor-not-allowed" id="occ-aluno" required disabled>
+<option value="">Selecione a turma primeiro...</option>
+</select>
+</div>
+<div class="md:col-span-2 hidden" id="occ-retorno-wrap">
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5" for="occ-data-retorno">Data do Retorno <span class="text-error">*</span></label>
+<input type="date" class="w-full px-4 py-2.5 border border-border-subtle rounded-xl text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="occ-data-retorno"/>
+<p class="text-[11px] text-text-secondary mt-1.5">Informe a data em que o aluno poderá retornar às aulas após a suspensão.</p>
+</div>
+</div>
+<div>
+<div class="flex items-center justify-between mb-2">
+<label class="block text-[11px] font-bold text-text-secondary uppercase">Outros Envolvidos</label>
+<button type="button" class="flex items-center gap-1.5 text-primary text-xs font-semibold hover:underline" onclick="openEnvolvidoModal()">
+<span class="material-symbols-outlined text-[16px]">person_add</span>Incluir Envolvido
+</button>
+</div>
+<div class="min-h-[44px] bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2 flex flex-wrap gap-2" id="envolvidos-chips">
+<span class="text-text-secondary text-xs italic self-center">Nenhum envolvido adicionado</span>
+</div>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5" for="occ-descricao">Descricao da Ocorrencia <span class="text-error">*</span></label>
+<textarea class="w-full px-4 py-3 border border-border-subtle rounded-xl text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none" id="occ-descricao" rows="4" placeholder="Descreva detalhadamente o que aconteceu..." required></textarea>
+</div>
+<div class="flex justify-end gap-3 pt-2 border-t border-border-subtle">
+<button type="button" class="px-6 py-2.5 border border-border-subtle rounded-xl text-body-md font-semibold hover:bg-surface-container transition-colors" onclick="closeNovaOcorrenciaModal()">Cancelar</button>
+<button type="submit" class="px-6 py-2.5 bg-primary hover:bg-[#005228] text-white rounded-xl font-semibold flex items-center gap-2 transition-all shadow-md active:scale-95">
+<span class="material-symbols-outlined text-[18px]">save</span><span id="modal-occ-btn-text">Registrar Ocorrência</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- MODAL: INCLUIR ENVOLVIDO -->
+<div class="fixed inset-0 z-[300] flex items-center justify-center p-4 hidden" id="modal-envolvido">
+<div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEnvolvidoModal()"></div>
+<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 z-10">
+<div class="flex items-center justify-between p-5 border-b border-border-subtle">
+<h3 class="font-headline-sm font-bold text-on-surface">Incluir Envolvido</h3>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors" onclick="closeEnvolvidoModal()">
+<span class="material-symbols-outlined text-text-secondary">close</span>
+</button>
+</div>
+<div class="p-5 space-y-4">
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Buscar Aluno</label>
+<input class="w-full px-4 py-2.5 border border-border-subtle rounded-xl text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" id="env-search" placeholder="Digite o nome do aluno..." oninput="filterEnvolvidoSearch()"/>
+</div>
+<div class="max-h-48 overflow-y-auto border border-border-subtle rounded-xl" id="env-list"></div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Papel na Ocorrencia</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="env-papel" value="Vítima" class="w-4 h-4 accent-red-600"><span class="text-body-md">Vítima</span></label>
+<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="env-papel" value="Parte" class="w-4 h-4 accent-amber-600" checked><span class="text-body-md">Parte da ocorrência</span></label>
+</div>
+</div>
+<input type="hidden" id="env-selected-id"/>
+<input type="hidden" id="env-selected-name"/>
+</div>
+<div class="flex justify-end gap-3 p-5 border-t border-border-subtle">
+<button class="px-5 py-2 border border-border-subtle rounded-xl text-body-md font-semibold hover:bg-surface-container transition-colors" onclick="closeEnvolvidoModal()">Cancelar</button>
+<button class="px-5 py-2 bg-primary text-white rounded-xl font-semibold transition-all hover:bg-[#005228] active:scale-95" onclick="addEnvolvido()">Adicionar</button>
+</div>
+</div>
+</div>
+
+<!-- TOAST -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[400] hidden transition-all" id="toast">
+<div class="bg-on-surface text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-body-md font-medium">
+<span class="material-symbols-outlined text-[18px]" id="toast-icon">check_circle</span>
+<span id="toast-msg">Operacao realizada</span>
+</div>
+</div>
+
+<script>
+var ocorrencias = [];
+var envolvidos  = [];
+var editingId   = null;
+var treatId     = null;
+var CURRENT_USER = 'Joao Silva';
+var GRAVES_TIPOS = ['Bullying', 'Agressao Fisica', 'Agressão Física', 'Suspensao', 'Suspensão', 'Evasão', 'Evasao'];
+
+window.initOccurrencesPage = function() {
+    if (typeof getClasses === 'function') getClasses();
+    getAlunos();
+    loadOcorrencias();
+    populateTurmaFilters();
+    renderTable();
+    updateKPIs();
+};
+window.renderOccurrences = function() {};
+window.openNewOccurrenceModal = function() {
+    openNovaOcorrenciaModal();
+};
+
+function loadOcorrencias() {
+    try {
+        var raw = JSON.parse(localStorage.getItem('siga_occurrences') || '[]');
+        var needsPersist = false;
+        ocorrencias = raw.map(function(o) {
+            var id = o.id;
+            if (!id) {
+                id = 'occ_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+                needsPersist = true;
+            }
+            var turma = o.turma || o.class || '';
+            // Resolve turma pelo aluno quando a ocorrência automática veio sem turma
+            if (!turma && (o.student || o.aluno)) {
+                var alunoNome = o.student || o.aluno;
+                var stu = getAlunos().find(function(a) {
+                    return (a.nome || '') === alunoNome || String(a.id) === String(o.alunoId || '');
+                });
+                if (stu && stu.turma) {
+                    turma = stu.turma;
+                    needsPersist = true;
+                }
+            }
+            return {
+                id: id,
+                tipo: o.type || o.tipo || 'Indisciplina',
+                aluno: o.student || o.aluno || 'Aluno Desconhecido',
+                alunoId: o.alunoId || '',
+                turma: turma || '—',
+                data: o.date || o.data || new Date().toISOString().split('T')[0],
+                hora: o.hora || '—',
+                usuario: o.prof || o.usuario || 'Sistema',
+                status: o.status || 'Em Análise',
+                descricao: o.desc || o.descricao || '',
+                dataRetorno: o.dataRetorno || o.data_retorno || '',
+                envolvidos: o.envolvidos || [],
+                tratamento: o.tratamento || null,
+                origem: o.origem || ((o.prof === 'Sistema (Automático)' || o.usuario === 'Sistema (Automático)') ? 'automatica' : 'manual'),
+                origemChamada: o.origemChamada || null
+            };
+        });
+        if (needsPersist) saveOcorrencias();
+    } catch(e) {
+        ocorrencias = [];
+    }
+}
+
+function saveOcorrencias() {
+    var raw = ocorrencias.map(function(o) {
+        return {
+            id: o.id,
+            student: o.aluno,
+            aluno: o.aluno,
+            alunoId: o.alunoId || '',
+            type: o.tipo,
+            tipo: o.tipo,
+            date: o.data,
+            data: o.data,
+            prof: o.usuario,
+            usuario: o.usuario,
+            status: o.status,
+            desc: o.descricao,
+            descricao: o.descricao,
+            turma: o.turma,
+            hora: o.hora,
+            dataRetorno: o.dataRetorno || '',
+            envolvidos: o.envolvidos || [],
+            tratamento: o.tratamento || null,
+            origem: o.origem || 'manual',
+            origemChamada: o.origemChamada || null
+        };
+    });
+    localStorage.setItem('siga_occurrences', JSON.stringify(raw));
+}
+
+function getTurmas() {
+    try {
+        if (typeof getClasses === 'function') return getClasses();
+        return JSON.parse(localStorage.getItem('siga_classes') || '[]');
+    } catch(e) {
+        return [];
+    }
+}
+
+function getAlunos() {
+    try {
+        var students = JSON.parse(localStorage.getItem('siga_students') || '[]');
+        if ((!students || students.length === 0) && typeof getDefaultStudents === 'function') {
+            students = getDefaultStudents();
+            localStorage.setItem('siga_students', JSON.stringify(students));
+        }
+        return students || [];
+    } catch(e) {
+        return [];
+    }
+}
+
+function turmaLabel(t) {
+    var code = t.code || t.codigo || t.id || '';
+    if (!code) return '';
+    var serie = t.serie ? ' - ' + t.serie : '';
+    var turno = t.turno ? ' (' + t.turno + ')' : '';
+    return code + serie + turno;
+}
+
+function resolveTurmaDisplay(code) {
+    if (!code) return '-';
+    var turmas = getTurmas();
+    var found = turmas.find(function(t) {
+        return String(t.code || t.codigo || t.id || '') === String(code);
+    });
+    return found ? (found.code || code) : code;
+}
+
+function genId() {
+    return 'occ_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initOccurrencesPage();
+});
+
+function populateTurmaFilters() {
+    var turmas = getTurmas();
+    var filterSel = document.getElementById('filter-turma');
+    var formSel   = document.getElementById('occ-turma');
+    if (!filterSel || !formSel) return;
+    var filterVal = filterSel.value;
+    var formVal = formSel.value;
+    filterSel.innerHTML = '<option value="">Todas as turmas</option>';
+    formSel.innerHTML   = '<option value="">Selecione a turma...</option>';
+    turmas.forEach(function(t) {
+        var code = t.code || t.codigo || t.id || '';
+        if (!code) return;
+        var label = turmaLabel(t);
+        filterSel.innerHTML += '<option value="' + code + '">' + label + '</option>';
+        formSel.innerHTML   += '<option value="' + code + '">' + label + '</option>';
+    });
+    if (filterVal) filterSel.value = filterVal;
+    if (formVal) formSel.value = formVal;
+}
+
+function renderTable() {
+    loadOcorrencias();
+    var q      = (document.getElementById('global-search').value || '').toLowerCase();
+    var fTipo  = document.getElementById('filter-tipo').value;
+    var fTurma = document.getElementById('filter-turma').value;
+    var fStat  = document.getElementById('filter-status').value;
+    var fData  = document.getElementById('filter-data').value;
+
+    var list = ocorrencias.filter(function(o) {
+        if (fTipo  && o.tipo   !== fTipo)  return false;
+        if (fTurma && o.turma  !== fTurma) return false;
+        if (fStat) {
+            if (fStat === 'Em Análise' || fStat === 'Em Analise') {
+                if (o.status !== 'Em Análise' && o.status !== 'Em Analise') return false;
+            } else if (fStat === 'Tratado' || fStat === 'Resolvida') {
+                if (o.status !== 'Tratado' && o.status !== 'Resolvida') return false;
+            } else if (o.status !== fStat) {
+                return false;
+            }
+        }
+        if (fData  && o.data.indexOf(fData) !== 0) return false;
+        if (q && (o.aluno + o.tipo + o.turma).toLowerCase().indexOf(q) === -1) return false;
+        return true;
+    }).sort(function(a, b) {
+        return b.data.localeCompare(a.data);
+    });
+
+    var tbody = document.getElementById('occurrences-tbody');
+    if (!tbody) return;
+    
+    if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-text-secondary text-body-md"><span class="material-symbols-outlined text-[40px] mb-2 block opacity-30">search_off</span>Nenhuma ocorrência encontrada</td></tr>';
+        document.getElementById('table-count').textContent = '0 ocorrências';
+        updateKPIs();
+        return;
+    }
+
+    tbody.innerHTML = list.map(function(o) {
+        var envLine = (o.envolvidos && o.envolvidos.length) ? '<p class="text-[11px] text-text-secondary">+' + o.envolvidos.length + ' envolvido(s)</p>' : '';
+        var isTratado = (o.status === 'Tratado' || o.status === 'Resolvida');
+        var pillCls = isTratado ? 'pill-tratado' : 'pill-analise';
+        var displayStatus = isTratado ? 'Tratado' : 'Em Análise';
+        var iconCol = (GRAVES_TIPOS.indexOf(o.tipo) >= 0) ? 'text-red-600' : 'text-text-secondary';
+        var origemBadge = (o.origem === 'automatica')
+            ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200">Auto</span>'
+            : '';
+        
+        return `
+            <tr>
+                <td class="px-6 py-4">
+                    <span class="flex items-center gap-2 flex-wrap">
+                        <span class="material-symbols-outlined text-[18px] ${iconCol}">${tipoIcon(o.tipo)}</span>
+                        <span class="text-body-md font-medium">${o.tipo}</span>
+                        ${origemBadge}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <p class="text-body-md font-semibold">${o.aluno}</p>
+                    ${envLine}
+                </td>
+                <td class="px-6 py-4">
+                    <span class="bg-surface-container-low px-2.5 py-1 rounded-lg text-xs font-semibold">${resolveTurmaDisplay(o.turma)}</span>
+                </td>
+                <td class="px-6 py-4">
+                    <p class="text-body-md">${formatDate(o.data)}</p>
+                    <p class="text-[11px] text-text-secondary">${o.hora || '—'}</p>
+                </td>
+                <td class="px-6 py-4 text-body-md text-text-secondary">
+                    ${o.usuario}
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold ${pillCls}">${displayStatus}</span>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        <button class="px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-[#005228] transition-colors flex items-center gap-1" data-action="visualizar" data-id="${o.id}">
+                            <span class="material-symbols-outlined text-[14px]">visibility</span>Visualizar
+                        </button>
+                        <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-border-subtle hover:bg-surface-container transition-colors" data-action="imprimir" data-id="${o.id}" title="Imprimir ocorrência">
+                            <span class="material-symbols-outlined text-[18px]">print</span>
+                        </button>
+                        <div class="relative">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-border-subtle hover:bg-surface-container transition-colors btn-menu-toggle" data-id="${o.id}">
+                                <span class="material-symbols-outlined text-[18px]">more_vert</span>
+                            </button>
+                            <div class="action-menu" id="action-menu-${o.id}">
+                                <button class="w-full text-left px-4 py-2.5 text-body-md hover:bg-surface-container-low flex items-center gap-2" data-action="visualizar" data-id="${o.id}">
+                                    <span class="material-symbols-outlined text-[16px]">visibility</span>Visualizar
+                                </button>
+                                <button class="w-full text-left px-4 py-2.5 text-body-md hover:bg-surface-container-low flex items-center gap-2" data-action="editar" data-id="${o.id}">
+                                    <span class="material-symbols-outlined text-[16px]">edit</span>Editar
+                                </button>
+                                <button class="w-full text-left px-4 py-2.5 text-body-md hover:bg-surface-container-low flex items-center gap-2" data-action="imprimir" data-id="${o.id}">
+                                    <span class="material-symbols-outlined text-[16px]">print</span>Imprimir
+                                </button>
+                                <button class="w-full text-left px-4 py-2.5 text-body-md hover:bg-red-50 flex items-center gap-2 text-error" data-action="excluir" data-id="${o.id}">
+                                    <span class="material-symbols-outlined text-[16px]">delete</span>Excluir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    var textCount = list.length + (list.length !== 1 ? ' ocorrências' : ' ocorrência') + ' encontrada(s)';
+    document.getElementById('table-count').textContent = textCount;
+    updateKPIs();
+}
+
+// Table click delegation
+document.getElementById('occurrences-tbody').addEventListener('click', function(e) {
+    var toggleBtn = e.target.closest('.btn-menu-toggle');
+    if (toggleBtn) {
+        e.stopPropagation();
+        var id = toggleBtn.getAttribute('data-id');
+        var menu = document.getElementById('action-menu-' + id);
+        var isOpen = menu.classList.contains('open');
+        document.querySelectorAll('.action-menu.open').forEach(function(m) {
+            m.classList.remove('open');
+        });
+        if (!isOpen) menu.classList.add('open');
+        return;
+    }
+
+    var actionBtn = e.target.closest('[data-action]');
+    if (actionBtn) {
+        var action = actionBtn.getAttribute('data-action');
+        var id = actionBtn.getAttribute('data-id');
+        if (action === 'visualizar') openTreatmentView(id);
+        else if (action === 'editar') editOcorrencia(id);
+        else if (action === 'excluir') deleteOcorrencia(id);
+        else if (action === 'imprimir') imprimirOcorrencia(id);
+        return;
+    }
+});
+
+// Close all menus when clicking outside
+document.addEventListener('click', function() {
+    document.querySelectorAll('.action-menu.open').forEach(function(m) {
+        m.classList.remove('open');
+    });
+});
+
+function tipoIcon(tipo) {
+    var map = {
+        'Atraso': 'schedule',
+        'Evasao': 'directions_run',
+        'Evasão': 'directions_run',
+        'Indisciplina': 'mood_bad',
+        'Bullying': 'person_alert',
+        'Agressao Fisica': 'back_hand',
+        'Agressão Física': 'back_hand',
+        'Liberado pela Coordenacao': 'exit_to_app',
+        'Liberado pela Coordenação': 'exit_to_app',
+        'Suspensao por uso de celular': 'smartphone_camera',
+        'Suspensão por uso de celular': 'smartphone_camera',
+        'Suspensao': 'block',
+        'Suspensão': 'block'
+    };
+    return map[tipo] || 'warning';
+}
+
+function formatDate(iso) {
+    if (!iso) return '-';
+    var d = iso.split('T')[0].split('-');
+    return d[2] + '/' + d[1] + '/' + d[0];
+}
+
+function updateKPIs() {
+    var kTotal = document.getElementById('kpi-total');
+    var kAnalise = document.getElementById('kpi-analise');
+    var kTratado = document.getElementById('kpi-tratado');
+    var kGraves = document.getElementById('kpi-graves');
+    if (!kTotal || !kAnalise || !kTratado || !kGraves) return;
+    
+    kTotal.textContent = ocorrencias.length;
+    kAnalise.textContent = ocorrencias.filter(function(o) {
+        return o.status === 'Em Análise' || o.status === 'Em Analise';
+    }).length;
+    kTratado.textContent = ocorrencias.filter(function(o) {
+        return o.status === 'Tratado' || o.status === 'Resolvida';
+    }).length;
+    kGraves.textContent = ocorrencias.filter(function(o) {
+        return GRAVES_TIPOS.indexOf(o.tipo) >= 0;
+    }).length;
+}
+
+function isTipoSuspensao(tipo) {
+    if (!tipo) return false;
+    var normalized = String(tipo).toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    return normalized.indexOf('suspens') >= 0;
+}
+
+function toggleDataRetornoField() {
+    var wrap = document.getElementById('occ-retorno-wrap');
+    var input = document.getElementById('occ-data-retorno');
+    if (!wrap || !input) return;
+    var show = isTipoSuspensao(document.getElementById('occ-tipo').value);
+    if (show) {
+        wrap.classList.remove('hidden');
+        input.required = true;
+    } else {
+        wrap.classList.add('hidden');
+        input.required = false;
+        input.value = '';
+    }
+}
+
+function openNovaOcorrenciaModal() {
+    editingId = null;
+    envolvidos = [];
+    populateTurmaFilters();
+    document.getElementById('form-ocorrencia').reset();
+    document.getElementById('occ-edit-id').value = '';
+    var alunoSel = document.getElementById('occ-aluno');
+    alunoSel.innerHTML = '<option value="">Selecione a turma primeiro...</option>';
+    alunoSel.disabled = true;
+    toggleDataRetornoField();
+    document.getElementById('modal-occ-title').textContent = 'Nova Ocorrência';
+    document.getElementById('modal-occ-btn-text').textContent = 'Registrar Ocorrência';
+    renderEnvolvidosChips();
+    document.getElementById('modal-ocorrencia').classList.remove('hidden');
+}
+
+function closeNovaOcorrenciaModal() {
+    document.getElementById('modal-ocorrencia').classList.add('hidden');
+}
+
+function editOcorrencia(id) {
+    loadOcorrencias();
+    var o = ocorrencias.find(function(x) { return x.id === id; });
+    if (!o) return;
+    editingId = id;
+    envolvidos = o.envolvidos ? o.envolvidos.slice() : [];
+    populateTurmaFilters();
+    document.getElementById('modal-occ-title').textContent = 'Editar Ocorrência';
+    document.getElementById('modal-occ-btn-text').textContent = 'Salvar Alterações';
+    document.getElementById('occ-edit-id').value = id;
+    document.getElementById('occ-tipo').value = o.tipo;
+    document.getElementById('occ-turma').value = o.turma;
+    loadAlunosByTurma(o.aluno);
+    toggleDataRetornoField();
+    document.getElementById('occ-data-retorno').value = o.dataRetorno || '';
+    document.getElementById('occ-descricao').value = o.descricao;
+    renderEnvolvidosChips();
+    document.getElementById('modal-ocorrencia').classList.remove('hidden');
+}
+
+function loadAlunosByTurma(selectedAluno) {
+    var turma = document.getElementById('occ-turma').value;
+    var sel   = document.getElementById('occ-aluno');
+    if (!sel) return;
+    if (!turma) {
+        sel.innerHTML = '<option value="">Selecione a turma primeiro...</option>';
+        sel.disabled = true;
+        return;
+    }
+    var alunos = getAlunos().filter(function(a) {
+        return String(a.turma || a.class || '') === String(turma);
+    }).sort(function(a, b) {
+        return (a.nome || a.name || '').localeCompare(b.nome || b.name || '', 'pt-BR');
+    });
+    sel.disabled = false;
+    if (alunos.length === 0) {
+        sel.innerHTML = '<option value="">Nenhum aluno matriculado nesta turma</option>';
+        return;
+    }
+    sel.innerHTML = '<option value="">Selecione o aluno...</option>';
+    alunos.forEach(function(a) {
+        var name = a.nome || a.name || 'Aluno';
+        sel.innerHTML += '<option value="' + name + '"' + (selectedAluno === name ? ' selected' : '') + '>' + name + '</option>';
+    });
+}
+
+function submitOcorrencia(e) {
+    e.preventDefault();
+    var tipo = document.getElementById('occ-tipo').value;
+    var turma = document.getElementById('occ-turma').value;
+    var aluno = document.getElementById('occ-aluno').value;
+    var descricao = document.getElementById('occ-descricao').value.trim();
+    var dataRetorno = document.getElementById('occ-data-retorno').value;
+    var isSuspensao = isTipoSuspensao(tipo);
+    if (!tipo || !turma || !aluno || !descricao) {
+        showLocalToast('Preencha todos os campos obrigatórios.', 'error');
+        return;
+    }
+    if (isSuspensao && !dataRetorno) {
+        showLocalToast('Informe a data do retorno para ocorrências de suspensão.', 'error');
+        return;
+    }
+    if (!isSuspensao) dataRetorno = '';
+    var now  = new Date();
+    var data = now.toISOString().split('T')[0];
+    var hora = now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+    
+    if (editingId) {
+        var idx = ocorrencias.findIndex(function(x) { return x.id === editingId; });
+        if (idx > -1) {
+            ocorrencias[idx] = Object.assign({}, ocorrencias[idx], {
+                tipo: tipo,
+                turma: turma,
+                aluno: aluno,
+                descricao: descricao,
+                dataRetorno: dataRetorno,
+                envolvidos: envolvidos.slice()
+            });
+        }
+        showLocalToast('Ocorrência atualizada com sucesso!');
+    } else {
+        var occ = {
+            id: genId(),
+            tipo: tipo,
+            turma: turma,
+            aluno: aluno,
+            descricao: descricao,
+            dataRetorno: dataRetorno,
+            envolvidos: envolvidos.slice(),
+            data: data,
+            hora: hora,
+            usuario: CURRENT_USER,
+            status: 'Em Análise',
+            tratamento: null,
+            origem: 'manual',
+            origemChamada: null
+        };
+        ocorrencias.unshift(occ);
+        linkToFicha(occ);
+        showLocalToast('Ocorrência registrada com sucesso!');
+    }
+    saveOcorrencias();
+    renderTable();
+    closeNovaOcorrenciaModal();
+}
+
+function deleteOcorrencia(id) {
+    if (!confirm('Tem certeza que deseja excluir esta ocorrência?')) return;
+    ocorrencias = ocorrencias.filter(function(o) { return o.id !== id; });
+    saveOcorrencias();
+    renderTable();
+    showLocalToast('Ocorrência excluída com sucesso.', 'info');
+}
+
+function openEnvolvidoModal() {
+    document.getElementById('env-search').value = '';
+    document.getElementById('env-selected-id').value = '';
+    document.getElementById('env-selected-name').value = '';
+    document.querySelectorAll('input[name="env-papel"]')[1].checked = true;
+    renderEnvolvidoList('');
+    document.getElementById('modal-envolvido').classList.remove('hidden');
+}
+
+function closeEnvolvidoModal() {
+    document.getElementById('modal-envolvido').classList.add('hidden');
+}
+
+function filterEnvolvidoSearch() {
+    renderEnvolvidoList(document.getElementById('env-search').value.toLowerCase());
+}
+
+function renderEnvolvidoList(q) {
+    var turmasMap = {};
+    getTurmas().forEach(function(t) {
+        var code = t.code || t.codigo || t.id;
+        if (code) turmasMap[code] = turmaLabel(t);
+    });
+    var alunos = getAlunos().filter(function(a) {
+        return (a.nome || a.name || '').toLowerCase().indexOf(q) >= 0;
+    });
+    var list = document.getElementById('env-list');
+    if (!list) return;
+    if (alunos.length === 0) {
+        list.innerHTML = '<p class="px-4 py-3 text-text-secondary text-xs text-center">Nenhum aluno encontrado</p>';
+        return;
+    }
+    list.innerHTML = alunos.slice(0, 20).map(function(a) {
+        var name = a.nome || a.name || 'Aluno';
+        var id   = a.id   || name;
+        var turmaCode = a.turma || a.class || '';
+        var turma = turmasMap[turmaCode] || turmaCode || 'Sem turma';
+        return `
+            <button type="button" class="w-full text-left px-4 py-2.5 hover:bg-surface-container-low flex items-center gap-3 transition-colors env-list-item" data-action="select-envolvido" data-id="${id}" data-name="${name}">
+                <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">${name[0] || '?'}</div>
+                <div>
+                    <p class="text-body-md font-medium">${name}</p>
+                    <p class="text-[11px] text-text-secondary">${turma}</p>
+                </div>
+            </button>
+        `;
+    }).join('');
+}
+
+// Delegate selection in list
+document.getElementById('env-list').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action="select-envolvido"]');
+    if (btn) {
+        var id = btn.getAttribute('data-id');
+        var name = btn.getAttribute('data-name');
+        selectEnvolvido(id, name);
+    }
+});
+
+function selectEnvolvido(id, name) {
+    document.getElementById('env-selected-id').value   = id;
+    document.getElementById('env-selected-name').value = name;
+    document.querySelectorAll('.env-list-item').forEach(function(b) {
+        b.classList.remove('bg-primary/10');
+    });
+    var activeItem = Array.from(document.querySelectorAll('.env-list-item')).find(function(item) {
+        return item.getAttribute('data-id') === id;
+    });
+    if (activeItem) activeItem.classList.add('bg-primary/10');
+}
+
+function addEnvolvido() {
+    var id   = document.getElementById('env-selected-id').value;
+    var name = document.getElementById('env-selected-name').value;
+    var papel= document.querySelector('input[name="env-papel"]:checked') ? document.querySelector('input[name="env-papel"]:checked').value : 'Parte';
+    if (!name) {
+        showLocalToast('Selecione um aluno primeiro.', 'error');
+        return;
+    }
+    if (envolvidos.find(function(e) { return e.id === id; })) {
+        showLocalToast('Aluno já adicionado.', 'info');
+        return;
+    }
+    envolvidos.push({id: id, name: name, papel: papel});
+    renderEnvolvidosChips();
+    closeEnvolvidoModal();
+}
+
+function removeEnvolvido(id) {
+    envolvidos = envolvidos.filter(function(e) { return e.id !== id; });
+    renderEnvolvidosChips();
+}
+
+// Delegate remove involved
+document.getElementById('envolvidos-chips').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action="remove-envolvido"]');
+    if (btn) {
+        var id = btn.getAttribute('data-id');
+        removeEnvolvido(id);
+    }
+});
+
+function renderEnvolvidosChips() {
+    var container = document.getElementById('envolvidos-chips');
+    if (!container) return;
+    if (envolvidos.length === 0) {
+        container.innerHTML = '<span class="text-text-secondary text-xs italic self-center">Nenhum envolvido adicionado</span>';
+        return;
+    }
+    container.innerHTML = envolvidos.map(function(e) {
+        var cls = e.papel === 'Vitima' || e.papel === 'Vítima' ? 'chip-vitima' : 'chip-parte';
+        return `
+            <span class="chip-envolvido ${cls}">
+                ${e.name} <em class="not-italic opacity-70">(${e.papel})</em>
+                <button type="button" class="ml-1 hover:opacity-60" data-action="remove-envolvido" data-id="${e.id}">
+                    <span class="material-symbols-outlined text-[14px]">close</span>
+                </button>
+            </span>
+        `;
+    }).join('');
+}
+
+function openTreatmentView(id) {
+    loadOcorrencias();
+    var o = ocorrencias.find(function(x) { return x.id === id; });
+    if (!o) return;
+    treatId = id;
+    
+    var envHtml = (o.envolvidos && o.envolvidos.length)
+        ? o.envolvidos.map(function(e) {
+            var cls = e.papel === 'Vitima' || e.papel === 'Vítima' ? 'chip-vitima' : 'chip-parte';
+            return '<span class="chip-envolvido ' + cls + '">' + e.name + ' (' + e.papel + ')</span>';
+        }).join('')
+        : '<span class="text-text-secondary text-xs italic">Nenhum</span>';
+        
+    var tratHtml = '';
+    if (o.tratamento) {
+        tratHtml = `
+            <div class="mt-4 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                <p class="text-[10px] font-bold text-emerald-700 uppercase mb-2">Tratamento Registrado</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs mb-2">
+                    <span><strong>Advertido:</strong> ${o.tratamento.advertido}</span>
+                    <span><strong>Suspenso:</strong> ${o.tratamento.suspenso}</span>
+                    <span><strong>Resp. comunicado:</strong> ${o.tratamento.responsavel}</span>
+                </div>
+                <p class="text-xs text-emerald-800">${o.tratamento.descricao}</p>
+            </div>
+        `;
+    }
+    
+    var isTratado = (o.status === 'Tratado' || o.status === 'Resolvida');
+    var pillCls = isTratado ? 'pill-tratado' : 'pill-analise';
+    var displayStatus = isTratado ? 'Tratado' : 'Em Análise';
+    var turmaTxt = resolveTurmaDisplay(o.turma);
+    var origemHtml = (o.origem === 'automatica')
+        ? '<div class="mt-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">' +
+          '<strong>Origem:</strong> Gerada automaticamente pela chamada' +
+          (o.origemChamada && o.origemChamada.data
+            ? ' de ' + formatDate(o.origemChamada.data) + ' · Turma ' + (o.origemChamada.turma || o.turma) +
+              ' (Entrada: ' + (o.origemChamada.entrada || 'P') + ' · Saída: ' + (o.origemChamada.saida || 'F') + ')'
+            : '') +
+          '. Pode ser visualizada, tratada, editada e impressa como as demais ocorrências.' +
+          '</div>'
+        : '';
+    
+    document.getElementById('treatment-summary').innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+                <div><p class="text-[10px] font-bold text-text-secondary uppercase">Tipo</p><p class="text-body-md font-semibold mt-0.5">${o.tipo}</p></div>
+                <div><p class="text-[10px] font-bold text-text-secondary uppercase">Aluno Principal</p><p class="text-body-md font-semibold mt-0.5">${o.aluno}</p></div>
+                <div><p class="text-[10px] font-bold text-text-secondary uppercase">Turma</p><p class="text-body-md font-semibold mt-0.5">${turmaTxt}</p></div>
+            </div>
+            <div class="space-y-3">
+                <div><p class="text-[10px] font-bold text-text-secondary uppercase">Data / Hora</p><p class="text-body-md font-semibold mt-0.5">${formatDate(o.data)} às ${o.hora || '—'}</p></div>
+                <div><p class="text-[10px] font-bold text-text-secondary uppercase">Registrado por</p><p class="text-body-md font-semibold mt-0.5">${o.usuario}</p></div>
+                <div><p class="text-[10px] font-bold text-text-secondary uppercase">Status</p><span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-bold ${pillCls}">${displayStatus}</span></div>
+                ${o.dataRetorno ? `<div><p class="text-[10px] font-bold text-text-secondary uppercase">Data do Retorno</p><p class="text-body-md font-semibold mt-0.5">${formatDate(o.dataRetorno)}</p></div>` : ''}
+            </div>
+        </div>
+        ${origemHtml}
+        <div class="mt-4">
+            <p class="text-[10px] font-bold text-text-secondary uppercase">Descrição</p>
+            <p class="text-body-md mt-1 bg-surface-container-low p-3 rounded-xl">${o.descricao || '—'}</p>
+        </div>
+        <div class="mt-4">
+            <p class="text-[10px] font-bold text-text-secondary uppercase mb-2">Envolvidos</p>
+            <div class="flex flex-wrap gap-2">${envHtml}</div>
+        </div>
+        ${tratHtml}
+    `;
+
+    if (o.tratamento) {
+        var radA = document.querySelector('input[name="t-advertido"][value="' + o.tratamento.advertido + '"]');
+        var radS = document.querySelector('input[name="t-suspenso"][value="' + o.tratamento.suspenso + '"]');
+        var radR = document.querySelector('input[name="t-responsavel"][value="' + o.tratamento.responsavel + '"]');
+        if (radA) radA.checked = true;
+        if (radS) radS.checked = true;
+        if (radR) radR.checked = true;
+        document.getElementById('t-descricao').value = o.tratamento.descricao;
+    } else {
+        document.querySelectorAll('input[name="t-advertido"]')[1].checked  = true;
+        document.querySelectorAll('input[name="t-suspenso"]')[1].checked   = true;
+        document.querySelectorAll('input[name="t-responsavel"]')[1].checked = true;
+        document.getElementById('t-descricao').value = '';
+    }
+    
+    document.getElementById('list-view').classList.add('hidden');
+    document.getElementById('treatment-view').classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function closeTreatmentView() {
+    treatId = null;
+    document.getElementById('treatment-view').classList.remove('active');
+    document.getElementById('list-view').classList.remove('hidden');
+}
+
+function saveTreatment() {
+    var idx = ocorrencias.findIndex(function(x) { return x.id === treatId; });
+    if (idx < 0) return;
+    
+    var advertido  = document.querySelector('input[name="t-advertido"]:checked') ? document.querySelector('input[name="t-advertido"]:checked').value : 'Não';
+    var suspenso   = document.querySelector('input[name="t-suspenso"]:checked')  ? document.querySelector('input[name="t-suspenso"]:checked').value  : 'Não';
+    var responsavel= document.querySelector('input[name="t-responsavel"]:checked') ? document.querySelector('input[name="t-responsavel"]:checked').value : 'Não';
+    var descricao  = document.getElementById('t-descricao').value.trim();
+    
+    if (!descricao) {
+        showLocalToast('Informe a descrição do tratamento.', 'error');
+        return;
+    }
+    
+    ocorrencias[idx].status = 'Tratado';
+    ocorrencias[idx].tratamento = {
+        advertido: advertido,
+        suspenso: suspenso,
+        responsavel: responsavel,
+        descricao: descricao
+    };
+    saveOcorrencias();
+    showLocalToast('Tratamento salvo! Status alterado para Tratado.', 'success');
+    closeTreatmentView();
+    renderTable();
+}
+
+function linkToFicha(occ) {
+    try {
+        var fichas = JSON.parse(localStorage.getItem('siga_student_occurrences') || '{}');
+        var key = occ.aluno;
+        if (!fichas[key]) fichas[key] = [];
+        fichas[key].push({id: occ.id, tipo: occ.tipo, data: occ.data, hora: occ.hora});
+        localStorage.setItem('siga_student_occurrences', JSON.stringify(fichas));
+    } catch(e) {}
+}
+
+function escapeHtmlOcc(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function getOccSchoolInfo() {
+    if (typeof getSecSchoolInfo === 'function') return getSecSchoolInfo();
+    return {
+        nome: localStorage.getItem('siga_school_name') || 'Escola Estadual Dr. Romildo Veloso e Silva',
+        localEmissao: localStorage.getItem('siga_school_city_state') || 'Ourilândia do Norte - PA'
+    };
+}
+
+function getOccPrintStyles() {
+    if (typeof getPrintDocumentStyles === 'function') {
+        return getPrintDocumentStyles() +
+            '.occ-print .print-content{display:block;height:100%;min-height:100%;padding:41mm 18mm 34mm 18mm;position:relative;box-sizing:border-box}' +
+            '.occ-print .protocol-tag{margin:0 0 6px}' +
+            '.occ-print .doc-title{margin:2px 0 12px}' +
+            '.occ-print .doc-date{margin:22px 0 8px;font-size:12pt}' +
+            '.occ-print .signature-area{margin-top:28px;margin-bottom:6px}' +
+            '.occ-print .signature-line{margin:36px 0 5px}' +
+            '.occ-print .signature-area.occ-sig-escola{margin-top:22px}' +
+            '.occ-print .meta-footer{position:absolute;left:18mm;right:18mm;bottom:20mm;margin-top:0;border-top:none;padding-top:0}' +
+            '.occ-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin:0 0 12px;font-size:12pt}' +
+            '.occ-item label{display:block;font-size:8pt;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:1px}' +
+            '.occ-item span{font-size:12pt}' +
+            '.occ-box{border:1px solid #222;padding:12px 14px;margin:0 0 10px;background:rgba(255,255,255,.82);font-size:12pt;text-align:justify;line-height:1.45;overflow:hidden;box-sizing:border-box;width:100%;max-width:100%}' +
+            '.occ-box p,.occ-box ul,.occ-box li{margin:0;max-width:100%;overflow-wrap:anywhere;word-wrap:break-word;word-break:break-word;white-space:normal}' +
+            '.occ-box-title{font-size:9pt;font-weight:700;text-transform:uppercase;margin:0 0 8px;color:#222}' +
+            '.occ-box-desc{min-height:72px}' +
+            '.occ-list{margin:0;padding-left:18px;font-size:12pt}' +
+            '.occ-list li{margin-bottom:3px}';
+    }
+    var bg = 'assets/timbrado-a4.jpg';
+    try { bg = new URL('assets/timbrado-a4.jpg', window.location.href).href; } catch (e) {}
+    return '@page{size:A4;margin:0}body{font-family:Arial,sans-serif}.print-page{width:210mm;height:297mm;background:url(\'' + bg + '\') no-repeat center top/210mm 297mm}';
+}
+
+function formatOccDataExtenso(iso) {
+    if (typeof formatarDataPorExtenso === 'function') return formatarDataPorExtenso(iso);
+    if (!iso) return '—';
+    var d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+    if (isNaN(d.getTime())) return formatDate(iso);
+    var meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    return d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+}
+
+function imprimirOcorrencia(id) {
+    loadOcorrencias();
+    var o = ocorrencias.find(function(x) { return x.id === id; });
+    if (!o) {
+        showLocalToast('Ocorrência não encontrada.', 'error');
+        return;
+    }
+
+    var school = getOccSchoolInfo();
+    var escolaEsc = escapeHtmlOcc(school.nome);
+    var localEsc = escapeHtmlOcc(school.localEmissao || 'Ourilândia do Norte - PA');
+    var isTratado = (o.status === 'Tratado' || o.status === 'Resolvida');
+    var displayStatus = isTratado ? 'Tratado' : 'Em Análise';
+    var turmaLabel = (typeof resolveTurmaDisplay === 'function') ? resolveTurmaDisplay(o.turma) : (o.turma || '—');
+    var protocolo = o.id || ('OCC-' + Date.now());
+    var dataExtenso = formatOccDataExtenso(o.data);
+    var now = new Date();
+
+    var envHtml = '';
+    if (o.envolvidos && o.envolvidos.length) {
+        envHtml = '<ul class="occ-list">' + o.envolvidos.map(function(e) {
+            return '<li><b>' + escapeHtmlOcc(e.name) + '</b> — ' + escapeHtmlOcc(e.papel || 'Parte') + '</li>';
+        }).join('') + '</ul>';
+    } else {
+        envHtml = '<p style="margin:0;font-size:12pt;color:#444">Nenhum outro envolvido registrado.</p>';
+    }
+
+    var tratHtml = '';
+    if (o.tratamento) {
+        tratHtml =
+            '<div class="occ-box">' +
+            '<div class="occ-box-title">Tratamento / Providências</div>' +
+            '<div class="occ-grid" style="margin-bottom:8px">' +
+            '<div class="occ-item"><label>Aluno advertido</label><span>' + escapeHtmlOcc(o.tratamento.advertido || '—') + '</span></div>' +
+            '<div class="occ-item"><label>Aluno suspenso</label><span>' + escapeHtmlOcc(o.tratamento.suspenso || '—') + '</span></div>' +
+            '<div class="occ-item"><label>Responsável comunicado</label><span>' + escapeHtmlOcc(o.tratamento.responsavel || '—') + '</span></div>' +
+            '</div>' +
+            '<p style="margin:0">' + escapeHtmlOcc(o.tratamento.descricao || '') + '</p>' +
+            '</div>';
+    }
+
+    var retornoHtml = o.dataRetorno
+        ? '<div class="occ-item"><label>Data do retorno</label><span>' + escapeHtmlOcc(formatDate(o.dataRetorno)) + '</span></div>'
+        : '';
+
+    var origemPrint = (o.origem === 'automatica')
+        ? '<div class="occ-box" style="border-color:#f59e0b;background:#fffbeb">' +
+          '<div class="occ-box-title">Origem do registro</div>' +
+          '<p style="margin:0">Ocorrência gerada automaticamente pelo sistema de frequência' +
+          (o.origemChamada && o.origemChamada.data
+            ? ' em ' + escapeHtmlOcc(formatDate(o.origemChamada.data)) +
+              ' · Turma ' + escapeHtmlOcc(o.origemChamada.turma || o.turma) +
+              ' (Entrada: ' + escapeHtmlOcc(o.origemChamada.entrada || 'P') +
+              ' · Saída: ' + escapeHtmlOcc(o.origemChamada.saida || 'F') + ')'
+            : '') +
+          '.</p></div>'
+        : '';
+
+    var body =
+        '<div class="print-page occ-print"><div class="print-content">' +
+        '<div class="protocol-tag">Registro: <b>' + escapeHtmlOcc(protocolo) + '</b></div>' +
+        '<div class="doc-title">Registro de Ocorrência</div>' +
+        '<p class="doc-text" style="text-indent:0;margin-bottom:12px">' +
+        'A secretaria escolar da <b>' + escolaEsc + '</b> registra a presente ocorrência disciplinar/pedagógica ' +
+        'para fins de documentação oficial e acompanhamento institucional.' +
+        '</p>' +
+        origemPrint +
+        '<div class="occ-grid">' +
+        '<div class="occ-item"><label>Tipo de ocorrência</label><span><b>' + escapeHtmlOcc(o.tipo) + '</b></span></div>' +
+        '<div class="occ-item"><label>Status</label><span>' + escapeHtmlOcc(displayStatus) + '</span></div>' +
+        '<div class="occ-item"><label>Aluno principal</label><span><b>' + escapeHtmlOcc(o.aluno) + '</b></span></div>' +
+        '<div class="occ-item"><label>Turma</label><span>' + escapeHtmlOcc(turmaLabel) + '</span></div>' +
+        '<div class="occ-item"><label>Data / hora</label><span>' + escapeHtmlOcc(formatDate(o.data)) + ' às ' + escapeHtmlOcc(o.hora || '—') + '</span></div>' +
+        '<div class="occ-item"><label>Registrado por</label><span>' + escapeHtmlOcc(o.usuario || 'Secretaria') + '</span></div>' +
+        retornoHtml +
+        '</div>' +
+        '<div class="occ-box occ-box-desc">' +
+        '<div class="occ-box-title">Descrição da ocorrência</div>' +
+        '<p style="margin:0">' + escapeHtmlOcc(o.descricao || 'Sem descrição informada.') + '</p>' +
+        '</div>' +
+        '<div class="occ-box">' +
+        '<div class="occ-box-title">Outros envolvidos</div>' +
+        envHtml +
+        '</div>' +
+        tratHtml +
+        '<div class="doc-date"><b>' + localEsc + ', ' + escapeHtmlOcc(dataExtenso) + '.</b></div>' +
+        '<div class="signature-area">' +
+        '<div class="signature-box">' +
+        '<div class="signature-line"></div>' +
+        '<span class="signature-desc"><b>Assinatura do Aluno</b><br>' +
+        escapeHtmlOcc(o.aluno || 'Aluno') + '</span></div>' +
+        '<div class="signature-box">' +
+        '<div class="signature-line"></div>' +
+        '<span class="signature-desc"><b>Assinatura do Responsável</b><br>' +
+        'Pai / Mãe / Responsável Legal</span></div>' +
+        '</div>' +
+        '<div class="signature-area occ-sig-escola">' +
+        '<div class="signature-box" style="width:52%">' +
+        '<div class="signature-line"></div>' +
+        '<span class="signature-desc"><b>Assinatura Autorizada</b></span></div></div>' +
+        '<div class="meta-footer"><div class="meta-footer-main">' +
+        escolaEsc + ' — Documento de ocorrência escolar<br>' +
+        'Emitido em ' + now.toLocaleDateString('pt-BR') + ' às ' +
+        now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) +
+        ' | Registro: ' + escapeHtmlOcc(protocolo) +
+        ((o.origem === 'automatica') ? ' | Origem: Automática (Frequência)' : '') +
+        '</div></div>' +
+        '</div></div>';
+
+    var htmlPrint =
+        '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+        '<title>Registro de Ocorrência - ' + escapeHtmlOcc(o.aluno) + '</title>' +
+        '<style>' + getOccPrintStyles() + '</style></head><body>' + body + '</body></html>';
+
+    var printed = false;
+    function openFrame() {
+        if (printed) return;
+        printed = true;
+        var iframe = document.createElement('iframe');
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none';
+        document.body.appendChild(iframe);
+        var doc = iframe.contentWindow.document || iframe.contentDocument;
+        doc.open();
+        doc.write(htmlPrint);
+        doc.close();
+        setTimeout(function() {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(function() { iframe.remove(); }, 2500);
+        }, 400);
+    }
+
+    if (typeof getTimbradoBackgroundUrl === 'function') {
+        var img = new Image();
+        img.onload = openFrame;
+        img.onerror = openFrame;
+        img.src = getTimbradoBackgroundUrl();
+        setTimeout(openFrame, 2200);
+    } else {
+        openFrame();
+    }
+}
+
+function clearFilters() {
+    document.getElementById('filter-tipo').value = '';
+    document.getElementById('filter-turma').value = '';
+    document.getElementById('filter-status').value = '';
+    document.getElementById('filter-data').value = '';
+    document.getElementById('global-search').value = '';
+    renderTable();
+}
+
+function showLocalToast(msg, type) {
+    type = type || 'success';
+    var icons = {success: 'check_circle', error: 'error', info: 'info'};
+    var toast = document.getElementById('toast');
+    if (!toast) return;
+    document.getElementById('toast-msg').textContent  = msg;
+    document.getElementById('toast-icon').textContent = icons[type] || 'check_circle';
+    toast.classList.remove('hidden');
+    setTimeout(function() {
+        toast.classList.add('hidden');
+    }, 3000);
+}
+
+function toggleSidebarCollapse() {
+    document.body.classList.toggle('sidebar-collapsed');
+    var collapsed = document.body.classList.contains('sidebar-collapsed');
+    localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
+    var icon = document.getElementById('sidebar-collapse-icon');
+    if (icon) icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+}
+
+function toggleNavGroup(button) {
+    var group = button.closest('.nav-dropdown');
+    if (!group) return;
+    var shouldOpen = !group.classList.contains('open');
+    document.querySelectorAll('.nav-dropdown').forEach(function(g) {
+        if (g !== group) {
+            g.classList.remove('open');
+            var btn = g.querySelector('.nav-dropdown-toggle');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+    });
+    group.classList.toggle('open', shouldOpen);
+    button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+}
+</script>
+</body></html>

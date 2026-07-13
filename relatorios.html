@@ -1,0 +1,786 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#64de8b",
+                        "on-surface": "#121c2a",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#d9e3f6",
+                        "surface-container-high": "#dee9fc",
+                        "on-primary-container": "#003a1a",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container": "#e6eeff",
+                        "background": "#f8f9ff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#006d37",
+                        "on-error": "#ffffff",
+                        "tertiary": "#795900",
+                        "tertiary-fixed": "#ffdf9f",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-tertiary-fixed": "#261a00",
+                        "secondary-container": "#2170e4",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "outline": "#6e7a6e",
+                        "tertiary-container": "#c39200",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "secondary-fixed": "#d8e2ff",
+                        "text-secondary": "#6B7280",
+                        "on-surface-variant": "#3e4a3f",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-background": "#121c2a",
+                        "on-tertiary-container": "#412f00",
+                        "secondary": "#0058be",
+                        "on-primary-fixed-variant": "#005228",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#81fba5",
+                        "primary-container": "#2eaf62",
+                        "surface-container-highest": "#d9e3f6",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006d37",
+                        "outline-variant": "#bdcabc",
+                        "inverse-surface": "#27313f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-light": "#7EDC8A",
+                        "border-subtle": "#E5E7EB",
+                        "background-surface": "#FFFFFF",
+                        "on-secondary-container": "#fefcff",
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#64de8b",
+                        "on-primary-fixed": "#00210c",
+                        "surface-dim": "#d0dbed",
+                        "background-page": "#F7FAF8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-padding": "24px",
+                        "gutter": "16px",
+                        "section-gap": "32px",
+                        "container-margin": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["11px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }</script>
+<style>
+        html, html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        .sidebar-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+<style id="sidebar-styles">
+        /* Collapsible Sidebar Styles */
+        :root {
+            --sidebar-width: 260px;
+        }
+        body.sidebar-collapsed {
+            --sidebar-width: 72px;
+        }
+        
+        aside#sidebar {
+            width: var(--sidebar-width) !important;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            overflow: visible !important;
+        }
+        
+        @media (min-width: 1024px) {
+            main {
+                padding-left: var(--sidebar-width) !important;
+                transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+        }
+        
+        /* Hide elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-logo-text,
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-label,
+        body.sidebar-collapsed aside#sidebar .nav-chevron,
+        body.sidebar-collapsed aside#sidebar .nav-section-title,
+        body.sidebar-collapsed aside#sidebar .text-label-md,
+        body.sidebar-collapsed aside#sidebar .user-meta,
+        body.sidebar-collapsed aside#sidebar .logout-btn-text {
+            display: none !important;
+        }
+        
+        /* Center elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-header {
+            padding: 24px 0 16px !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-item {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+            border-left-width: 0px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-toggle {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .sidebar-user-info {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .p-4 {
+            padding: 12px 8px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .logout-btn {
+            padding: 8px 0 !important;
+            width: 40px !important;
+            margin: 0 auto !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar nav {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+        
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-menu {
+            display: none !important;
+        }
+        
+        /* Nav dropdown styling */
+        .nav-dropdown {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .nav-dropdown-toggle {
+            transition: all 0.2s ease;
+        }
+        .nav-dropdown-menu {
+            display: none;
+            padding-left: 8px;
+            margin-top: 4px;
+            border-left: 1px solid rgba(0, 109, 55, 0.15); /* primary brand tint */
+        }
+        .nav-dropdown.open .nav-dropdown-menu {
+            display: block !important;
+        }
+        .nav-dropdown.open .nav-chevron {
+            transform: rotate(180deg);
+        }
+        
+        /* Floating Collapse Toggle Button */
+        .sidebar-toggle-btn {
+            position: absolute;
+            bottom: 40px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #5c56e0; /* Blue/Indigo from screenshot */
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 2px 4px -1px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: all 0.2s ease;
+        }
+        .sidebar-toggle-btn:hover {
+            transform: scale(1.1);
+            background-color: #4943c7;
+        }
+        .sidebar-toggle-btn span {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            line-height: 1;
+            user-select: none;
+        }
+</style><style id="fouc-styles">
+        html {
+            visibility: hidden;
+            opacity: 0;
+        }
+        html.ready {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.15s ease-in-out;
+        }
+</style><script id="fouc-prevention">
+        (function() {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.documentElement.classList.add('ready');
+            });
+            // Fallback
+            window.addEventListener("load", () => {
+                document.documentElement.classList.add('ready');
+            });
+        })();
+</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><script src="js/relatorios.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="bg-background-page"><script id="sidebar-flicker-prevention">
+         (function() {
+             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+             if (isCollapsed) {
+                 document.body.classList.add('sidebar-collapsed');
+                 document.addEventListener('DOMContentLoaded', () => {
+                     const icon = document.getElementById('sidebar-collapse-icon');
+                     if (icon) icon.textContent = 'chevron_right';
+                 });
+             }
+         })();
+</script>
+<!-- SideNavBar (Shared Component) -->
+<aside class="h-screen fixed left-0 top-0 flex flex-col bg-background-surface border-r border-border-subtle z-50" id="sidebar">
+<!-- Floating toggle button positioned exactly on the border -->
+<button class="sidebar-toggle-btn hidden lg:flex" id="sidebar-toggle" onclick="toggleSidebarCollapse()" title="Recuar Menu" type="button">
+<span class="material-symbols-outlined" id="sidebar-collapse-icon">chevron_left</span>
+</button>
+<div class="p-6 flex items-center gap-2 sidebar-header">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-white flex-shrink-0 sidebar-logo-icon">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div class="sidebar-logo-text">
+<h1 class="font-headline-sm text-primary leading-tight">SIGA EDUCA</h1>
+<p class="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Gestão Educacional</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto sidebar-scroll px-4 space-y-1 py-2">
+<!-- Active Item: Minha Escola -->
+<a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-container transition-colors" href="painelprincipal.html">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md">Minha Escola</span>
+</a>
+<!-- Dropdown: Administrativo -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+<span class="nav-dropdown-label">Administrativo</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="calendarioletivo.html">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-label-md">Calendário Letivo</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="turmas.html">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-label-md">Turmas</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="alunos.html">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md">Alunos</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="frequencia.html">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="text-label-md">Frequência</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="horariodeaula.html">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-label-md">Horário de Aula</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="agenda.html">
+<span class="material-symbols-outlined">event</span>
+<span class="text-label-md">Agenda</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="ocorrencias.html">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-label-md">Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="documentossecretaria.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Documentos Secretaria</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="usuarios.html">
+<span class="material-symbols-outlined">manage_accounts</span>
+<span class="text-label-md">Usuários</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="Gestão de Lotação/lotacao.html">
+<span class="material-symbols-outlined">apartment</span>
+<span class="text-label-md">Lotação</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Pedagógico -->
+<div class="nav-dropdown open">
+<button aria-expanded="true" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">school</span>
+<span class="nav-dropdown-label">Pedagógico</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="topodosaber.html">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="text-label-md">Projeto Olímpico</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="boletins.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Boletins</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="conselho.html">
+<span class="material-symbols-outlined">diversity_3</span>
+<span class="text-label-md">Conselho de Classe</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-md">Diagnóstico de Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="controlelivros.html">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="text-label-md">Controle de Livros</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 bg-primary-light/20 text-primary border-l-4 border-primary font-semibold transition-all rounded-lg" href="relatorios.html">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assessment</span>
+<span class="text-label-md">Relatórios</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Sistema -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="nav-dropdown-label">Sistema</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="meuperfil.html">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-label-md">Meu Perfil</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="permissões.html">
+<span class="material-symbols-outlined">shield_person</span>
+<span class="text-label-md">Permissões</span>
+</a>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-border-subtle bg-surface-container-low sidebar-user-info">
+<a href="meuperfil.html" class="flex items-center gap-3 mb-4 rounded-lg hover:bg-white/60 transition-colors p-1 -m-1" title="Meu Perfil">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white font-bold flex items-center justify-center flex-shrink-0 sidebar-user-avatar" aria-hidden="true">U</div>
+<div class="overflow-hidden user-meta">
+<p class="text-body-md font-semibold truncate">Usuário</p>
+<p class="text-label-sm text-text-secondary truncate">Administrador</p>
+</div>
+</a>
+<button class="logout-btn w-full flex items-center justify-center gap-2 py-2 px-4 border border-border-subtle rounded-lg text-error font-semibold hover:bg-error/5 transition-colors" onclick="window.location.href='login.html'">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="text-label-md logout-btn-text">Sair</span>
+</button>
+</div>
+</aside>
+<!-- Content Area -->
+<main class="min-h-screen"><header class="siga-app-header h-16 w-full flex justify-between items-center px-4 sm:px-6 lg:px-8 bg-background/50 backdrop-blur-md sticky top-0 z-40 border-b border-transparent">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-on-surface leading-tight">Relatórios Gerenciais</h2>
+<span class="text-label-sm text-text-secondary">Dados consolidados e relatórios gerais</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-border-subtle rounded-full text-body-md w-36 sm:w-56 md:w-64 focus:ring-2 focus:ring-primary-light focus:outline-none transition-all" placeholder="Buscar..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/50 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header><div class="p-8 max-w-[1440px] mx-auto space-y-8">
+<!-- Page Header (hub) -->
+<div id="relatorios-hub">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<nav class="flex items-center gap-2 text-text-secondary text-label-md mb-2">
+<span>SIGA EDUCA</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-bold">Relatórios Gerenciais</span>
+</nav>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Relatórios Gerenciais</h2>
+<p class="text-body-md font-body-md text-text-secondary mt-1">Gere e exporte dados estratégicos da sua instituição em tempo real.</p>
+</div>
+<div class="flex items-center gap-3">
+<button type="button" id="btn-novo-relatorio" class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all shadow-sm opacity-80" title="Em breve">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="font-label-md text-label-md">Novo Relatório</span>
+</button>
+<button type="button" id="btn-historico-relatorio" class="flex items-center gap-2 px-4 py-2.5 bg-white border border-border-subtle text-text-secondary rounded-lg hover:bg-surface-container-low transition-all" title="Em breve">
+<span class="material-symbols-outlined text-[20px]">history</span>
+<span class="font-label-md text-label-md">Histórico</span>
+</button>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="bg-white p-4 rounded-xl shadow-[0px_4px_12px_rgba(0,0,0,0.03)] border border-border-subtle flex flex-wrap items-center gap-4 mt-8">
+<div class="flex-1 min-w-[200px]">
+<label class="block text-label-md font-label-md text-text-secondary mb-1" for="relatorio-periodo">Período</label>
+<select id="relatorio-periodo" class="w-full bg-surface-container-low border-none rounded-lg text-body-md py-2 focus:ring-1 focus:ring-primary">
+<option value="mes">Este mês</option>
+<option value="semestre">Último semestre</option>
+<option value="ano" selected>Ano letivo 2026</option>
+<option value="personalizado">Personalizado</option>
+</select>
+</div>
+<div class="flex-1 min-w-[200px]">
+<label class="block text-label-md font-label-md text-text-secondary mb-1">Categoria</label>
+<div class="flex flex-wrap gap-2" id="relatorio-categorias">
+<button type="button" data-categoria="todos" class="rel-cat-btn px-3 py-1.5 bg-primary-light/20 text-primary border border-primary-light/30 rounded-full text-label-md font-bold">Todos</button>
+<button type="button" data-categoria="pedagogico" class="rel-cat-btn px-3 py-1.5 bg-surface-container-low text-text-secondary rounded-full text-label-md hover:bg-surface-container-high transition-colors">Pedagógico</button>
+<button type="button" data-categoria="administrativo" class="rel-cat-btn px-3 py-1.5 bg-surface-container-low text-text-secondary rounded-full text-label-md hover:bg-surface-container-high transition-colors">Administrativo</button>
+<button type="button" data-categoria="disciplina" class="rel-cat-btn px-3 py-1.5 bg-surface-container-low text-text-secondary rounded-full text-label-md hover:bg-surface-container-high transition-colors">Disciplina</button>
+</div>
+</div>
+<div class="flex-none min-w-[150px]">
+<label class="block text-label-md font-label-md text-text-secondary mb-1">Formato</label>
+<div class="flex bg-surface-container-low rounded-lg p-1" id="relatorio-formato">
+<button type="button" data-formato="pdf" class="rel-fmt-btn flex-1 py-1 px-3 bg-white shadow-sm rounded text-label-md font-bold text-on-surface">PDF</button>
+<button type="button" data-formato="excel" class="rel-fmt-btn flex-1 py-1 px-3 text-text-secondary text-label-md">Excel</button>
+</div>
+</div>
+</div>
+<!-- Bento Grid of Report Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-8" id="relatorios-grid">
+<!-- Card 1: Aproveitamento Acadêmico -->
+<div class="report-card bg-white rounded-2xl p-6 border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0px_8px_24px_rgba(0,0,0,0.08)] transition-all group" data-categoria="pedagogico">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-primary-light/10 rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">analytics</span>
+</div>
+<span class="px-2 py-1 bg-primary-light/20 text-primary text-[10px] font-bold rounded uppercase">Pedagógico</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Aproveitamento Acadêmico</h3>
+<p class="text-body-md font-body-md text-text-secondary mb-6 line-clamp-2">Visão consolidada de notas, médias e desempenho por turma e disciplina no período selecionado.</p>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<span class="text-label-md text-text-secondary">Sem dados gerados</span>
+<button type="button" class="btn-export-relatorio flex items-center gap-2 px-4 py-2 border border-border-subtle text-text-secondary rounded-lg cursor-default opacity-70" disabled title="Em breve">
+<span class="material-symbols-outlined text-[18px]">hourglass_empty</span>
+<span class="font-label-md text-label-md">Em breve</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Taxa de Evasão -->
+<div class="report-card bg-white rounded-2xl p-6 border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0px_8px_24px_rgba(0,0,0,0.08)] transition-all group" data-categoria="administrativo">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-secondary-container/10 rounded-xl flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl">trending_down</span>
+</div>
+<span class="px-2 py-1 bg-secondary-container/10 text-secondary text-[10px] font-bold rounded uppercase">Administrativo</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Taxa de Evasão</h3>
+<p class="text-body-md font-body-md text-text-secondary mb-6 line-clamp-2">Análise estatística de cancelamentos e transferências para identificação de padrões e riscos.</p>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<span class="text-label-md text-text-secondary">Sem dados gerados</span>
+<button type="button" class="btn-export-relatorio flex items-center gap-2 px-4 py-2 border border-border-subtle text-text-secondary rounded-lg cursor-default opacity-70" disabled title="Em breve">
+<span class="material-symbols-outlined text-[18px]">hourglass_empty</span>
+<span class="font-label-md text-label-md">Em breve</span>
+</button>
+</div>
+</div>
+<!-- Card 3: Frequência Consolidada -->
+<button type="button" id="card-freq-consolidada" class="report-card text-left bg-white rounded-2xl p-6 border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0px_8px_24px_rgba(0,0,0,0.08)] transition-all group cursor-pointer hover:border-primary/40" data-categoria="pedagogico">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-tertiary-container/10 rounded-xl flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-3xl">fact_check</span>
+</div>
+<span class="px-2 py-1 bg-tertiary-container/10 text-tertiary text-[10px] font-bold rounded uppercase">Pedagógico</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Frequência Consolidada</h3>
+<p class="text-body-md font-body-md text-text-secondary mb-6 line-clamp-2">Relatório detalhado de presenças e faltas por turma, com % de frequência e faltas conforme o período escolhido.</p>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<span class="text-label-md text-text-secondary">Filtros por turno, turma e período</span>
+<span class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded-lg group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+<span class="font-label-md text-label-md">Abrir</span>
+</span>
+</div>
+</button>
+<!-- Card 4: Relatório de Ocorrências -->
+<div class="report-card bg-white rounded-2xl p-6 border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0px_8px_24px_rgba(0,0,0,0.08)] transition-all group" data-categoria="disciplina">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-error-container/20 rounded-xl flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-3xl">priority_high</span>
+</div>
+<span class="px-2 py-1 bg-error-container/20 text-error text-[10px] font-bold rounded uppercase">Disciplina</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Relatório de Ocorrências</h3>
+<p class="text-body-md font-body-md text-text-secondary mb-6 line-clamp-2">Mapeamento de incidentes disciplinares categorizados por gravidade e tipo de ocorrência.</p>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<span class="text-label-md text-text-secondary" id="relatorio-ocorrencias-meta">Sem dados gerados</span>
+<button type="button" class="btn-export-relatorio flex items-center gap-2 px-4 py-2 border border-border-subtle text-text-secondary rounded-lg cursor-default opacity-70" disabled title="Em breve">
+<span class="material-symbols-outlined text-[18px]">hourglass_empty</span>
+<span class="font-label-md text-label-md">Em breve</span>
+</button>
+</div>
+</div>
+<!-- Card 5: Alocação de Docentes -->
+<div class="report-card bg-white rounded-2xl p-6 border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0px_8px_24px_rgba(0,0,0,0.08)] transition-all group" data-categoria="administrativo">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-surface-container-highest/50 rounded-xl flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-3xl">assignment_ind</span>
+</div>
+<span class="px-2 py-1 bg-surface-container-highest/50 text-on-surface-variant text-[10px] font-bold rounded uppercase">Administrativo</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Alocação de Docentes</h3>
+<p class="text-body-md font-body-md text-text-secondary mb-6 line-clamp-2">Distribuição de carga horária e disciplinas por professor para o planejamento do período letivo.</p>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<span class="text-label-md text-text-secondary">Sem dados gerados</span>
+<button type="button" class="btn-export-relatorio flex items-center gap-2 px-4 py-2 border border-border-subtle text-text-secondary rounded-lg cursor-default opacity-70" disabled title="Em breve">
+<span class="material-symbols-outlined text-[18px]">hourglass_empty</span>
+<span class="font-label-md text-label-md">Em breve</span>
+</button>
+</div>
+</div>
+</div>
+<p class="text-body-md text-text-secondary text-center py-2" id="relatorios-empty" hidden>Nenhum relatório nesta categoria.</p>
+</div>
+
+<!-- Frequência Consolidada detail view -->
+<div id="relatorio-freq-view" class="hidden space-y-6">
+<button type="button" id="btn-voltar-relatorios" class="inline-flex items-center gap-2 text-text-secondary hover:text-primary transition-colors text-label-md font-semibold">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+Voltar aos relatórios
+</button>
+
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[26px]">bar_chart</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface leading-tight">Relatórios</h2>
+<p class="text-body-md text-text-secondary">Frequência consolidada por turma e período</p>
+</div>
+</div>
+
+<div class="inline-flex flex-wrap gap-1 p-1.5 bg-white border border-border-subtle rounded-2xl shadow-sm">
+<button type="button" class="rel-mod-tab px-5 py-2.5 rounded-xl text-label-md font-bold bg-surface-container-low text-on-surface shadow-sm" data-mod="frequencia">Frequência</button>
+<button type="button" class="rel-mod-tab px-5 py-2.5 rounded-xl text-label-md font-medium text-text-secondary hover:bg-surface-container-low/60" data-mod="transporte" disabled title="Em breve">Transporte</button>
+<button type="button" class="rel-mod-tab px-5 py-2.5 rounded-xl text-label-md font-medium text-text-secondary hover:bg-surface-container-low/60" data-mod="ocorrencias" disabled title="Em breve">Ocorrências</button>
+<button type="button" class="rel-mod-tab px-5 py-2.5 rounded-xl text-label-md font-medium text-text-secondary hover:bg-surface-container-low/60" data-mod="livros" disabled title="Em breve">Livros</button>
+</div>
+
+<div class="bg-white rounded-2xl border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] p-5">
+<div class="flex flex-wrap items-end gap-4">
+<div class="w-full sm:min-w-[140px] flex-1">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="freq-turno">Turno</label>
+<select id="freq-turno" class="w-full bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"></select>
+</div>
+<div class="w-full sm:min-w-[180px] w-full sm:flex-[1.4]">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="freq-turma">Turma</label>
+<select id="freq-turma" class="w-full bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"></select>
+</div>
+<div class="w-full sm:min-w-[160px] flex-1">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="freq-tipo-periodo">Período</label>
+<select id="freq-tipo-periodo" class="w-full bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+<option value="dia">Data específica</option>
+<option value="semana">Semanal</option>
+<option value="mes">Mensal</option>
+<option value="bimestre">Bimestral</option>
+</select>
+</div>
+<div id="freq-campo-data" class="w-full sm:min-w-[160px] flex-1">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="freq-data">Data</label>
+<input id="freq-data" type="date" class="w-full bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
+</div>
+<div id="freq-campo-mes" class="w-full sm:min-w-[160px] flex-1 hidden">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="freq-mes">Mês</label>
+<input id="freq-mes" type="month" class="w-full bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
+</div>
+<div id="freq-campo-bimestre" class="w-full sm:min-w-[160px] flex-1 hidden">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="freq-bimestre">Bimestre</label>
+<select id="freq-bimestre" class="w-full bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2.5 text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+<option value="1">1º Bimestre (Fev–Abr)</option>
+<option value="2">2º Bimestre (Mai–Jul)</option>
+<option value="3">3º Bimestre (Ago–Out)</option>
+<option value="4">4º Bimestre (Nov–Dez)</option>
+</select>
+</div>
+<div class="flex-none">
+<button type="button" id="btn-gerar-freq" class="h-[42px] px-5 bg-on-surface text-white font-bold text-label-md rounded-xl hover:bg-primary transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+Gerar Relatório
+</button>
+</div>
+</div>
+</div>
+
+<div id="freq-resultado" class="hidden space-y-4">
+<div class="flex flex-wrap items-center justify-between gap-3">
+<div class="flex flex-wrap items-center gap-3 text-body-md text-text-secondary">
+<span id="freq-meta-turma" class="font-semibold text-on-surface"></span>
+<span class="w-1 h-1 rounded-full bg-border-subtle"></span>
+<span id="freq-meta-periodo"></span>
+<span class="w-1 h-1 rounded-full bg-border-subtle"></span>
+<span id="freq-meta-dias" class="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-label-md font-bold"></span>
+</div>
+<div class="flex items-center gap-2">
+<button type="button" id="btn-export-freq-excel" class="px-3.5 py-2 border border-border-subtle rounded-xl text-label-md font-semibold hover:bg-surface-container-low flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">table_view</span> Excel
+</button>
+<button type="button" id="btn-export-freq-pdf" class="px-3.5 py-2 bg-primary text-white rounded-xl text-label-md font-semibold hover:bg-[#005228] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span> PDF
+</button>
+</div>
+</div>
+<div class="bg-white rounded-2xl border border-border-subtle overflow-hidden shadow-sm">
+<div class="overflow-x-auto max-h-[70vh]">
+<table class="min-w-full text-sm" id="freq-tabela">
+<thead class="bg-surface-container-low sticky top-0 z-10" id="freq-thead"></thead>
+<tbody id="freq-tbody"></tbody>
+</table>
+</div>
+</div>
+<p class="text-[11px] text-text-secondary">Legenda: <strong class="text-primary">P</strong> presença · <strong class="text-error">F</strong> falta · <span class="text-amber-700 font-semibold">FJ</span> falta justificada (conta como presença) · <span class="text-text-secondary">—</span> sem registro consolidado</p>
+</div>
+
+<div id="freq-empty-state" class="bg-white border border-dashed border-border-subtle rounded-2xl p-10 text-center text-text-secondary">
+<span class="material-symbols-outlined text-4xl text-outline mb-2">fact_check</span>
+<p class="font-semibold text-on-surface">Selecione turno, turma e período</p>
+<p class="text-body-md mt-1">Em seguida clique em <strong>Gerar Relatório</strong> para ver a frequência diária dos alunos.</p>
+</div>
+</div>
+</div></main>
+<script id="sidebar-collapsible-script">
+        // Micro-interactions and small UI behaviors
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (el.getAttribute('href') === '#') e.preventDefault();
+            });
+        });
+
+        // Collapsible Sidebar and Dropdowns functions
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            const collapsed = document.body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
+            const icon = document.getElementById('sidebar-collapse-icon');
+            if (icon) {
+                icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+            }
+        }
+
+        // Dropdown functions
+        function toggleNavGroup(button) {
+            const group = button.closest('.nav-dropdown');
+            if (!group) return;
+
+            const shouldOpen = !group.classList.contains('open');
+            
+            // Auto-collapse other groups
+            document.querySelectorAll('.nav-dropdown').forEach(g => {
+                if (g !== group) {
+                    g.classList.remove('open');
+                    const btn = g.querySelector('.nav-dropdown-toggle');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            group.classList.toggle('open', shouldOpen);
+            button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        }
+</script></body></html>

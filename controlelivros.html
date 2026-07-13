@@ -1,0 +1,753 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIGA EDUCA - Controle de Livros</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#64de8b",
+                        "on-surface": "#121c2a",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#d9e3f6",
+                        "surface-container-high": "#dee9fc",
+                        "on-primary-container": "#003a1a",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container": "#e6eeff",
+                        "background": "#f8f9ff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#006d37",
+                        "on-error": "#ffffff",
+                        "tertiary": "#795900",
+                        "tertiary-fixed": "#ffdf9f",
+                        "on-tertiary-fixed-variant": "#5c4300",
+                        "on-tertiary-fixed": "#261a00",
+                        "secondary-container": "#2170e4",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "outline": "#6e7a6e",
+                        "tertiary-container": "#c39200",
+                        "tertiary-fixed-dim": "#f9bd22",
+                        "secondary-fixed": "#d8e2ff",
+                        "text-secondary": "#6B7280",
+                        "on-surface-variant": "#3e4a3f",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-background": "#121c2a",
+                        "on-tertiary-container": "#412f00",
+                        "secondary": "#0058be",
+                        "on-primary-fixed-variant": "#005228",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#81fba5",
+                        "primary-container": "#2eaf62",
+                        "surface-container-highest": "#d9e3f6",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#006d37",
+                        "outline-variant": "#bdcabc",
+                        "inverse-surface": "#27313f",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-light": "#7EDC8A",
+                        "border-subtle": "#E5E7EB",
+                        "background-surface": "#FFFFFF",
+                        "on-secondary-container": "#fefcff",
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#64de8b",
+                        "on-primary-fixed": "#00210c",
+                        "surface-dim": "#d0dbed",
+                        "background-page": "#F7FAF8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-padding": "24px",
+                        "gutter": "16px",
+                        "section-gap": "32px",
+                        "container-margin": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["11px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        html, html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        html, body {
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #F7FAF8;
+            font-family: 'Inter', sans-serif;
+            color: #121C2A;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        aside#sidebar .text-label-md {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+        /* Custom scrollbar for sidebar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #E5E7EB;
+            border-radius: 10px;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+        }
+    #livros-toast[data-type='error'],#livros-toast[data-type='info']{background:#ba1a1a}
+</style>
+<style id="sidebar-styles">
+        /* Collapsible Sidebar Styles */
+        :root {
+            --sidebar-width: 260px;
+        }
+        body.sidebar-collapsed {
+            --sidebar-width: 72px;
+        }
+        
+        aside#sidebar {
+            width: var(--sidebar-width) !important;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            overflow: visible !important;
+        }
+        
+        @media (min-width: 1024px) {
+            main {
+                padding-left: var(--sidebar-width) !important;
+                transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+        }
+        
+        /* Hide elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-logo-text,
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-label,
+        body.sidebar-collapsed aside#sidebar .nav-chevron,
+        body.sidebar-collapsed aside#sidebar .nav-section-title,
+        body.sidebar-collapsed aside#sidebar .text-label-md,
+        body.sidebar-collapsed aside#sidebar .user-meta,
+        body.sidebar-collapsed aside#sidebar .logout-btn-text {
+            display: none !important;
+        }
+        
+        /* Center elements when collapsed */
+        body.sidebar-collapsed aside#sidebar .sidebar-header {
+            padding: 24px 0 16px !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-item {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+            border-left-width: 0px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-toggle {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .sidebar-user-info {
+            justify-content: center !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: center !important;
+            gap: 0 !important;
+        }
+        body.sidebar-collapsed aside#sidebar .p-4 {
+            padding: 12px 8px !important;
+        }
+        body.sidebar-collapsed aside#sidebar .logout-btn {
+            padding: 8px 0 !important;
+            width: 40px !important;
+            margin: 0 auto !important;
+            justify-content: center !important;
+        }
+        body.sidebar-collapsed aside#sidebar nav {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+        
+        body.sidebar-collapsed aside#sidebar .nav-dropdown-menu {
+            display: none !important;
+        }
+        
+        /* Nav dropdown styling */
+        .nav-dropdown {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .nav-dropdown-toggle {
+            transition: all 0.2s ease;
+        }
+        .nav-dropdown-menu {
+            display: none;
+            padding-left: 8px;
+            margin-top: 4px;
+            border-left: 1px solid rgba(0, 109, 55, 0.15); /* primary brand tint */
+        }
+        .nav-dropdown.open .nav-dropdown-menu {
+            display: block !important;
+        }
+        .nav-dropdown.open .nav-chevron {
+            transform: rotate(180deg);
+        }
+        
+        /* Floating Collapse Toggle Button */
+        .sidebar-toggle-btn {
+            position: absolute;
+            bottom: 40px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #5c56e0; /* Blue/Indigo from screenshot */
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15), 0 2px 4px -1px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: all 0.2s ease;
+        }
+        .sidebar-toggle-btn:hover {
+            transform: scale(1.1);
+            background-color: #4943c7;
+        }
+        .sidebar-toggle-btn span {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            line-height: 1;
+            user-select: none;
+        }
+</style><style id="fouc-styles">
+        html {
+            visibility: hidden;
+            opacity: 0;
+        }
+        html.ready {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.15s ease-in-out;
+        }
+</style><script id="fouc-prevention">
+        (function() {
+            document.addEventListener("DOMContentLoaded", () => {
+                document.documentElement.classList.add('ready');
+            });
+            // Fallback
+            window.addEventListener("load", () => {
+                document.documentElement.classList.add('ready');
+            });
+        })();
+</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><script src="js/controle-livros.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="bg-background-page"><script id="sidebar-flicker-prevention">
+         (function() {
+             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+             if (isCollapsed) {
+                 document.body.classList.add('sidebar-collapsed');
+                 document.addEventListener('DOMContentLoaded', () => {
+                     const icon = document.getElementById('sidebar-collapse-icon');
+                     if (icon) icon.textContent = 'chevron_right';
+                 });
+             }
+         })();
+</script>
+<!-- SideNavBar (Authority Source: JSON) -->
+<aside class="h-screen fixed left-0 top-0 flex flex-col bg-background-surface border-r border-border-subtle z-50" id="sidebar">
+<!-- Floating toggle button positioned exactly on the border -->
+<button class="sidebar-toggle-btn hidden lg:flex" id="sidebar-toggle" onclick="toggleSidebarCollapse()" title="Recuar Menu" type="button">
+<span class="material-symbols-outlined" id="sidebar-collapse-icon">chevron_left</span>
+</button>
+<div class="p-6 flex items-center gap-2 sidebar-header">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-white flex-shrink-0 sidebar-logo-icon">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<div class="sidebar-logo-text">
+<h1 class="font-headline-sm text-primary leading-tight">SIGA EDUCA</h1>
+<p class="text-[10px] text-text-secondary uppercase tracking-widest font-bold">Gestão Educacional</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto sidebar-scroll px-4 space-y-1 py-2">
+<!-- Active Item: Minha Escola -->
+<a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-container transition-colors" href="painelprincipal.html">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-md">Minha Escola</span>
+</a>
+<!-- Dropdown: Administrativo -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+<span class="nav-dropdown-label">Administrativo</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="calendarioletivo.html">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-label-md">Calendário Letivo</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="turmas.html">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-label-md">Turmas</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="alunos.html">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md">Alunos</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="frequencia.html">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="text-label-md">Frequência</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="horariodeaula.html">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-label-md">Horário de Aula</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="agenda.html">
+<span class="material-symbols-outlined">event</span>
+<span class="text-label-md">Agenda</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="ocorrencias.html">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-label-md">Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="documentossecretaria.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Documentos Secretaria</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="usuarios.html">
+<span class="material-symbols-outlined">manage_accounts</span>
+<span class="text-label-md">Usuários</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="Gestão de Lotação/lotacao.html">
+<span class="material-symbols-outlined">apartment</span>
+<span class="text-label-md">Lotação</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Pedagógico -->
+<div class="nav-dropdown open">
+<button aria-expanded="true" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">school</span>
+<span class="nav-dropdown-label">Pedagógico</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="topodosaber.html">
+<span class="material-symbols-outlined">emoji_events</span>
+<span class="text-label-md">Projeto Olímpico</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="boletins.html">
+<span class="material-symbols-outlined">description</span>
+<span class="text-label-md">Boletins</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="conselho.html">
+<span class="material-symbols-outlined">diversity_3</span>
+<span class="text-label-md">Conselho de Classe</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="text-label-md">Diagnóstico de Ocorrências</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 bg-primary-light/20 text-primary border-l-4 border-primary font-semibold transition-all rounded-lg" href="controlelivros.html">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="text-label-md">Controle de Livros</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="relatorios.html">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-label-md">Relatórios</span>
+</a>
+</div>
+</div>
+<!-- Dropdown: Sistema -->
+<div class="nav-dropdown">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="nav-dropdown-label">Sistema</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="meuperfil.html">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-label-md">Meu Perfil</span>
+</a>
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="permissões.html">
+<span class="material-symbols-outlined">shield_person</span>
+<span class="text-label-md">Permissões</span>
+</a>
+</div>
+</div>
+</nav>
+<div class="p-4 border-t border-border-subtle bg-surface-container-low sidebar-user-info">
+<a href="meuperfil.html" class="flex items-center gap-3 mb-4 rounded-lg hover:bg-white/60 transition-colors p-1 -m-1" title="Meu Perfil">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white font-bold flex items-center justify-center flex-shrink-0 sidebar-user-avatar" aria-hidden="true">U</div>
+<div class="overflow-hidden user-meta">
+<p class="text-body-md font-semibold truncate">João Silva</p>
+<p class="text-label-sm text-text-secondary truncate">Administrador</p>
+</div>
+</a>
+<button class="logout-btn w-full flex items-center justify-center gap-2 py-2 px-4 border border-border-subtle rounded-lg text-error font-semibold hover:bg-error/5 transition-colors" onclick="window.location.href='login.html'">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+<span class="text-label-md logout-btn-text">Sair</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="min-h-screen"><header class="siga-app-header h-16 w-full flex justify-between items-center px-4 sm:px-6 lg:px-8 bg-background/50 backdrop-blur-md sticky top-0 z-40 border-b border-transparent">
+<div class="flex flex-col">
+<h2 class="font-headline-md text-on-surface leading-tight">Controle de Livros</h2>
+<span class="text-label-sm text-text-secondary">Gestão do acervo e empréstimo de livros</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+<input class="pl-10 pr-4 py-2 bg-white border border-border-subtle rounded-full text-body-md w-36 sm:w-56 md:w-64 focus:ring-2 focus:ring-primary-light focus:outline-none transition-all" placeholder="Buscar..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/50 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header><div class="p-8 max-w-[1440px] mx-auto space-y-8">
+<!-- Page Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Controle de Acervo e Empréstimos</h2>
+<p class="text-body-md text-text-secondary mt-1">Gerencie os títulos disponíveis, empréstimos ativos e devoluções pendentes.</p>
+</div>
+<div class="flex items-center gap-3 flex-wrap">
+<select id="filter-status-livro" class="px-3 py-2 border border-border-subtle bg-white rounded-lg text-body-md">
+<option value="">Todos os status</option>
+<option value="Disponível">Disponível</option>
+<option value="Emprestado">Emprestado</option>
+<option value="Atrasado">Atrasado</option>
+</select>
+<select id="filter-categoria-livro" class="px-3 py-2 border border-border-subtle bg-white rounded-lg text-body-md">
+<option value="">Todas as categorias</option>
+</select>
+<button type="button" onclick="openNovoRegistroModal()" class="flex items-center gap-2 px-5 py-2 bg-primary-container text-white rounded-lg text-body-md font-bold shadow-sm hover:brightness-90 transition-all">
+<span class="material-symbols-outlined text-[20px]">add</span>
+Novo Registro
+</button>
+</div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="bg-white p-5 rounded-xl border border-border-subtle shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary-light/20 rounded-lg text-primary"><span class="material-symbols-outlined">menu_book</span></div>
+</div>
+<h3 class="text-label-md font-medium text-text-secondary">Total do Acervo</h3>
+<p class="text-headline-lg font-bold text-on-surface" id="kpi-acervo">0</p>
+</div>
+<div class="bg-white p-5 rounded-xl border border-border-subtle shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-secondary-fixed/20 rounded-lg text-secondary"><span class="material-symbols-outlined">sync_alt</span></div>
+<span class="text-label-sm font-bold text-secondary" id="kpi-circ-badge">0% circulação</span>
+</div>
+<h3 class="text-label-md font-medium text-text-secondary">Empréstimos Ativos</h3>
+<p class="text-headline-lg font-bold text-on-surface" id="kpi-ativos">0</p>
+</div>
+<div class="bg-white p-5 rounded-xl border border-border-subtle shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-error-container rounded-lg text-error"><span class="material-symbols-outlined">warning</span></div>
+<span class="text-label-sm font-bold text-error">Urgente</span>
+</div>
+<h3 class="text-label-md font-medium text-text-secondary">Livros Atrasados</h3>
+<p class="text-headline-lg font-bold text-on-surface" id="kpi-atrasados">0</p>
+</div>
+<div class="bg-white p-5 rounded-xl border border-border-subtle shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-tertiary-fixed/30 rounded-lg text-tertiary"><span class="material-symbols-outlined">auto_stories</span></div>
+<span class="text-label-sm font-bold text-tertiary">Top categoria</span>
+</div>
+<h3 class="text-label-md font-medium text-text-secondary">Mais Lidos</h3>
+<p class="text-headline-lg font-bold text-on-surface" id="kpi-top-cat">—</p>
+</div>
+</div>
+
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm overflow-hidden flex flex-col">
+<div class="px-6 py-4 border-b border-border-subtle flex flex-col md:flex-row md:justify-between md:items-center gap-3 bg-surface-container-lowest">
+<h3 class="font-headline-sm text-on-surface">Listagem de Títulos</h3>
+<div class="relative w-full md:w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[18px]">search</span>
+<input id="livros-search" type="text" placeholder="Buscar livro, autor ou aluno..." class="w-full pl-10 pr-3 py-2 border border-border-subtle rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/30">
+<th class="px-6 py-3 font-label-md text-label-md text-outline uppercase tracking-wider border-b border-border-subtle">Livro</th>
+<th class="px-6 py-3 font-label-md text-label-md text-outline uppercase tracking-wider border-b border-border-subtle">Autor / Categoria</th>
+<th class="px-6 py-3 font-label-md text-label-md text-outline uppercase tracking-wider border-b border-border-subtle">Aluno / Requerente</th>
+<th class="px-6 py-3 font-label-md text-label-md text-outline uppercase tracking-wider border-b border-border-subtle">Data do Pedido</th>
+<th class="px-6 py-3 font-label-md text-label-md text-outline uppercase tracking-wider border-b border-border-subtle">Data Limite</th>
+<th class="px-6 py-3 font-label-md text-label-md text-outline uppercase tracking-wider border-b border-border-subtle">Status</th>
+<th class="px-6 py-3 font-label-md text-label-md text-outline uppercase tracking-wider border-b border-border-subtle">Ações</th>
+</tr>
+</thead>
+<tbody id="livros-tbody" class="divide-y divide-border-subtle"></tbody>
+</table>
+</div>
+<div class="px-6 py-3 border-t border-border-subtle text-label-md text-text-secondary" id="livros-count">0 títulos</div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="bg-white rounded-xl border border-border-subtle shadow-sm p-6">
+<h3 class="font-headline-sm text-on-surface mb-4">Últimas Devoluções</h3>
+<div id="ultimas-devolucoes" class="space-y-1"></div>
+</div>
+<div class="bg-gradient-to-br from-primary to-primary-container text-white rounded-xl p-6 shadow-sm">
+<h3 class="font-headline-sm font-bold mb-2">Biblioteca Escolar</h3>
+<p class="text-sm opacity-90 mb-4">Nesta aba aparecem os livros cadastrados. Use Novo Registro para emprestar um título a um aluno (turma, nome e data de devolução).</p>
+<button type="button" onclick="openNovoRegistroModal()" class="px-4 py-2 bg-white text-primary rounded-lg text-sm font-bold hover:bg-white/90 transition-colors mr-2">Novo Empréstimo</button>
+<button type="button" onclick="openNovoLivroModal()" class="px-4 py-2 bg-white/15 text-white border border-white/40 rounded-lg text-sm font-bold hover:bg-white/25 transition-colors">Cadastrar no Acervo</button>
+</div>
+</div>
+</div>
+
+<!-- Modal: Novo Livro -->
+<div id="modal-novo-livro" class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+<div class="absolute inset-0 bg-black/40" onclick="closeModalLivros('modal-novo-livro')"></div>
+<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 z-10">
+<div class="flex items-center justify-between p-5 border-b border-border-subtle">
+<h3 class="font-headline-sm font-bold">Cadastrar Livro no Acervo</h3>
+<button type="button" class="p-2 hover:bg-surface-container rounded-lg" onclick="closeModalLivros('modal-novo-livro')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<form id="form-novo-livro" class="p-5 space-y-4">
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Título *</label>
+<input id="livro-titulo" required class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Nome do livro"/>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Autor *</label>
+<input id="livro-autor" required class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Autor"/>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Categoria</label>
+<input id="livro-categoria" class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Ex: Ficção"/>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">ISBN</label>
+<input id="livro-isbn" class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="978-..."/>
+</div>
+</div>
+<div class="flex justify-end gap-3 pt-2 border-t border-border-subtle">
+<button type="button" onclick="closeModalLivros('modal-novo-livro')" class="px-5 py-2.5 border border-border-subtle rounded-xl font-semibold">Cancelar</button>
+<button type="submit" class="px-5 py-2.5 bg-primary text-white rounded-xl font-semibold">Salvar Livro</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- Modal: Novo Registro (Empréstimo) -->
+<div id="modal-emprestar" class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+<div class="absolute inset-0 bg-black/40" onclick="closeModalLivros('modal-emprestar')"></div>
+<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 z-10 max-h-[90vh] overflow-y-auto">
+<div class="flex items-center justify-between p-5 border-b border-border-subtle sticky top-0 bg-white z-10">
+<div>
+<h3 class="font-headline-sm font-bold">Novo Registro de Empréstimo</h3>
+<p class="text-label-sm text-text-secondary">Selecione um livro cadastrado e o aluno requerente</p>
+</div>
+<button type="button" class="p-2 hover:bg-surface-container rounded-lg" onclick="closeModalLivros('modal-emprestar')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<form id="form-emprestar" class="p-5 space-y-4">
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Livro cadastrado *</label>
+<select id="loan-book-id" required class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"></select>
+<p class="text-[11px] text-text-secondary mt-1.5">Somente livros disponíveis no acervo.</p>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Turma *</label>
+<select id="loan-turma" required class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"></select>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Aluno / Requerente *</label>
+<select id="loan-aluno" required disabled class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+<option value="">Selecione a turma primeiro...</option>
+</select>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Data do Pedido *</label>
+<input type="date" id="loan-data-pedido" required class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"/>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Data da Devolução *</label>
+<input type="date" id="loan-data-limite" required class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"/>
+</div>
+</div>
+<div class="flex justify-end gap-3 pt-2 border-t border-border-subtle">
+<button type="button" onclick="closeModalLivros('modal-emprestar')" class="px-5 py-2.5 border border-border-subtle rounded-xl font-semibold">Cancelar</button>
+<button type="submit" class="px-5 py-2.5 bg-primary text-white rounded-xl font-semibold">Registrar Empréstimo</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- Modal: Renovar -->
+<div id="modal-renovar" class="fixed inset-0 z-[200] flex items-center justify-center p-4 hidden">
+<div class="absolute inset-0 bg-black/40" onclick="closeModalLivros('modal-renovar')"></div>
+<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 z-10">
+<div class="flex items-center justify-between p-5 border-b border-border-subtle">
+<div>
+<h3 class="font-headline-sm font-bold">Renovar Empréstimo</h3>
+<p class="text-label-sm text-text-secondary" id="renovar-book-title"></p>
+</div>
+<button type="button" class="p-2 hover:bg-surface-container rounded-lg" onclick="closeModalLivros('modal-renovar')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<form id="form-renovar" class="p-5 space-y-4">
+<input type="hidden" id="renovar-book-id"/>
+<div class="bg-surface-container-low rounded-xl p-4 text-body-md space-y-1">
+<p><span class="text-text-secondary">Aluno / Requerente:</span> <strong id="renovar-aluno">—</strong></p>
+<p><span class="text-text-secondary">Data do Pedido:</span> <strong id="renovar-pedido">—</strong></p>
+<p><span class="text-text-secondary">Prazo atual:</span> <strong id="renovar-limite-atual">—</strong></p>
+</div>
+<div>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Nova Data de Devolução *</label>
+<input type="date" id="renovar-nova-data" required class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"/>
+<p class="text-[11px] text-text-secondary mt-1.5">Selecione a nova data limite e confirme para atualizar o empréstimo.</p>
+</div>
+<div class="flex justify-end gap-3 pt-2 border-t border-border-subtle">
+<button type="button" onclick="closeModalLivros('modal-renovar')" class="px-5 py-2.5 border border-border-subtle rounded-xl font-semibold">Cancelar</button>
+<button type="submit" class="px-5 py-2.5 bg-primary text-white rounded-xl font-semibold">Atualizar Empréstimo</button>
+</div>
+</form>
+</div>
+</div>
+
+<div id="livros-toast" class="fixed bottom-6 right-6 hidden z-[400] w-full sm:min-w-[260px] sm:w-auto max-w-[420px] px-4 py-3 rounded-xl bg-[#121c2a] text-white text-sm font-medium shadow-lg"></div>
+</main>
+<button type="button" onclick="openNovoRegistroModal()" class="fixed bottom-8 right-8 w-14 h-14 bg-primary-container text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center z-50" title="Novo Registro de Empréstimo">
+<span class="material-symbols-outlined text-[28px]">add</span>
+</button>
+
+<script id="sidebar-collapsible-script">
+        // Micro-interactions and small UI behaviors
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (el.getAttribute('href') === '#') e.preventDefault();
+            });
+        });
+
+        // Collapsible Sidebar and Dropdowns functions
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            const collapsed = document.body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
+            const icon = document.getElementById('sidebar-collapse-icon');
+            if (icon) {
+                icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+            }
+        }
+
+        // Dropdown functions
+        function toggleNavGroup(button) {
+            const group = button.closest('.nav-dropdown');
+            if (!group) return;
+
+            const shouldOpen = !group.classList.contains('open');
+            
+            // Auto-collapse other groups
+            document.querySelectorAll('.nav-dropdown').forEach(g => {
+                if (g !== group) {
+                    g.classList.remove('open');
+                    const btn = g.querySelector('.nav-dropdown-toggle');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            group.classList.toggle('open', shouldOpen);
+            button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        }
+</script></body></html>
