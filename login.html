@@ -128,12 +128,21 @@
         }
 
         html, body {
-            min-height: 100%;
-            overflow-x: hidden;
+            height: 100%;
+            overflow: hidden;
         }
 
-        body {
+        body.siga-auth-page {
             background-color: #52B788;
+            min-height: 100dvh;
+            height: 100dvh;
+            max-height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px !important;
+            box-sizing: border-box;
         }
         
         .bg-login {
@@ -144,18 +153,50 @@
         /* Isola o login do shell (padding da sidebar) */
         body.siga-auth-page main,
         body main.login-panel {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-            max-width: 440px !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            max-width: 400px !important;
             width: 100% !important;
             box-sizing: border-box;
+            max-height: calc(100dvh - 16px);
         }
 
         .login-panel .glass-card {
             width: 100%;
             box-sizing: border-box;
+            gap: 0.75rem !important;
+            padding: 1rem 1.15rem !important;
+        }
+
+        .login-panel #login-form {
+            gap: 0.65rem !important;
+        }
+
+        .login-panel #login-form input[type="email"],
+        .login-panel #login-form input[type="password"],
+        .login-panel #login-form input[type="text"] {
+            padding-top: 0.55rem !important;
+            padding-bottom: 0.55rem !important;
+        }
+
+        .login-panel #login-form button[type="submit"] {
+            padding-top: 0.65rem !important;
+            padding-bottom: 0.65rem !important;
+        }
+
+        .login-panel .login-hint {
+            display: none;
+        }
+
+        .login-panel .login-footer-copy {
+            margin-top: 0.5rem !important;
+            font-size: 10px !important;
+            line-height: 1.3;
+            opacity: 0.75;
+        }
+
+        body.siga-auth-page #siga-app-footer {
+            display: none !important;
         }
 
         .login-options-row {
@@ -163,15 +204,15 @@
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
-            gap: 8px 12px;
+            gap: 6px 10px;
         }
 
         @keyframes fade-in {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in {
-            animation: fade-in 0.6s ease-out forwards;
+            animation: fade-in 0.35s ease-out forwards;
         }
     </style>
 <script>
@@ -195,38 +236,38 @@
         })();
 </script>
 </head>
-<body class="siga-auth-page min-h-screen flex items-center justify-center bg-login px-4 py-8 font-body-md text-on-background">
+<body class="siga-auth-page bg-login font-body-md text-on-background">
 <!-- Center Login Card -->
-<main class="login-panel w-full max-w-[440px] z-10 animate-fade-in">
-<div class="glass-card rounded-2xl p-6 sm:p-8 flex flex-col gap-6">
+<main class="login-panel w-full z-10 animate-fade-in">
+<div class="glass-card rounded-2xl flex flex-col">
 <!-- Header section: Logo & Identity -->
-<div class="flex flex-col items-center text-center gap-2">
+<div class="flex flex-col items-center text-center gap-0.5">
 <div class="flex items-center gap-2 text-primary">
-<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">school</span>
-<h1 class="font-headline-md text-headline-md tracking-tight uppercase">SIGA EDUCA</h1>
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">school</span>
+<h1 class="text-lg font-bold tracking-tight uppercase">SIGA EDUCA</h1>
 </div>
-<p class="font-label-md text-label-md text-text-secondary">Gestão Educacional Inteligente</p>
+<p class="text-[11px] text-text-secondary">Gestão Educacional Inteligente</p>
 </div>
 <!-- Welcome Message -->
-<div class="space-y-1">
-<h2 class="font-headline-sm text-headline-sm text-on-surface">Bem-vindo de volta</h2>
-<p class="text-text-secondary font-body-md">Acesse com seu e-mail institucional</p>
+<div class="space-y-0.5 mt-1">
+<h2 class="text-base font-semibold text-on-surface">Bem-vindo de volta</h2>
+<p class="text-text-secondary text-sm">Acesse com seu e-mail institucional</p>
 </div>
 <!-- Login Form -->
-<form id="login-form" action="#" class="flex flex-col gap-5">
-<div class="space-y-2">
+<form id="login-form" action="#" class="flex flex-col">
+<div class="space-y-1">
 <label class="font-label-md text-label-md text-on-surface-variant px-1" for="username">E-mail institucional</label>
 <div class="relative group">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors">mail</span>
-<input class="w-full pl-10 pr-4 py-3 bg-white/60 border border-border-subtle rounded-lg focus:ring-2 focus:ring-primary-light focus:border-primary outline-none transition-all font-body-md" id="username" placeholder="nome@escola.seduc.pa.gov.br" type="email" style="font-size:16px" autocomplete="username" required/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors text-[20px]">mail</span>
+<input class="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-border-subtle rounded-lg focus:ring-2 focus:ring-primary-light focus:border-primary outline-none transition-all font-body-md" id="username" placeholder="nome@escola.seduc.pa.gov.br" type="email" style="font-size:16px" autocomplete="username" required/>
 </div>
-<p class="text-[11px] text-text-secondary px-1">Alunos: @aluno.seduc.pa.gov.br · Servidores: @escola.seduc.pa.gov.br</p>
+<p class="login-hint text-[11px] text-text-secondary px-1">Alunos: @aluno.seduc.pa.gov.br · Servidores: @escola.seduc.pa.gov.br</p>
 </div>
-<div class="space-y-2">
+<div class="space-y-1">
 <label class="font-label-md text-label-md text-on-surface-variant px-1" for="password">Senha</label>
 <div class="relative group">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors">lock</span>
-<input class="w-full pl-10 pr-12 py-3 bg-white/60 border border-border-subtle rounded-lg focus:ring-2 focus:ring-primary-light focus:border-primary outline-none transition-all font-body-md" id="password" placeholder="••••••••" type="password" style="font-size:16px" autocomplete="current-password" required/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors text-[20px]">lock</span>
+<input class="w-full pl-10 pr-12 py-2.5 bg-white/60 border border-border-subtle rounded-lg focus:ring-2 focus:ring-primary-light focus:border-primary outline-none transition-all font-body-md" id="password" placeholder="••••••••" type="password" style="font-size:16px" autocomplete="current-password" required/>
 <button class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-primary transition-colors" onclick="togglePassword()" type="button">
 <span class="material-symbols-outlined" id="eye-icon">visibility</span>
 </button>
@@ -239,20 +280,20 @@
 </label>
 <a id="link-esqueci-senha" class="font-label-md text-label-md text-primary hover:underline transition-all whitespace-nowrap" href="#">Esqueci minha senha</a>
 </div>
-<button class="w-full bg-primary-container hover:bg-primary text-white font-headline-sm py-3.5 px-4 sm:px-6 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-primary/10" type="submit">
+<button class="w-full bg-primary-container hover:bg-primary text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-primary/10" type="submit">
 <span>Entrar na conta</span>
-<span class="material-symbols-outlined shrink-0">arrow_forward</span>
+<span class="material-symbols-outlined shrink-0 text-[20px]">arrow_forward</span>
 </button>
 </form>
-<div class="pt-4 border-t border-border-subtle/50 text-center">
-<p class="font-body-md text-text-secondary">
+<div class="pt-2 border-t border-border-subtle/50 text-center">
+<p class="text-sm text-text-secondary">
                     Novo na instituição?
-                    <a class="font-label-md text-primary hover:text-primary-container ml-1 font-bold uppercase" href="#">SOLICITAR ACESSO</a>
+                    <a class="text-primary hover:text-primary-container ml-1 font-bold uppercase text-xs" href="#">SOLICITAR ACESSO</a>
 </p>
 </div>
 </div>
-<div class="mt-8 text-center text-on-surface-variant/70 font-label-md">
-            © 2026 SIGA EDUCA Sistemas. Todos os direitos reservados - Desenvolvido por Dhenison Carlos
+<div class="login-footer-copy text-center text-on-surface-variant/70">
+            © 2026 SIGA EDUCA — Dhenison Carlos
         </div>
 </main>
 

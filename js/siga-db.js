@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login / portal: não aplicar shell (padding da sidebar esmagava o card)
     if (isAuthPage) {
         document.body.classList.add('siga-auth-page');
-        ensureAppFooter();
+        // Login/portal: sem rodapé global (evita scroll na tela de autenticação)
         return;
     }
 
