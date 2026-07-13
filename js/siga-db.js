@@ -4261,6 +4261,9 @@ function initTurmaDetalhePage() {
     document.getElementById('detail-ano-letivo').textContent = `Ano Letivo: ${classObj.anoLetivo}`;
 
     renderTurmaDetalhe(classCode);
+    if (typeof window.initTurmaProfessores === 'function') {
+        window.initTurmaProfessores(classCode);
+    }
 }
 
 function renderTurmaDetalhe(classCode) {
@@ -4271,7 +4274,10 @@ function renderTurmaDetalhe(classCode) {
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
     const classStudents = students.filter(s => studentBelongsToClass(s, classCode));
 
-    document.getElementById('detail-student-count').textContent = classStudents.length;
+    const studentCountEl = document.getElementById('detail-student-count');
+    if (studentCountEl) studentCountEl.textContent = classStudents.length;
+    const alunosCountLabel = document.getElementById('detail-alunos-count-label');
+    if (alunosCountLabel) alunosCountLabel.textContent = classStudents.length;
 
     if (classStudents.length === 0) {
         tbody.innerHTML = '';

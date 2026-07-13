@@ -279,12 +279,13 @@
             });
         })();
     </script>
-    <script src="js/siga-config.js?v=20260713f"></script>
+    <script src="js/siga-config.js?v=20260713m"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/siga-supabase.js?v=20260713f"></script>
-    <script src="js/siga-security.js?v=20260713f"></script>
-    <script src="js/siga-school-data.js?v=20260713g"></script>
-    <script src="js/siga-db.js?v=20260713f"></script>
+    <script src="js/siga-supabase.js?v=20260713m"></script>
+    <script src="js/siga-security.js?v=20260713m"></script>
+    <script src="js/siga-school-data.js?v=20260713m"></script>
+    <script src="js/siga-turma-professores.js?v=20260713m"></script>
+    <script src="js/siga-db.js?v=20260713m"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -476,44 +477,97 @@
             </div>
         </div>
 
-        <!-- Student Listing Section -->
-        <div class="bg-background-surface rounded-2xl shadow-sm border border-border-subtle overflow-hidden">
-            <div class="px-6 py-4 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/20">
-                <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Alunos da Turma</h3>
-                <div class="flex items-center gap-3">
-                    <button class="flex items-center gap-2 border border-border-subtle bg-white hover:bg-surface-container px-4 py-2 rounded-lg text-text-secondary transition-all font-semibold text-body-md active:scale-95 shadow-sm" onclick="downloadClassList()">
-                        <span class="material-symbols-outlined text-[20px]">download</span>
-                        <span>Download Lista</span>
-                    </button>
-                    <button class="flex items-center gap-2 bg-primary text-white hover:brightness-95 px-5 py-2 rounded-lg transition-all font-semibold text-body-md active:scale-95 shadow-md shadow-primary/15" onclick="printClassList()">
-                        <span class="material-symbols-outlined text-[20px]">print</span>
-                        <span>Imprimir Lista</span>
-                    </button>
+        <!-- Accordion: Alunos / Professores -->
+        <div class="space-y-4">
+            <!-- 1) Alunos -->
+            <div class="bg-background-surface rounded-2xl shadow-sm border border-border-subtle overflow-hidden">
+                <button type="button" id="turma-acc-alunos-toggle" aria-expanded="false" aria-controls="turma-acc-alunos-panel"
+                    class="w-full px-6 py-4 flex items-center justify-between gap-4 bg-surface-container-low/20 hover:bg-surface-container-low/40 transition-colors text-left">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">groups</span>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Alunos</h3>
+                            <p class="text-[12px] text-text-secondary"><span id="detail-alunos-count-label">0</span> matriculado(s) nesta turma</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-text-secondary" id="turma-acc-alunos-chevron">expand_more</span>
+                </button>
+
+                <div id="turma-acc-alunos-panel" class="hidden border-t border-border-subtle">
+                    <div class="px-6 py-3 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-end gap-3 bg-white">
+                        <div class="flex items-center gap-3">
+                            <button class="flex items-center gap-2 border border-border-subtle bg-white hover:bg-surface-container px-4 py-2 rounded-lg text-text-secondary transition-all font-semibold text-body-md active:scale-95 shadow-sm" onclick="downloadClassList()">
+                                <span class="material-symbols-outlined text-[20px]">download</span>
+                                <span>Download Lista</span>
+                            </button>
+                            <button class="flex items-center gap-2 bg-primary text-white hover:brightness-95 px-5 py-2 rounded-lg transition-all font-semibold text-body-md active:scale-95 shadow-md shadow-primary/15" onclick="printClassList()">
+                                <span class="material-symbols-outlined text-[20px]">print</span>
+                                <span>Imprimir Lista</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-surface-container-low border-b border-border-subtle">
+                                <tr>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Aluno</th>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Idade</th>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Frequência</th>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border-subtle" id="class-students-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="class-students-empty" class="hidden p-12 text-center space-y-4">
+                        <span class="material-symbols-outlined text-[64px] text-text-secondary/40">person_off</span>
+                        <p class="text-body-lg text-text-secondary font-medium">Nenhum aluno matriculado nesta turma até o momento.</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Table of Students -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-surface-container-low border-b border-border-subtle">
-                        <tr>
-                            <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Aluno</th>
-                            <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Idade</th>
-                            <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Frequência</th>
-                            <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border-subtle" id="class-students-tbody">
-                        <!-- Rendered dynamically -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Empty state -->
-            <div id="class-students-empty" class="hidden p-12 text-center space-y-4">
-                <span class="material-symbols-outlined text-[64px] text-text-secondary/40">person_off</span>
-                <p class="text-body-lg text-text-secondary font-medium">Nenhum aluno matriculado nesta turma até o momento.</p>
+            <!-- 2) Professores -->
+            <div class="bg-background-surface rounded-2xl shadow-sm border border-border-subtle overflow-hidden">
+                <button type="button" id="turma-acc-profs-toggle" aria-expanded="false" aria-controls="turma-acc-profs-panel"
+                    class="w-full px-6 py-4 flex items-center justify-between gap-4 bg-surface-container-low/20 hover:bg-surface-container-low/40 transition-colors text-left">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">school</span>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Professores</h3>
+                            <p class="text-[12px] text-text-secondary"><span id="detail-profs-count-label">0</span> disciplina(s) nesta turma</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-text-secondary" id="turma-acc-profs-chevron">expand_more</span>
+                </button>
+
+                <div id="turma-acc-profs-panel" class="hidden border-t border-border-subtle">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-surface-container-low border-b border-border-subtle">
+                                <tr>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Nome do Professor</th>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Disciplina</th>
+                                    <th class="px-6 py-4 text-label-sm font-bold text-text-secondary uppercase tracking-wider">Código</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border-subtle" id="class-professores-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="class-professores-empty" class="hidden p-12 text-center space-y-4">
+                        <span class="material-symbols-outlined text-[64px] text-text-secondary/40">person_off</span>
+                        <p class="text-body-lg text-text-secondary font-medium">Nenhuma disciplina encontrada na lotação para esta turma.</p>
+                    </div>
+                    <p class="px-6 py-3 text-[11px] text-text-secondary border-t border-border-subtle">
+                        Fonte: Gestão de Lotação. Disciplinas sem professor aparecem como <strong>SEM LOTAÇÃO</strong>.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
