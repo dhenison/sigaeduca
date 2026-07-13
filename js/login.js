@@ -144,12 +144,24 @@
         return isInstitutionalEmail(email) || isSystemAdminEmail(email);
     }
 
-    /** Destino obrigatório após login */
+    /** Destino obrigatório após login — admin do sistema SEMPRE paineladmin */
     function redirectAfterLogin(email, session) {
+        email = normEmail(email);
         var goAdmin = isSystemAdminEmail(email) ||
-            !!(session && (session.sistemaAdmin || session.tipo === 'sistema'));
+            !!(session && (session.sistemaAdmin === true || session.tipo === 'sistema'));
+        // Admin precisa escolher escola no Painel Admin — limpa contexto anterior
+        if (goAdmin) {
+            try {
+                localStorage.removeItem('siga_active_school');
+                localStorage.removeItem('siga_school_name');
+            } catch (e) { /* ignore */ }
+        }
+        // Caminhos absolutos evitam erro de resolução em /login.html
         var dest = goAdmin ? '/paineladmin.html' : '/painelprincipal.html';
-        setTimeout(function () { window.location.replace(dest); }, 300);
+        try {
+            sessionStorage.setItem('siga_post_login_dest', dest);
+        } catch (e) { /* ignore */ }
+        window.location.replace(dest);
     }
 
     function ensureSystemAdminLocalUser(email) {

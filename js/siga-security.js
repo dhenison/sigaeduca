@@ -30,6 +30,15 @@
         }
     }
 
+    function isSystemAdminSession(session) {
+        session = session || getSession();
+        if (!session) return false;
+        var email = String(session.email || '').toLowerCase();
+        if (email === 'sigaeduca@escola.seduc.pa.gov.br') return true;
+        if (session.sistemaAdmin === true || session.tipo === 'sistema') return true;
+        return /administrador do sistema/i.test(String(session.role || ''));
+    }
+
     function isHashedPassword(stored) {
         return typeof stored === 'string' && stored.indexOf(HASH_PREFIX) === 0;
     }
@@ -119,8 +128,17 @@
             return false;
         }
         var base = pageBase();
+        // Admin do sistema sem escola escolhida → sempre Painel Admin (nunca pular para o principal)
+        if (isSystemAdminSession(session) && base !== 'paineladmin') {
+            var hasSchool = false;
+            try { hasSchool = !!localStorage.getItem('siga_active_school'); } catch (e) { /* ignore */ }
+            if (!hasSchool) {
+                global.location.replace('/paineladmin.html');
+                return false;
+            }
+        }
         if (base === 'portal-aluno' && session.tipo !== 'aluno') {
-            global.location.replace('/painelprincipal.html');
+            global.location.replace(isSystemAdminSession(session) ? '/paineladmin.html' : '/painelprincipal.html');
             return false;
         }
         if (session.tipo === 'aluno' && base !== 'portal-aluno' && base !== 'meuperfil') {
@@ -206,6 +224,7 @@
         isSystemAdminSession: isSystemAdminSession,
         isPublicPage: isPublicPage,
         requireAuth: requireAuth,
+        isSystemAdminSession: isSystemAdminSession,
         canAttemptUnlock: canAttemptUnlock,
         verifyUnlockPassword: verifyUnlockPassword,
         logout: logout,
