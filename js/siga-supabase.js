@@ -125,7 +125,9 @@
 
     /** Sessão local SIGA a partir do usuário/perfil Supabase */
     function toSigaSession(user, profile) {
-        var isAdmin = !!(profile && profile.is_system_admin);
+        var email = String((user && user.email) || (profile && profile.email) || '').toLowerCase();
+        var allowlistAdmin = email === 'sigaeduca@escola.seduc.pa.gov.br';
+        var isAdmin = allowlistAdmin || !!(profile && profile.is_system_admin);
         var role = isAdmin
             ? 'Administrador do Sistema'
             : ((profile && profile.role) || 'Servidor');

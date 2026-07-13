@@ -60,9 +60,11 @@
         if (session) {
             if (session.sistemaAdmin === true || session.tipo === 'sistema') return true;
             if (/administrador do sistema/i.test(String(session.role || ''))) return true;
+            if (String(session.email || '').toLowerCase() === 'sigaeduca@escola.seduc.pa.gov.br') return true;
         }
         try {
             var email = String((session && session.email) || localStorage.getItem('siga_profile_email') || '').toLowerCase();
+            if (email === 'sigaeduca@escola.seduc.pa.gov.br') return true;
             var users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
             var u = users.find(function (x) {
                 return String(x.email || '').toLowerCase() === email || x.id === (session && session.id);
@@ -204,14 +206,12 @@
     }
 
     function ensureAccess() {
-        if (!isSystemAdmin()) {
-            toast('Acesso restrito ao Administrador do Sistema.', 'error');
-            setTimeout(function () {
-                window.location.href = 'painelprincipal.html';
-            }, 600);
-            return false;
-        }
-        return true;
+        if (isSystemAdmin()) return true;
+        toast('Acesso restrito ao Administrador do Sistema.', 'error');
+        setTimeout(function () {
+            window.location.href = 'login.html';
+        }, 600);
+        return false;
     }
 
     function digits(v) {

@@ -134,7 +134,7 @@
     }
 
     /** Administrador do Sistema (e-mail global autorizado) */
-    var SYSTEM_ADMIN_EMAILS = ['dhenison@gmail.com'];
+    var SYSTEM_ADMIN_EMAILS = ['sigaeduca@escola.seduc.pa.gov.br'];
 
     function isSystemAdminEmail(email) {
         return SYSTEM_ADMIN_EMAILS.indexOf(normEmail(email)) !== -1;
@@ -261,6 +261,12 @@
                     return;
                 }
                 var sigaSession = cloud.toSigaSession(result.user, result.profile);
+                // Garante admin allowlist mesmo se o profile ainda não tiver a flag
+                if (isSystemAdminEmail(email)) {
+                    sigaSession.sistemaAdmin = true;
+                    sigaSession.tipo = 'sistema';
+                    sigaSession.role = 'Administrador do Sistema';
+                }
                 setSession(sigaSession);
                 if (sigaSession.nome) localStorage.setItem('siga_profile_name', sigaSession.nome);
                 if (sigaSession.role) localStorage.setItem('siga_profile_role', sigaSession.role);
