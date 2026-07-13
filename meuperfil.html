@@ -324,7 +324,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260713j"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260713j"></script><script src="js/siga-security.js?v=20260713j"></script><script src="js/siga-staff-data.js?v=20260713j"></script><script src="js/siga-db.js?v=20260713j"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260713k"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260713k"></script><script src="js/siga-security.js?v=20260713k"></script><script src="js/siga-staff-data.js?v=20260713k"></script><script src="js/siga-db.js?v=20260713k"></script><script src="js/siga-minha-lotacao.js?v=20260713k"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -700,6 +700,54 @@ Foto única do usuário (também aparece em Usuários). Otimizada automaticament
 <span class="material-symbols-outlined text-[160px] text-primary">school</span>
 </div>
 </div>
+
+<!-- Minha Lotação -->
+<div id="minha-lotacao-root" class="bg-white p-card-padding rounded-xl card-elevation">
+<button type="button" id="minha-lotacao-toggle" aria-expanded="false" aria-controls="minha-lotacao-panel"
+class="w-full flex items-center justify-between gap-3 text-left group">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">assignment_ind</span>
+</div>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm">Minha Lotação</h3>
+<p class="text-[12px] text-text-secondary truncate">Turmas, disciplinas e carga horária de <span id="minha-lotacao-professor">Servidor</span></p>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-secondary group-hover:text-primary transition-colors" id="minha-lotacao-chevron">expand_more</span>
+</button>
+
+<div id="minha-lotacao-panel" class="hidden mt-5 pt-5 border-t border-border-subtle space-y-4">
+<p id="minha-lotacao-loading" class="hidden text-sm text-text-secondary">Carregando lotação…</p>
+<p id="minha-lotacao-empty" class="hidden text-sm text-text-secondary">
+Nenhuma disciplina lotada encontrada para o seu nome/matrícula. Confira o cadastro em Gestão de Lotação ou a matrícula em Usuários.
+</p>
+<div id="minha-lotacao-table-wrap" class="overflow-x-auto rounded-xl border border-border-subtle">
+<table class="w-full text-left border-collapse min-w-[640px]">
+<thead>
+<tr class="bg-surface-container-low border-b border-border-subtle">
+<th class="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Turmas</th>
+<th class="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Disciplina</th>
+<th class="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-text-secondary">Código</th>
+<th class="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-text-secondary text-right">Carga Horária Semanal</th>
+<th class="px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-text-secondary text-right">Carga Horária Mensal</th>
+</tr>
+</thead>
+<tbody id="minha-lotacao-tbody" class="divide-y divide-border-subtle"></tbody>
+<tfoot>
+<tr class="bg-primary/5 border-t border-border-subtle">
+<td colspan="4" class="px-3 py-3 text-sm font-bold text-on-surface text-right">Carga Horária Total</td>
+<td class="px-3 py-3 text-sm font-bold text-primary text-right tabular-nums" id="minha-lotacao-total">0h</td>
+</tr>
+</tfoot>
+</table>
+</div>
+<p class="text-[11px] text-text-secondary">
+Carga horária mensal = carga semanal × 5. Fonte: Gestão de Lotação.
+</p>
+</div>
+</div>
+
 </div>
 </div>
 <!-- Vertical Spacer to match sidebar rhythm -->
