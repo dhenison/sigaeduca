@@ -79,16 +79,23 @@
     function pageName() {
         var path = String(global.location && global.location.pathname || '');
         var parts = path.split('/');
-        return (parts[parts.length - 1] || '').toLowerCase();
+        var name = (parts[parts.length - 1] || '').toLowerCase();
+        // Vercel cleanUrls: /login → "login" (sem .html)
+        if (name.indexOf('.') === -1 && name) return name + '.html';
+        return name;
+    }
+
+    function pageBase() {
+        return pageName().replace(/\.html$/i, '');
     }
 
     function isPublicPage() {
-        var name = pageName();
-        if (!name || name === '') return true;
+        var base = pageBase();
+        if (!base) return true;
         return (
-            name === 'login.html' ||
-            name === 'validar-documento.html' ||
-            name === 'index.html'
+            base === 'login' ||
+            base === 'validar-documento' ||
+            base === 'index'
         );
     }
 
@@ -106,12 +113,12 @@
             }
             return false;
         }
-        var name = pageName();
-        if (name === 'portal-aluno.html' && session.tipo !== 'aluno') {
+        var base = pageBase();
+        if (base === 'portal-aluno' && session.tipo !== 'aluno') {
             global.location.replace('painelprincipal.html');
             return false;
         }
-        if (session.tipo === 'aluno' && name !== 'portal-aluno.html' && name !== 'meuperfil.html') {
+        if (session.tipo === 'aluno' && base !== 'portal-aluno' && base !== 'meuperfil') {
             global.location.replace('portal-aluno.html');
             return false;
         }

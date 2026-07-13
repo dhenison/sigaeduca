@@ -33,7 +33,8 @@ let mediaStream = null;
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-    const isAuthPage = /login\.html|portal-aluno\.html/i.test(window.location.pathname + window.location.href);
+    const pathForMatch = (window.location.pathname + ' ' + window.location.href).toLowerCase();
+    const isAuthPage = /(?:^|[\/\s])login(?:\.html)?(?:[?#\s]|$)|(?:^|[\/\s])portal-aluno(?:\.html)?(?:[?#\s]|$)/i.test(pathForMatch);
 
     // Gate de autenticação no cliente (até Supabase Auth)
     if (window.SigaSecurity && typeof window.SigaSecurity.requireAuth === 'function') {

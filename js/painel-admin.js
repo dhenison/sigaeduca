@@ -618,7 +618,7 @@
 
     /** Aplica permissões da escola ativa nas páginas do sistema (esconde itens do menu) */
     function applySchoolMenuPermissions() {
-        if (isSystemAdmin() && /paineladmin\.html/i.test(location.pathname + location.href)) return;
+        if (isSystemAdmin() && /paineladmin(?:\.html)?/i.test(location.pathname + location.href)) return;
 
         ensureAdminContextBanner();
 
@@ -651,7 +651,7 @@
     /** Banner: admin em contexto de escola — voltar ao seletor */
     function ensureAdminContextBanner() {
         if (!isSystemAdmin()) return;
-        if (/paineladmin\.html/i.test(location.pathname + location.href)) return;
+        if (/paineladmin(?:\.html)?/i.test(location.pathname + location.href)) return;
         var name = localStorage.getItem('siga_school_name') || '';
         if (!localStorage.getItem(ACTIVE_SCHOOL_KEY)) return;
         if (document.getElementById('siga-admin-school-banner')) return;
@@ -668,7 +668,7 @@
     }
 
     function initPainelAdminPage() {
-        if (!/paineladmin\.html/i.test(location.pathname + location.href)) {
+        if (!/paineladmin(?:\.html)?/i.test(location.pathname + location.href)) {
             applySchoolMenuPermissions();
             return;
         }
