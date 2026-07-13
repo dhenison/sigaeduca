@@ -16,8 +16,13 @@
 
     var editingId = null;
     var pendingPhoto = '';
+    var photoTouched = false;
     var cameraStream = null;
     var filterFn = '';
+    /** Avatar: boa resolução, leve para gravar no banco (JPEG ~512px) */
+    var AVATAR_MAX_SIDE = 512;
+    var AVATAR_JPEG_QUALITY = 0.72;
+    var AVATAR_MAX_DATA_URL = 180000; // ~180 KB em texto (base64)
 
     function toast(msg, type) {
         if (typeof showToast === 'function') showToast(msg, type || 'success');
@@ -76,6 +81,10 @@
     }
 
     function ensureModal() {
+        if (document.getElementById('user-modal') && document.getElementById('user-senha')) return;
+        if (document.getElementById('user-modal') && !document.getElementById('user-senha')) {
+            document.getElementById('user-modal').remove();
+        }
         if (document.getElementById('user-modal')) return;
         var wrap = document.createElement('div');
         wrap.innerHTML = [
@@ -109,6 +118,7 @@
             '              </button>',
             '              <button type="button" id="user-photo-clear" class="px-3 py-2 rounded-lg border border-border-subtle text-label-md font-bold text-error hover:bg-error/5">Remover</button>',
             '            </div>',
+            '            <p class="text-[11px] text-text-secondary text-center max-w-[220px]">A foto é otimizada automaticamente (boa qualidade, arquivo leve) e salva no cadastro do usuário.</p>',
             '            <div id="user-camera-box" class="hidden w-full space-y-2">',
             '              <video id="user-camera-video" class="w-full max-w-[240px] mx-auto rounded-xl bg-black aspect-square object-cover" autoplay playsinline></video>',
             '              <div class="flex gap-2 justify-center">',
@@ -142,6 +152,15 @@
             '            <div class="flex flex-col gap-1.5 md:col-span-2">',
             '              <label class="text-label-md font-bold" for="user-telefone">Telefone (DDD + número)</label>',
             '              <input id="user-telefone" class="px-4 py-2.5 rounded-lg border border-border-subtle text-body-md outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary" placeholder="(91) 98888-7777" maxlength="16"/>',
+            '            </div>',
+            '            <div class="flex flex-col gap-1.5" id="user-senha-wrap">',
+            '              <label class="text-label-md font-bold" for="user-senha"><span id="user-senha-label">Senha de acesso *</span></label>',
+            '              <input id="user-senha" type="password" autocomplete="new-password" class="px-4 py-2.5 rounded-lg border border-border-subtle text-body-md outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary" placeholder="Mínimo 6 caracteres"/>',
+            '              <p id="user-senha-hint" class="text-label-sm text-text-secondary">O colaborador usará esta senha no login com o e-mail institucional.</p>',
+            '            </div>',
+            '            <div class="flex flex-col gap-1.5" id="user-senha2-wrap">',
+            '              <label class="text-label-md font-bold" for="user-senha2"><span id="user-senha2-label">Confirmar senha *</span></label>',
+            '              <input id="user-senha2" type="password" autocomplete="new-password" class="px-4 py-2.5 rounded-lg border border-border-subtle text-body-md outline-none focus:ring-2 focus:ring-primary/15 focus:border-primary" placeholder="Repita a senha"/>',
             '            </div>',
             '          </div>',
             '        </div>',
@@ -211,7 +230,8 @@
         });
     }
 
-    function setPhotoPreview(dataUrl) {
+    function setPhotoPreview(dataUrl, markTouched) {
+        if (markTouched) photoTouched = true;
         pendingPhoto = dataUrl || '';
         var img = document.getElementById('user-photo-preview');
         var ini = document.getElementById('user-photo-initials');
@@ -227,9 +247,91 @@
         }
     }
 
+    /** Redimensiona e comprime para JPEG leve (adequado a gravar em avatar_url no banco) */
+    function compressToAvatar(source, onDone, onError) {
+        function fail(msg) {
+            if (typeof onError === 'function') onError(msg || 'Não foi possível processar a foto.');
+            else toast(msg || 'Não foi possível processar a foto.', 'error');
+        }
+
+        function drawAndEncode(imgW, imgH, drawFn) {
+            var scale = Math.min(1, AVATAR_MAX_SIDE / Math.max(imgW, imgH));
+            var w = Math.max(1, Math.round(imgW * scale));
+            var h = Math.max(1, Math.round(imgH * scale));
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) {
+                fail('Canvas indisponível neste navegador.');
+                return;
+            }
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            drawFn(ctx, w, h);
+
+            var quality = AVATAR_JPEG_QUALITY;
+            var dataUrl = canvas.toDataURL('image/jpeg', quality);
+            // Se ainda grande, reduz qualidade gradualmente
+            while (dataUrl.length > AVATAR_MAX_DATA_URL && quality > 0.45) {
+                quality -= 0.08;
+                dataUrl = canvas.toDataURL('image/jpeg', quality);
+            }
+            if (dataUrl.length > AVATAR_MAX_DATA_URL) {
+                fail('A foto ficou muito pesada mesmo após otimizar. Tente outra imagem.');
+                return;
+            }
+            onDone(dataUrl);
+        }
+
+        if (!source) {
+            fail('Nenhuma imagem selecionada.');
+            return;
+        }
+
+        if (source instanceof HTMLVideoElement) {
+            if (!source.videoWidth) {
+                fail('Aguarde a câmera iniciar.');
+                return;
+            }
+            drawAndEncode(source.videoWidth, source.videoHeight, function (ctx, w, h) {
+                ctx.drawImage(source, 0, 0, w, h);
+            });
+            return;
+        }
+
+        var url = '';
+        var revoke = false;
+        if (typeof source === 'string') {
+            url = source;
+        } else if (source instanceof Blob) {
+            url = URL.createObjectURL(source);
+            revoke = true;
+        } else {
+            fail('Formato de imagem não suportado.');
+            return;
+        }
+
+        var img = new Image();
+        img.onload = function () {
+            try {
+                drawAndEncode(img.naturalWidth || img.width, img.naturalHeight || img.height, function (ctx, w, h) {
+                    ctx.drawImage(img, 0, 0, w, h);
+                });
+            } finally {
+                if (revoke) URL.revokeObjectURL(url);
+            }
+        };
+        img.onerror = function () {
+            if (revoke) URL.revokeObjectURL(url);
+            fail('Não foi possível ler a imagem.');
+        };
+        img.src = url;
+    }
+
     function clearPhoto() {
         stopCamera();
-        setPhotoPreview('');
+        setPhotoPreview('', true);
         var file = document.getElementById('user-photo-file');
         if (file) file.value = '';
     }
@@ -241,16 +343,15 @@
             toast('Use JPG, PNG ou WEBP.', 'error');
             return;
         }
-        if (file.size > 2 * 1024 * 1024) {
-            toast('A foto deve ter no máximo 2MB.', 'error');
+        if (file.size > 8 * 1024 * 1024) {
+            toast('Arquivo original muito grande (máx. 8MB). Escolha outra foto.', 'error');
             return;
         }
-        var reader = new FileReader();
-        reader.onload = function () {
-            setPhotoPreview(reader.result);
+        compressToAvatar(file, function (dataUrl) {
+            setPhotoPreview(dataUrl, true);
             stopCamera();
-        };
-        reader.readAsDataURL(file);
+            toast('Foto otimizada e pronta para salvar.');
+        });
     }
 
     function startCamera() {
@@ -261,7 +362,14 @@
             return;
         }
         stopCamera();
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: 'user',
+                width: { ideal: 720 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        })
             .then(function (stream) {
                 cameraStream = stream;
                 video.srcObject = stream;
@@ -285,17 +393,15 @@
 
     function capturePhoto() {
         var video = document.getElementById('user-camera-video');
-        var canvas = document.getElementById('user-camera-canvas');
         if (!video || !video.videoWidth) {
             toast('Aguarde a câmera iniciar.', 'error');
             return;
         }
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        setPhotoPreview(canvas.toDataURL('image/jpeg', 0.9));
-        stopCamera();
-        toast('Foto capturada!');
+        compressToAvatar(video, function (dataUrl) {
+            setPhotoPreview(dataUrl, true);
+            stopCamera();
+            toast('Foto capturada e otimizada!');
+        });
     }
 
     function openModal(user) {
@@ -315,7 +421,38 @@
         document.getElementById('user-facebook').value = user && user.redes ? (user.redes.facebook || '') : '';
         document.getElementById('user-lattes').value = user ? (user.lattes || '') : '';
         document.getElementById('user-bio').value = user ? (user.bio || '') : '';
-        setPhotoPreview(user ? (user.avatar || '') : '');
+        setPhotoPreview(user ? (user.avatar || '') : '', false);
+        photoTouched = false;
+
+        var senha = document.getElementById('user-senha');
+        var senha2 = document.getElementById('user-senha2');
+        var senhaLabel = document.getElementById('user-senha-label');
+        var senha2Label = document.getElementById('user-senha2-label');
+        var senhaHint = document.getElementById('user-senha-hint');
+        if (senha) senha.value = '';
+        if (senha2) senha2.value = '';
+        if (user) {
+            if (senha) senha.required = false;
+            if (senha2) senha2.required = false;
+            if (senhaLabel) senhaLabel.textContent = 'Nova senha (opcional)';
+            if (senha2Label) senha2Label.textContent = 'Confirmar nova senha';
+            if (senhaHint) {
+                senhaHint.textContent = user.senha
+                    ? 'Deixe em branco para manter a senha atual. Preencha só se quiser trocar.'
+                    : 'Este usuário ainda não tem senha. Defina uma agora para liberar o login.';
+            }
+            if (senha && !user.senha) senha.required = true;
+            if (senha2 && !user.senha) senha2.required = true;
+        } else {
+            if (senha) senha.required = true;
+            if (senha2) senha2.required = true;
+            if (senhaLabel) senhaLabel.textContent = 'Senha de acesso *';
+            if (senha2Label) senha2Label.textContent = 'Confirmar senha *';
+            if (senhaHint) {
+                senhaHint.textContent = 'O colaborador usará esta senha no login com o e-mail institucional.';
+            }
+        }
+
         document.getElementById('user-modal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }
@@ -327,6 +464,7 @@
         document.body.style.overflow = '';
         editingId = null;
         pendingPhoto = '';
+        photoTouched = false;
     }
 
     function applyAvatarToSystem(user) {
@@ -336,10 +474,11 @@
             var email = session && session.email ? normEmail(session.email) : '';
             if (email && email === normEmail(user.email)) {
                 if (user.avatar) localStorage.setItem('siga_profile_avatar', user.avatar);
+                else localStorage.removeItem('siga_profile_avatar');
                 if (user.nome) localStorage.setItem('siga_profile_name', user.nome);
                 if (user.cargo) localStorage.setItem('siga_profile_role', user.cargo);
                 if (user.bio != null) localStorage.setItem('siga_profile_bio', user.bio || '');
-                if (user.telefone) localStorage.setItem('siga_profile_phone', user.telefone);
+                if (user.telefone != null) localStorage.setItem('siga_profile_phone', user.telefone || '');
                 if (user.email) localStorage.setItem('siga_profile_email', user.email);
                 if (typeof syncProfile === 'function') syncProfile();
             }
@@ -359,6 +498,8 @@
         var facebook = document.getElementById('user-facebook').value.trim();
         var lattes = document.getElementById('user-lattes').value.trim();
         var bio = document.getElementById('user-bio').value.trim();
+        var senha = String((document.getElementById('user-senha') || {}).value || '');
+        var senha2 = String((document.getElementById('user-senha2') || {}).value || '');
 
         if (!nome || !funcao || !matricula || !email) {
             toast('Preencha os campos obrigatórios.', 'error');
@@ -374,6 +515,22 @@
         }
 
         var list = getUsers();
+        var prev = editingId
+            ? (list.find(function (u) { return String(u.id) === String(editingId); }) || {})
+            : {};
+        var precisaSenhaAgora = !editingId || !prev.senha;
+
+        if (precisaSenhaAgora || senha || senha2) {
+            if (senha.length < 6) {
+                toast('A senha deve ter pelo menos 6 caracteres.', 'error');
+                return;
+            }
+            if (senha !== senha2) {
+                toast('As senhas não coincidem.', 'error');
+                return;
+            }
+        }
+
         var dupEmail = list.find(function (u) {
             return normEmail(u.email) === email && String(u.id) !== String(editingId || '');
         });
@@ -390,48 +547,72 @@
             return;
         }
 
-        var payload = {
-            id: editingId || uid(),
-            nome: nome,
-            cargo: funcao,
-            funcao: funcao,
-            matriculaSemVinculo: matricula,
-            email: email,
-            disciplinaPrincipal: disciplina,
-            telefone: telefone,
-            redes: { instagram: instagram, x: x, facebook: facebook },
-            lattes: lattes,
-            bio: bio,
-            avatar: pendingPhoto || '',
-            status: 'Ativo',
-            lastAccess: editingId
-                ? ((list.find(function (u) { return String(u.id) === String(editingId); }) || {}).lastAccess || '—')
-                : 'Nunca',
-            precisaDefinirSenha: true,
-            updatedAt: new Date().toISOString()
-        };
+        function persist(hashedSenha) {
+            var payload = {
+                id: editingId || uid(),
+                nome: nome,
+                cargo: funcao,
+                funcao: funcao,
+                matriculaSemVinculo: matricula,
+                email: email,
+                disciplinaPrincipal: disciplina,
+                telefone: telefone,
+                redes: { instagram: instagram, x: x, facebook: facebook },
+                lattes: lattes,
+                bio: bio,
+                avatar: photoTouched ? (pendingPhoto || '') : (pendingPhoto || prev.avatar || ''),
+                status: prev.status || 'Ativo',
+                lastAccess: editingId ? (prev.lastAccess || '—') : 'Nunca',
+                precisaDefinirSenha: false,
+                updatedAt: new Date().toISOString()
+            };
 
-        if (editingId) {
-            var prev = list.find(function (u) { return String(u.id) === String(editingId); }) || {};
-            payload.senha = prev.senha || '';
-            payload.precisaDefinirSenha = prev.precisaDefinirSenha !== false && !prev.senha;
-            payload.cpf = prev.cpf || '';
-            payload.dataNascimento = prev.dataNascimento || '';
-            list = list.map(function (u) {
-                return String(u.id) === String(editingId) ? Object.assign({}, prev, payload) : u;
-            });
-            toast('Usuário atualizado!');
-        } else {
-            payload.senha = '';
-            payload.createdAt = new Date().toISOString();
-            list.push(payload);
-            toast('Usuário cadastrado!');
+            if (hashedSenha) {
+                payload.senha = hashedSenha;
+                payload.precisaDefinirSenha = false;
+            } else if (editingId) {
+                payload.senha = prev.senha || '';
+                payload.precisaDefinirSenha = !payload.senha;
+            } else {
+                payload.senha = '';
+                payload.precisaDefinirSenha = true;
+            }
+
+            if (editingId) {
+                payload.cpf = prev.cpf || '';
+                payload.dataNascimento = prev.dataNascimento || '';
+                list = list.map(function (u) {
+                    return String(u.id) === String(editingId) ? Object.assign({}, prev, payload) : u;
+                });
+                toast(hashedSenha ? 'Usuário e senha atualizados!' : 'Usuário atualizado!');
+            } else {
+                payload.createdAt = new Date().toISOString();
+                list.push(payload);
+                toast('Usuário cadastrado com senha de acesso!');
+            }
+
+            saveUsers(list);
+            applyAvatarToSystem(payload);
+            closeModal();
+            render();
         }
 
-        saveUsers(list);
-        applyAvatarToSystem(payload);
-        closeModal();
-        render();
+        if (senha) {
+            var sec = window.SigaSecurity;
+            if (sec && typeof sec.hashPassword === 'function') {
+                sec.hashPassword(senha).then(function (hashed) {
+                    persist(hashed);
+                }).catch(function () {
+                    toast('Não foi possível proteger a senha. Tente novamente.', 'error');
+                });
+                return;
+            }
+            // Fallback sem SigaSecurity (não ideal)
+            persist(senha);
+            return;
+        }
+
+        persist(null);
     }
 
     function removeUser(id) {

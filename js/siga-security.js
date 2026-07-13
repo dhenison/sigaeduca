@@ -141,7 +141,8 @@
             global.location.replace(isSystemAdminSession(session) ? '/paineladmin.html' : '/painelprincipal.html');
             return false;
         }
-        if (session.tipo === 'aluno' && base !== 'portal-aluno' && base !== 'meuperfil') {
+        // Alunos usam apenas o Portal do Aluno (sem Meu Perfil / foto / segurança de servidor)
+        if (session.tipo === 'aluno' && base !== 'portal-aluno') {
             global.location.replace('/portal-aluno.html');
             return false;
         }

@@ -41,6 +41,9 @@ erDiagram
     text logo_url
     text status
     jsonb menu_permissions
+    uuid created_by
+    uuid updated_by
+    text observacoes
   }
 
   school_memberships {
@@ -61,13 +64,19 @@ Perfil ligado a `auth.users`.
 
 ### `public.schools`
 Uma linha por unidade escolar (tenant).  
-- `inep` único  
+- `inep` único (8–12 dígitos; normalizado no trigger)  
 - `menu_permissions` JSON com flags das abas do menu (`turmas`, `alunos`, …)  
-- `status`: `Ativa` | `Inativa`
+- `status`: `Ativa` | `Inativa`  
+- `created_by` / `updated_by` preenchidos pelo trigger `trg_schools_audit`  
+- SQL detalhado: [sql/schools_creation.sql](./sql/schools_creation.sql) · [PAINEL_ADMIN_DATABASE.md](./PAINEL_ADMIN_DATABASE.md)
 
 ### `public.school_memberships`
 Quem pode trabalhar em cada escola (futuro: diretor, professor, etc.).  
 Admin do sistema **não precisa** de membership para gerenciar tudo.
+
+### `public.academic_years`
+Ano letivo por escola (base do Calendário Letivo e Turmas).  
+Criado no **Menu 1 — Minha Escola**. Ver [PAINEL_ESCOLA_DATABASE.md](./PAINEL_ESCOLA_DATABASE.md).
 
 ## RLS (resumo)
 

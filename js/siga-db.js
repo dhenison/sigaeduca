@@ -350,6 +350,26 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+function findStaffUserForSession(session) {
+    session = session || null;
+    try {
+        if (!session) session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+    } catch (e) {
+        session = null;
+    }
+    if (!session || session.tipo === 'aluno') return null;
+    try {
+        const users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
+        if (!Array.isArray(users)) return null;
+        return users.find((u) =>
+            String(u.id) === String(session.id) ||
+            String(u.email || '').toLowerCase() === String(session.email || '').toLowerCase()
+        ) || null;
+    } catch (e) {
+        return null;
+    }
+}
+
 function getProfileData() {
     let session = null;
     try {
@@ -357,14 +377,163 @@ function getProfileData() {
     } catch (e) {
         session = null;
     }
-    const name = localStorage.getItem('siga_profile_name') || (session && session.nome) || 'Usuário';
-    const role = localStorage.getItem('siga_profile_role') || (session && session.role) || 'Administrador';
-    const email = localStorage.getItem('siga_profile_email') || (session && session.email) || '';
-    const phone = localStorage.getItem('siga_profile_phone') || '';
-    const bio = localStorage.getItem('siga_profile_bio') || '';
-    const avatar = localStorage.getItem('siga_profile_avatar') || '';
+    const staff = findStaffUserForSession(session);
+    const name = localStorage.getItem('siga_profile_name') || (staff && staff.nome) || (session && session.nome) || 'Usuário';
+    const role = localStorage.getItem('siga_profile_role') || (staff && (staff.cargo || staff.funcao)) || (session && session.role) || 'Administrador';
+    const email = localStorage.getItem('siga_profile_email') || (staff && staff.email) || (session && session.email) || '';
+    const phone = localStorage.getItem('siga_profile_phone') || (staff && staff.telefone) || '';
+    const bio = localStorage.getItem('siga_profile_bio') || (staff && staff.bio) || '';
+    // Foto única: perfil ↔ cadastro em Usuários
+    let avatar = localStorage.getItem('siga_profile_avatar') || '';
+    if (!avatar && staff && staff.avatar) {
+        avatar = staff.avatar;
+        try { localStorage.setItem('siga_profile_avatar', avatar); } catch (e) { /* ignore */ }
+    }
     const twoFa = localStorage.getItem('siga_profile_2fa') !== 'false';
-    return { name, role, email, phone, bio, avatar, twoFa };
+    return { name, role, email, phone, bio, avatar, twoFa, session, staff };
+}
+
+/** Comprime imagem/vídeo para JPEG leve (mesma política de Usuários) */
+function compressProfileAvatar(source, onDone, onError) {
+    const AVATAR_MAX_SIDE = 512;
+    const AVATAR_JPEG_QUALITY = 0.72;
+    const AVATAR_MAX_DATA_URL = 180000;
+
+    function fail(msg) {
+        if (typeof onError === 'function') onError(msg || 'Não foi possível processar a foto.');
+        else showToast(msg || 'Não foi possível processar a foto.', 'error');
+    }
+
+    function drawAndEncode(imgW, imgH, drawFn) {
+        const scale = Math.min(1, AVATAR_MAX_SIDE / Math.max(imgW, imgH));
+        const w = Math.max(1, Math.round(imgW * scale));
+        const h = Math.max(1, Math.round(imgH * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            fail('Canvas indisponível neste navegador.');
+            return;
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        drawFn(ctx, w, h);
+
+        let quality = AVATAR_JPEG_QUALITY;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        while (dataUrl.length > AVATAR_MAX_DATA_URL && quality > 0.45) {
+            quality -= 0.08;
+            dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        if (dataUrl.length > AVATAR_MAX_DATA_URL) {
+            fail('A foto ficou muito pesada mesmo após otimizar. Tente outra imagem.');
+            return;
+        }
+        onDone(dataUrl);
+    }
+
+    if (!source) {
+        fail('Nenhuma imagem selecionada.');
+        return;
+    }
+
+    if (source instanceof HTMLVideoElement) {
+        if (!source.videoWidth) {
+            fail('Aguarde a câmera iniciar.');
+            return;
+        }
+        drawAndEncode(source.videoWidth, source.videoHeight, (ctx, w, h) => {
+            ctx.drawImage(source, 0, 0, w, h);
+        });
+        return;
+    }
+
+    let url = '';
+    let revoke = false;
+    if (typeof source === 'string') {
+        url = source;
+    } else if (source instanceof Blob) {
+        url = URL.createObjectURL(source);
+        revoke = true;
+    } else {
+        fail('Formato de imagem não suportado.');
+        return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+        try {
+            drawAndEncode(img.naturalWidth || img.width, img.naturalHeight || img.height, (ctx, w, h) => {
+                ctx.drawImage(img, 0, 0, w, h);
+            });
+        } finally {
+            if (revoke) URL.revokeObjectURL(url);
+        }
+    };
+    img.onerror = () => {
+        if (revoke) URL.revokeObjectURL(url);
+        fail('Não foi possível ler a imagem.');
+    };
+    img.src = url;
+}
+
+function syncAvatarToStaffUsers(dataUrl) {
+    let session = null;
+    try {
+        session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+    } catch (e) {
+        session = null;
+    }
+    const email = String(
+        (session && session.email) || localStorage.getItem('siga_profile_email') || ''
+    ).toLowerCase();
+    const id = session && session.id != null ? String(session.id) : '';
+    try {
+        const users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
+        if (!Array.isArray(users)) return;
+        let changed = false;
+        const next = users.map((u) => {
+            const match =
+                (id && String(u.id) === id) ||
+                (email && String(u.email || '').toLowerCase() === email);
+            if (!match) return u;
+            changed = true;
+            return Object.assign({}, u, { avatar: dataUrl || '' });
+        });
+        if (changed) localStorage.setItem('siga_users', JSON.stringify(next));
+    } catch (e) { /* ignore */ }
+}
+
+function syncProfileFieldsToStaffUsers(fields) {
+    let session = null;
+    try {
+        session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+    } catch (e) {
+        session = null;
+    }
+    if (!session || session.tipo === 'aluno') return;
+    const email = String(session.email || fields.email || '').toLowerCase();
+    const id = session.id != null ? String(session.id) : '';
+    try {
+        const users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
+        if (!Array.isArray(users)) return;
+        let changed = false;
+        const next = users.map((u) => {
+            const match =
+                (id && String(u.id) === id) ||
+                (email && String(u.email || '').toLowerCase() === email);
+            if (!match) return u;
+            changed = true;
+            const patch = {};
+            if (fields.name != null) patch.nome = fields.name;
+            if (fields.phone != null) patch.telefone = fields.phone;
+            if (fields.bio != null) patch.bio = fields.bio;
+            if (fields.email != null) patch.email = fields.email;
+            return Object.assign({}, u, patch);
+        });
+        if (changed) localStorage.setItem('siga_users', JSON.stringify(next));
+    } catch (e) { /* ignore */ }
 }
 
 function profileInitials(name) {
@@ -459,8 +628,19 @@ function syncProfile() {
     });
 }
 
-// 2. Profile Page (meuperfil.html)
+// 2. Profile Page (meuperfil.html) — somente usuários/servidores
 function initProfilePage() {
+    let session = null;
+    try {
+        session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+    } catch (e) {
+        session = null;
+    }
+    if (session && session.tipo === 'aluno') {
+        window.location.replace('portal-aluno.html');
+        return;
+    }
+
     const profile = getProfileData();
     const nameInput = document.getElementById('profile-name');
     const emailInput = document.getElementById('profile-email');
@@ -468,19 +648,204 @@ function initProfilePage() {
     const roleInput = document.getElementById('profile-role');
     const bioEl = document.getElementById('profile-bio');
     const cardName = document.getElementById('profile-card-name');
+    const cardEmail = document.getElementById('profile-card-email');
     const cardRole = document.getElementById('profile-card-role');
     const photoEl = document.getElementById('profile-photo');
+    const photoInitials = document.getElementById('profile-photo-initials');
     const photoInput = document.getElementById('profile-photo-input');
     const twoFaInput = document.getElementById('profile-2fa');
     const saveBtn = document.getElementById('profile-save-btn');
     const discardBtn = document.getElementById('profile-discard-btn');
     const changePhotoBtn = document.getElementById('profile-change-photo-btn');
+    const uploadPhotoBtn = document.getElementById('profile-photo-upload-btn');
+    const cameraPhotoBtn = document.getElementById('profile-photo-camera-btn');
+    const clearPhotoBtn = document.getElementById('profile-photo-clear-btn');
+    const cameraBox = document.getElementById('profile-camera-box');
+    const cameraVideo = document.getElementById('profile-camera-video');
+    const cameraCapture = document.getElementById('profile-camera-capture');
+    const cameraCancel = document.getElementById('profile-camera-cancel');
     const changePasswordBtn = document.getElementById('profile-change-password-btn');
+    const passwordModal = document.getElementById('profile-password-modal');
+    const passwordForm = document.getElementById('profile-password-form');
     const editBioBtn = document.getElementById('profile-edit-bio-btn');
-    const endSessionBtn = document.getElementById('profile-end-session-btn');
+    const sessionsList = document.getElementById('profile-sessions-list');
+    const passwordHint = document.getElementById('profile-password-hint');
+
+    let cameraStream = null;
 
     const defaultBio =
         'Especialista em Gestão Escolar com 15 anos de experiência. Focado em inovação pedagógica e implementação de tecnologias educacionais para otimização do aprendizado e engajamento da comunidade escolar.';
+
+    function setPhotoPreview(avatar) {
+        const initials = profileInitials(getProfileData().name);
+        if (avatar) {
+            if (photoEl) {
+                photoEl.src = avatar;
+                photoEl.classList.remove('hidden');
+            }
+            if (photoInitials) photoInitials.classList.add('hidden');
+        } else {
+            if (photoEl) {
+                photoEl.removeAttribute('src');
+                photoEl.classList.add('hidden');
+            }
+            if (photoInitials) {
+                photoInitials.textContent = initials;
+                photoInitials.classList.remove('hidden');
+            }
+        }
+    }
+
+    function applyAvatar(dataUrl, toastMsg) {
+        if (dataUrl) localStorage.setItem('siga_profile_avatar', dataUrl);
+        else localStorage.removeItem('siga_profile_avatar');
+        syncAvatarToStaffUsers(dataUrl || '');
+        setPhotoPreview(dataUrl || '');
+        syncProfile();
+        showToast(toastMsg || 'Foto atualizada!');
+    }
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach((t) => t.stop());
+            cameraStream = null;
+        }
+        if (cameraVideo) cameraVideo.srcObject = null;
+        if (cameraBox) cameraBox.classList.add('hidden');
+    }
+
+    function startCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showToast('Câmera não disponível neste navegador.', 'error');
+            return;
+        }
+        stopCamera();
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } },
+            audio: false
+        }).then((stream) => {
+            cameraStream = stream;
+            if (cameraVideo) cameraVideo.srcObject = stream;
+            if (cameraBox) cameraBox.classList.remove('hidden');
+        }).catch(() => {
+            showToast('Não foi possível acessar a câmera.', 'error');
+        });
+    }
+
+    function passwordAgeHint() {
+        const iso = localStorage.getItem('siga_profile_password_updated_at');
+        if (!iso) {
+            return 'Defina ou altere sua senha de acesso ao sistema.';
+        }
+        const then = new Date(iso);
+        if (Number.isNaN(then.getTime())) {
+            return 'Sua senha foi alterada recentemente.';
+        }
+        const days = Math.max(0, Math.floor((Date.now() - then.getTime()) / 86400000));
+        if (days === 0) return 'Sua senha foi alterada hoje.';
+        if (days === 1) return 'Sua senha foi alterada pela última vez há 1 dia.';
+        return `Sua senha foi alterada pela última vez há ${days} dias.`;
+    }
+
+    function detectDeviceLabel() {
+        const ua = navigator.userAgent || '';
+        let device = 'Computador';
+        if (/iPhone/i.test(ua)) device = 'iPhone';
+        else if (/iPad/i.test(ua)) device = 'iPad';
+        else if (/Android/i.test(ua)) device = 'Android';
+        else if (/Windows/i.test(ua)) device = 'Windows PC';
+        else if (/Mac OS|Macintosh/i.test(ua)) device = 'Mac';
+        let browser = 'Navegador';
+        if (/Edg\//i.test(ua)) browser = 'Edge';
+        else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) browser = 'Chrome';
+        else if (/Firefox\//i.test(ua)) browser = 'Firefox';
+        else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = 'Safari';
+        return { device, browser };
+    }
+
+    function upsertCurrentSession() {
+        const { device, browser } = detectDeviceLabel();
+        const current = {
+            id: 'current',
+            device,
+            browser,
+            label: device,
+            meta: `${browser} • Logado agora`,
+            current: true,
+            at: new Date().toISOString()
+        };
+        try {
+            localStorage.setItem('siga_profile_session_current', JSON.stringify(current));
+        } catch (e) { /* ignore */ }
+        return current;
+    }
+
+    function renderSessions() {
+        if (!sessionsList) return;
+        const current = upsertCurrentSession();
+        let extras = [];
+        try {
+            extras = JSON.parse(localStorage.getItem('siga_profile_sessions_extra') || '[]') || [];
+        } catch (e) {
+            extras = [];
+        }
+        if (!Array.isArray(extras)) extras = [];
+
+        const rows = [current].concat(extras.filter((s) => s && !s.current));
+        sessionsList.innerHTML = rows.map((s) => {
+            const icon = /iPhone|Android|iPad|smartphone/i.test(String(s.device || s.label || ''))
+                ? 'smartphone'
+                : 'laptop';
+            const action = s.current
+                ? '<span class="text-primary text-[11px] font-bold">ESTA SESSÃO</span>'
+                : `<button type="button" class="text-error text-[11px] font-bold hover:underline" data-end-session="${String(s.id)}">Encerrar</button>`;
+            return (
+                `<div class="flex items-center justify-between text-body-md">` +
+                `<div class="flex items-center gap-3">` +
+                `<span class="material-symbols-outlined text-text-secondary">${icon}</span>` +
+                `<div>` +
+                `<p class="font-medium">${escapeHtml(s.label || s.device || 'Dispositivo')}</p>` +
+                `<p class="text-[11px] text-text-secondary">${escapeHtml(s.meta || '')}</p>` +
+                `</div></div>${action}</div>`
+            );
+        }).join('');
+
+        sessionsList.querySelectorAll('[data-end-session]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const sid = btn.getAttribute('data-end-session');
+                try {
+                    const list = JSON.parse(localStorage.getItem('siga_profile_sessions_extra') || '[]') || [];
+                    localStorage.setItem(
+                        'siga_profile_sessions_extra',
+                        JSON.stringify(list.filter((s) => String(s.id) !== String(sid)))
+                    );
+                } catch (e) { /* ignore */ }
+                renderSessions();
+                showToast('Sessão remota encerrada.', 'error');
+            });
+        });
+    }
+
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function openPasswordModal() {
+        if (!passwordModal) return;
+        passwordModal.classList.remove('hidden');
+        const cur = document.getElementById('pwd-current');
+        if (cur) cur.focus();
+    }
+
+    function closePasswordModal() {
+        if (!passwordModal) return;
+        passwordModal.classList.add('hidden');
+        if (passwordForm) passwordForm.reset();
+    }
 
     function fillForm() {
         const p = getProfileData();
@@ -489,17 +854,16 @@ function initProfilePage() {
         if (phoneInput) phoneInput.value = p.phone;
         if (roleInput) roleInput.value = p.role;
         if (cardName) cardName.textContent = p.name || 'Usuário';
+        if (cardEmail) cardEmail.textContent = p.email || 'Conta do sistema';
         if (cardRole) cardRole.textContent = p.role;
         if (bioEl) bioEl.textContent = p.bio || defaultBio;
         if (twoFaInput) twoFaInput.checked = p.twoFa;
-        if (photoEl) {
-            if (p.avatar) {
-                photoEl.src = p.avatar;
-            }
-        }
+        setPhotoPreview(p.avatar);
+        if (passwordHint) passwordHint.textContent = passwordAgeHint();
     }
 
     fillForm();
+    renderSessions();
     syncProfile();
 
     if (saveBtn) {
@@ -508,6 +872,7 @@ function initProfilePage() {
             const email = (emailInput && emailInput.value.trim()) || '';
             const phone = (phoneInput && phoneInput.value.trim()) || '';
             const role = (roleInput && roleInput.value.trim()) || getProfileData().role;
+            const bio = (bioEl && bioEl.textContent.trim()) || '';
 
             localStorage.setItem('siga_profile_name', name);
             localStorage.setItem('siga_profile_email', email);
@@ -518,15 +883,19 @@ function initProfilePage() {
             }
 
             try {
-                const session = JSON.parse(localStorage.getItem('siga_session') || 'null') || {};
-                session.nome = name;
-                session.email = email;
-                session.role = role;
-                localStorage.setItem('siga_session', JSON.stringify(session));
+                const sess = JSON.parse(localStorage.getItem('siga_session') || 'null') || {};
+                sess.nome = name;
+                sess.email = email;
+                sess.role = role;
+                localStorage.setItem('siga_session', JSON.stringify(sess));
             } catch (e) { /* ignore */ }
 
+            syncProfileFieldsToStaffUsers({ name, email, phone, bio });
+
             if (cardName) cardName.textContent = name;
+            if (cardEmail) cardEmail.textContent = email || 'Conta do sistema';
             if (cardRole) cardRole.textContent = role;
+            setPhotoPreview(getProfileData().avatar);
             syncProfile();
             showToast('Perfil atualizado com sucesso!');
         });
@@ -543,59 +912,67 @@ function initProfilePage() {
         if (photoInput) photoInput.click();
     }
     if (changePhotoBtn) changePhotoBtn.addEventListener('click', openPhotoPicker);
-    if (photoEl && photoEl.parentElement) {
-        photoEl.parentElement.addEventListener('click', openPhotoPicker);
+    if (uploadPhotoBtn) uploadPhotoBtn.addEventListener('click', openPhotoPicker);
+    if (cameraPhotoBtn) cameraPhotoBtn.addEventListener('click', startCamera);
+    if (cameraCancel) cameraCancel.addEventListener('click', stopCamera);
+    if (cameraCapture) {
+        cameraCapture.addEventListener('click', () => {
+            if (!cameraVideo || !cameraVideo.videoWidth) {
+                showToast('Aguarde a câmera iniciar.', 'error');
+                return;
+            }
+            compressProfileAvatar(cameraVideo, (dataUrl) => {
+                applyAvatar(dataUrl, 'Foto capturada e sincronizada com Usuários!');
+                stopCamera();
+            });
+        });
+    }
+    if (clearPhotoBtn) {
+        clearPhotoBtn.addEventListener('click', () => {
+            stopCamera();
+            applyAvatar('', 'Foto removida.');
+            if (photoInput) photoInput.value = '';
+        });
     }
     if (photoInput) {
         photoInput.addEventListener('change', () => {
             const file = photoInput.files && photoInput.files[0];
             if (!file) return;
             if (!/^image\/(jpeg|png|jpg|webp)$/i.test(file.type)) {
-                showToast('Use JPG ou PNG.', 'error');
+                showToast('Use JPG, PNG ou WEBP.', 'error');
                 return;
             }
-            if (file.size > 2 * 1024 * 1024) {
-                showToast('A foto deve ter no máximo 2MB.', 'error');
+            if (file.size > 8 * 1024 * 1024) {
+                showToast('Arquivo original muito grande (máx. 8MB).', 'error');
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = () => {
-                const dataUrl = reader.result;
-                localStorage.setItem('siga_profile_avatar', dataUrl);
-                if (photoEl) photoEl.src = dataUrl;
-                try {
-                    const email = (localStorage.getItem('siga_profile_email') || '').toLowerCase();
-                    const users = JSON.parse(localStorage.getItem('siga_users') || '[]');
-                    if (Array.isArray(users) && email) {
-                        const next = users.map((u) => {
-                            if (String(u.email || '').toLowerCase() === email) {
-                                return Object.assign({}, u, { avatar: dataUrl });
-                            }
-                            return u;
-                        });
-                        localStorage.setItem('siga_users', JSON.stringify(next));
-                    }
-                } catch (e) { /* ignore */ }
-                syncProfile();
-                showToast('Foto atualizada!');
-            };
-            reader.readAsDataURL(file);
+            compressProfileAvatar(file, (dataUrl) => {
+                applyAvatar(dataUrl, 'Foto otimizada e sincronizada com Usuários!');
+                stopCamera();
+            });
+            photoInput.value = '';
         });
     }
 
     if (changePasswordBtn) {
-        changePasswordBtn.addEventListener('click', () => {
+        changePasswordBtn.addEventListener('click', openPasswordModal);
+    }
+    if (passwordModal) {
+        passwordModal.querySelectorAll('[data-pwd-close]').forEach((el) => {
+            el.addEventListener('click', closePasswordModal);
+        });
+    }
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
             const sec = window.SigaSecurity;
             if (!sec) {
                 showToast('Módulo de segurança indisponível.', 'error');
                 return;
             }
-            const current = prompt('Digite a senha atual:');
-            if (current === null) return;
-            const next = prompt('Digite a nova senha (mín. 6 caracteres):');
-            if (next === null) return;
-            const confirmNext = prompt('Confirme a nova senha:');
-            if (confirmNext === null) return;
+            const current = (document.getElementById('pwd-current') || {}).value || '';
+            const next = (document.getElementById('pwd-next') || {}).value || '';
+            const confirmNext = (document.getElementById('pwd-confirm') || {}).value || '';
             if (next.length < 6) {
                 showToast('A nova senha deve ter pelo menos 6 caracteres.', 'error');
                 return;
@@ -604,16 +981,16 @@ function initProfilePage() {
                 showToast('As senhas não coincidem.', 'error');
                 return;
             }
-            const session = sec.getSession() || {};
+            const sess = sec.getSession() || session || {};
             Promise.resolve().then(async () => {
                 let users = [];
-                try { users = JSON.parse(localStorage.getItem('siga_users') || '[]') || []; } catch (e) { users = []; }
+                try { users = JSON.parse(localStorage.getItem('siga_users') || '[]') || []; } catch (err) { users = []; }
                 const idx = users.findIndex((u) =>
-                    String(u.id) === String(session.id) ||
-                    String(u.email || '').toLowerCase() === String(session.email || '').toLowerCase()
+                    String(u.id) === String(sess.id) ||
+                    String(u.email || '').toLowerCase() === String(sess.email || '').toLowerCase()
                 );
                 if (idx < 0) {
-                    showToast('Usuário da sessão não encontrado.', 'error');
+                    showToast('Usuário da sessão não encontrado em Usuários.', 'error');
                     return;
                 }
                 const ok = await sec.verifyPassword(current, users[idx].senha || '');
@@ -624,10 +1001,9 @@ function initProfilePage() {
                 users[idx].senha = await sec.hashPassword(next);
                 users[idx].precisaDefinirSenha = false;
                 localStorage.setItem('siga_users', JSON.stringify(users));
-                localStorage.setItem('siga_profile_password_hint', 'updated');
                 localStorage.setItem('siga_profile_password_updated_at', new Date().toISOString());
-                const hint = document.getElementById('profile-password-hint');
-                if (hint) hint.textContent = 'Sua senha foi alterada recentemente.';
+                if (passwordHint) passwordHint.textContent = passwordAgeHint();
+                closePasswordModal();
                 showToast('Senha atualizada com sucesso!');
             });
         });
@@ -641,6 +1017,7 @@ function initProfilePage() {
             const trimmed = next.trim();
             localStorage.setItem('siga_profile_bio', trimmed);
             bioEl.textContent = trimmed || defaultBio;
+            syncProfileFieldsToStaffUsers({ bio: trimmed });
             showToast('Resumo profissional atualizado!');
         });
     }
@@ -652,16 +1029,10 @@ function initProfilePage() {
         });
     }
 
-    if (endSessionBtn) {
-        endSessionBtn.addEventListener('click', () => {
-            showToast('Sessão remota encerrada.', 'error');
-            const row = endSessionBtn.closest('.flex.items-center.justify-between');
-            if (row) row.remove();
-        });
-    }
+    window.addEventListener('beforeunload', stopCamera);
 }
 
-// 3. School Page (escola.html)
+// 3. School Page (escola.html) — lê/grava em public.schools (Supabase) com cache local
 function initSchoolPage() {
     const inputs = Array.from(document.querySelectorAll('input'));
     const dbKeys = [
@@ -669,43 +1040,108 @@ function initSchoolPage() {
         'siga_school_address', 'siga_school_cep', 'siga_school_bairro',
         'siga_school_city_state', 'siga_school_email', 'siga_school_phone'
     ];
-    const defaults = [
-        '', '', '',
-        '', '', '',
-        '', '', ''
-    ];
-    
-    inputs.forEach((inp, idx) => {
-        if (idx > 0 && idx <= 9) { // idx 0 is the search bar
-            const dbIdx = idx - 1;
-            inp.value = localStorage.getItem(dbKeys[dbIdx]) || defaults[dbIdx];
-        }
-    });
-    
+    const defaults = ['', '', '', '', '', '', '', '', ''];
+
+    function fillFromLocal() {
+        inputs.forEach((inp, idx) => {
+            if (idx > 0 && idx <= 9) {
+                const dbIdx = idx - 1;
+                inp.value = localStorage.getItem(dbKeys[dbIdx]) || defaults[dbIdx];
+            }
+        });
+    }
+
+    function applySchoolRow(row) {
+        if (!row) return;
+        const map = {
+            siga_school_name: row.nome || '',
+            siga_school_inep: row.inep || '',
+            siga_school_cnpj: row.cnpj || '',
+            siga_school_address: row.endereco || '',
+            siga_school_cep: row.cep || '',
+            siga_school_bairro: row.bairro || '',
+            siga_school_city_state: (row.municipio && row.uf) ? (row.municipio + '/' + row.uf) : (row.municipio || row.uf || ''),
+            siga_school_email: row.email || '',
+            siga_school_phone: row.telefone || ''
+        };
+        Object.keys(map).forEach((k) => localStorage.setItem(k, map[k]));
+        fillFromLocal();
+    }
+
+    fillFromLocal();
+
+    const schoolId = localStorage.getItem('siga_active_school');
+    const cloud = window.SigaSupabase && window.SigaSupabase.isConfigured && window.SigaSupabase.isConfigured()
+        ? window.SigaSupabase.getClient()
+        : null;
+
+    if (cloud && schoolId) {
+        cloud.from('schools').select('*').eq('id', schoolId).maybeSingle().then((res) => {
+            if (res.error) {
+                console.warn('[SIGA] escola fetch:', res.error.message);
+                return;
+            }
+            if (res.data) applySchoolRow(res.data);
+        });
+    }
+
     const buttons = Array.from(document.querySelectorAll('button'));
     const saveBtn = buttons.find(b => b.textContent.includes('Salvar Alterações'));
     const discardBtn = buttons.find(b => b.textContent.includes('Descartar'));
-    
+
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
+            const values = {};
             inputs.forEach((inp, idx) => {
                 if (idx > 0 && idx <= 9) {
                     const dbIdx = idx - 1;
+                    values[dbKeys[dbIdx]] = inp.value;
                     localStorage.setItem(dbKeys[dbIdx], inp.value);
                 }
             });
-            showToast('Informações da escola salvas!');
+
+            if (!cloud || !schoolId) {
+                showToast('Informações salvas localmente (sem sessão Supabase da escola).');
+                return;
+            }
+
+            const cityState = String(values.siga_school_city_state || '');
+            let municipio = cityState;
+            let uf = '';
+            if (cityState.indexOf('/') !== -1) {
+                const parts = cityState.split('/');
+                municipio = parts[0].trim();
+                uf = (parts[1] || '').trim().slice(0, 2).toUpperCase();
+            }
+
+            const payload = {
+                nome: values.siga_school_name || '',
+                inep: String(values.siga_school_inep || '').replace(/\D/g, ''),
+                cnpj: values.siga_school_cnpj || null,
+                endereco: values.siga_school_address || null,
+                cep: values.siga_school_cep || null,
+                bairro: values.siga_school_bairro || null,
+                municipio: municipio || null,
+                uf: uf || null,
+                email: values.siga_school_email || null,
+                telefone: values.siga_school_phone || null
+            };
+
+            cloud.from('schools').update(payload).eq('id', schoolId).select('*').single().then((res) => {
+                if (res.error) {
+                    console.warn(res.error);
+                    showToast('Falha ao salvar no Supabase: ' + res.error.message, 'error');
+                    return;
+                }
+                applySchoolRow(res.data);
+                showToast('Informações da escola salvas no Supabase!');
+            });
         });
     }
-    
+
     if (discardBtn) {
         discardBtn.addEventListener('click', () => {
-            inputs.forEach((inp, idx) => {
-                if (idx > 0 && idx <= 9) {
-                    const dbIdx = idx - 1;
-                    inp.value = localStorage.getItem(dbKeys[dbIdx]) || defaults[dbIdx];
-                }
-            });
+            fillFromLocal();
             showToast('Alterações descartadas.', 'error');
         });
     }

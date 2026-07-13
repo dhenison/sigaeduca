@@ -116,7 +116,12 @@
             diretor_email: school.diretorEmail || null,
             logo_url: logo || null,
             status: school.status || 'Ativa',
-            menu_permissions: school.permissoes || defaultSchoolPermissions()
+            menu_permissions: school.permissoes || defaultSchoolPermissions(),
+            cnpj: school.cnpj || null,
+            cep: school.cep || null,
+            bairro: school.bairro || null,
+            municipio: school.municipio || null,
+            uf: school.uf || null
         };
     }
 
@@ -133,6 +138,11 @@
             diretorContato: row.diretor_contato || '',
             diretorEmail: row.diretor_email || '',
             status: row.status || 'Ativa',
+            cnpj: row.cnpj || '',
+            cep: row.cep || '',
+            bairro: row.bairro || '',
+            municipio: row.municipio || '',
+            uf: row.uf || '',
             permissoes: row.menu_permissions && typeof row.menu_permissions === 'object'
                 ? row.menu_permissions
                 : defaultSchoolPermissions(),
@@ -161,27 +171,41 @@
         });
     }
 
-    function upsertSchoolCloud(school) {
+    function requireCloudAuth() {
         var sb = cloudClient();
-        if (!sb) return Promise.resolve(school);
-        var row = schoolToRow(school);
-        var q;
-        if (school.id && isUuid(school.id)) {
-            q = sb.from('schools').update(row).eq('id', school.id).select('*').single();
-        } else {
-            q = sb.from('schools').insert(row).select('*').single();
+        if (!sb) {
+            return Promise.reject(new Error('Supabase não configurado. Não é possível gravar escolas só no navegador.'));
         }
-        return q.then(function (res) {
-            if (res.error) throw res.error;
-            return rowToSchool(res.data);
+        return sb.auth.getSession().then(function (res) {
+            if (!res.data || !res.data.session) {
+                return Promise.reject(new Error('Sessão Supabase expirada. Faça login novamente como administrador.'));
+            }
+            return sb;
+        });
+    }
+
+    function upsertSchoolCloud(school) {
+        return requireCloudAuth().then(function (sb) {
+            var row = schoolToRow(school);
+            var q;
+            if (school.id && isUuid(school.id)) {
+                q = sb.from('schools').update(row).eq('id', school.id).select('*').single();
+            } else {
+                q = sb.from('schools').insert(row).select('*').single();
+            }
+            return q.then(function (res) {
+                if (res.error) throw res.error;
+                return rowToSchool(res.data);
+            });
         });
     }
 
     function deleteSchoolCloud(id) {
-        var sb = cloudClient();
-        if (!sb || !isUuid(id)) return Promise.resolve();
-        return sb.from('schools').delete().eq('id', id).then(function (res) {
-            if (res.error) throw res.error;
+        if (!isUuid(id)) return Promise.reject(new Error('ID de escola inválido.'));
+        return requireCloudAuth().then(function (sb) {
+            return sb.from('schools').delete().eq('id', id).then(function (res) {
+                if (res.error) throw res.error;
+            });
         });
     }
 
@@ -189,7 +213,14 @@
         localStorage.setItem(ACTIVE_SCHOOL_KEY, school.id);
         localStorage.setItem('siga_school_name', school.nome || '');
         localStorage.setItem('siga_school_inep', school.inep || '');
+        localStorage.setItem('siga_school_cnpj', school.cnpj || '');
         localStorage.setItem('siga_school_address', school.endereco || '');
+        localStorage.setItem('siga_school_cep', school.cep || '');
+        localStorage.setItem('siga_school_bairro', school.bairro || '');
+        var cityState = (school.municipio && school.uf)
+            ? (school.municipio + '/' + school.uf)
+            : (school.municipio || school.uf || '');
+        localStorage.setItem('siga_school_city_state', cityState);
         localStorage.setItem('siga_school_email', school.email || '');
         localStorage.setItem('siga_school_phone', school.telefone || '');
         var session = getSession() || {};
