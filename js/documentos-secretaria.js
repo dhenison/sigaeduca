@@ -325,34 +325,16 @@
       hide(grupoAluno);
       show(grupoVaga);
     } else if (isAtestadoConclusao(tipo)) {
+      hide(grupoAluno);
       show(grupoAtestado);
       const anoField = document.getElementById('sec-doc-ano-letivo');
       if (anoField && !String(anoField.value || '').trim()) {
         anoField.value = SEC_ANO_LETIVO;
       }
-      preencherCamposAtestadoDoAluno();
     }
 
     if (isRequerimento(tipo) || tipo === 'Declaração de Transferência' || isAtestadoConclusao(tipo)) {
       show(grupoReq);
-    }
-  }
-
-  function preencherCamposAtestadoDoAluno() {
-    const alunoId = document.getElementById('sec-doc-aluno-id')?.value;
-    const turmaField = document.getElementById('sec-doc-turma-atestado');
-    const dataNascField = document.getElementById('sec-doc-data-nasc');
-    if (!alunoId) {
-      if (turmaField) turmaField.value = '';
-      return;
-    }
-    const aluno = findStudentById(alunoId);
-    if (!aluno) return;
-    if (turmaField && !String(turmaField.value || '').trim()) {
-      turmaField.value = aluno.turma || '';
-    }
-    if (dataNascField && !dataNascField.value) {
-      dataNascField.value = (aluno.dataNascimento || aluno.nasc) || '';
     }
   }
 
@@ -362,17 +344,10 @@
     if (!dataNascField) return;
     if (!alunoId) {
       dataNascField.value = '';
-      const turmaField = document.getElementById('sec-doc-turma-atestado');
-      if (turmaField) turmaField.value = '';
       return;
     }
     const aluno = findStudentById(alunoId);
     dataNascField.value = (aluno && (aluno.dataNascimento || aluno.nasc)) || '';
-    const tipo = document.getElementById('sec-doc-tipo')?.value || '';
-    if (isAtestadoConclusao(tipo)) {
-      const turmaField = document.getElementById('sec-doc-turma-atestado');
-      if (turmaField) turmaField.value = (aluno && aluno.turma) || '';
-    }
   }
 
   function populateAlunoSelect() {
@@ -404,6 +379,7 @@
     const vagaTurno = document.getElementById('sec-doc-vaga-turno'); if (vagaTurno) vagaTurno.value = '';
     const anoLetivo = document.getElementById('sec-doc-ano-letivo'); if (anoLetivo) anoLetivo.value = SEC_ANO_LETIVO;
     const turmaAtest = document.getElementById('sec-doc-turma-atestado'); if (turmaAtest) turmaAtest.value = '';
+    const nomeAluno = document.getElementById('sec-doc-nome-aluno'); if (nomeAluno) nomeAluno.value = '';
     const nomeMae = document.getElementById('sec-doc-nome-mae'); if (nomeMae) nomeMae.value = '';
     const nomePai = document.getElementById('sec-doc-nome-pai'); if (nomePai) nomePai.value = '';
     const alunoSel = document.getElementById('sec-doc-aluno-id'); if (alunoSel) alunoSel.value = '';
@@ -442,6 +418,7 @@
     const vagaTurno = document.getElementById('sec-doc-vaga-turno')?.value || '';
     const anoLetivoInput = String(document.getElementById('sec-doc-ano-letivo')?.value || '').trim();
     const turmaAtestado = String(document.getElementById('sec-doc-turma-atestado')?.value || '').trim();
+    const nomeAlunoLivre = String(document.getElementById('sec-doc-nome-aluno')?.value || '').trim();
     const nomeMae = String(document.getElementById('sec-doc-nome-mae')?.value || '').trim();
     const nomePai = String(document.getElementById('sec-doc-nome-pai')?.value || '').trim();
 
@@ -449,7 +426,7 @@
       showSecToast('Selecione o tipo de emissão.', 'alerta');
       return;
     }
-    if (tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA && !alunoId) {
+    if (tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA && !isAtestadoConclusao(tipo) && !alunoId) {
       showSecToast('Selecione um aluno.', 'alerta');
       return;
     }
@@ -466,6 +443,10 @@
       return;
     }
     if (isAtestadoConclusao(tipo)) {
+      if (!nomeAlunoLivre) {
+        showSecToast('Informe o nome do aluno.', 'alerta');
+        return;
+      }
       if (!anoLetivoInput) {
         showSecToast('Informe o ano letivo.', 'alerta');
         return;
@@ -492,8 +473,10 @@
       }
     }
 
-    const aluno = tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? null : findStudentById(alunoId);
-    if (tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA && !aluno) {
+    const aluno = (tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA || isAtestadoConclusao(tipo))
+      ? null
+      : findStudentById(alunoId);
+    if (tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA && !isAtestadoConclusao(tipo) && !aluno) {
       showSecToast('Aluno não encontrado.', 'error');
       return;
     }
@@ -535,12 +518,15 @@
     const turmaDoc = isAtestadoConclusao(tipo)
       ? turmaAtestado
       : (aluno ? (aluno.turma || '') : '');
+    const nomeDoc = isAtestadoConclusao(tipo)
+      ? nomeAlunoLivre
+      : (aluno ? aluno.nome : '');
 
     const doc = {
       id: uid(),
       protocolo: protocolo,
-      alunoId: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? null : alunoId,
-      alunoNome: aluno ? aluno.nome : '',
+      alunoId: (tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA || isAtestadoConclusao(tipo)) ? null : alunoId,
+      alunoNome: nomeDoc,
       alunoCpf: aluno ? (aluno.cpf || '') : '',
       alunoTurma: turmaDoc,
       alunoSerie: serie || '',
@@ -610,12 +596,12 @@
       const reqDoc = {
         id: uid(),
         protocolo: reqProtocolo,
-        alunoId: alunoId,
-        alunoNome: aluno ? aluno.nome : '',
-        alunoCpf: aluno ? (aluno.cpf || '') : '',
+        alunoId: null,
+        alunoNome: nomeDoc,
+        alunoCpf: '',
         alunoTurma: turmaDoc,
-        alunoSerie: serie || '',
-        alunoTurno: aluno ? (aluno.turno || '') : '',
+        alunoSerie: '',
+        alunoTurno: '',
         tipo: DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA,
         dataEmissao: hoje,
         status: 'pendente',

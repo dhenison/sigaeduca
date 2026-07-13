@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS public.secretary_documents (
   vacancy_stage text,
   vacancy_shift text,
   year_label text NOT NULL DEFAULT '2026',
+  mother_name text,
+  father_name text,
   issued_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   meta jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -68,6 +70,11 @@ COMMENT ON COLUMN public.secretary_documents.valid_until IS 'Validade (declaraç
 COMMENT ON COLUMN public.secretary_documents.vacancy_stage IS 'Etapa da Declaração de Vaga (vagaEtapa)';
 COMMENT ON COLUMN public.secretary_documents.vacancy_shift IS 'Turno da Declaração de Vaga (vagaTurno)';
 COMMENT ON COLUMN public.secretary_documents.attendance_pct IS 'Frequência informada (Bolsa Família)';
+COMMENT ON COLUMN public.secretary_documents.year_label IS 'Ano letivo informado (ex.: Atestado de Conclusão)';
+COMMENT ON COLUMN public.secretary_documents.mother_name IS 'Nome da mãe (Atestado de Conclusão; digitação livre)';
+COMMENT ON COLUMN public.secretary_documents.father_name IS 'Nome do pai (Atestado de Conclusão; digitação livre)';
+COMMENT ON COLUMN public.secretary_documents.student_id IS 'FK opcional; NULL quando o nome é digitado manualmente (ex.: Atestado de Conclusão)';
+COMMENT ON COLUMN public.secretary_documents.student_name IS 'Nome do aluno; pode ser preenchido manualmente sem student_id';
 
 CREATE INDEX IF NOT EXISTS secretary_documents_school_idx
   ON public.secretary_documents (school_id);
