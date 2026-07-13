@@ -210,14 +210,17 @@
 
     function renderTable(rows) {
         var body = document.getElementById('minha-lotacao-tbody');
-        var totalEl = document.getElementById('minha-lotacao-total');
+        var totalSemanalEl = document.getElementById('minha-lotacao-total-semanal');
+        var totalMensalEl = document.getElementById('minha-lotacao-total-mensal') ||
+            document.getElementById('minha-lotacao-total');
         var emptyEl = document.getElementById('minha-lotacao-empty');
         var tableWrap = document.getElementById('minha-lotacao-table-wrap');
         if (!body) return;
 
         if (!rows.length) {
             body.innerHTML = '';
-            if (totalEl) totalEl.textContent = '0';
+            if (totalSemanalEl) totalSemanalEl.textContent = '0h';
+            if (totalMensalEl) totalMensalEl.textContent = '0h';
             if (emptyEl) emptyEl.classList.remove('hidden');
             if (tableWrap) tableWrap.classList.add('hidden');
             return;
@@ -226,8 +229,10 @@
         if (emptyEl) emptyEl.classList.add('hidden');
         if (tableWrap) tableWrap.classList.remove('hidden');
 
+        var totalSemanal = 0;
         var totalMensal = 0;
         body.innerHTML = rows.map(function (r) {
+            totalSemanal += r.chSemanal;
             totalMensal += r.chMensal;
             return (
                 '<tr class="border-b border-border-subtle">' +
@@ -240,7 +245,8 @@
             );
         }).join('');
 
-        if (totalEl) totalEl.textContent = formatHours(totalMensal) + 'h';
+        if (totalSemanalEl) totalSemanalEl.textContent = formatHours(totalSemanal) + 'h';
+        if (totalMensalEl) totalMensalEl.textContent = formatHours(totalMensal) + 'h';
     }
 
     function setLoading(isLoading) {
