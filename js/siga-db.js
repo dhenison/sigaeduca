@@ -1503,6 +1503,18 @@ function initAlunosPage() {
     migrateStudentsSchema();
     refreshAlunosFilterOptions();
     renderAlunos();
+
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.hydrateStudents === 'function') {
+        window.SigaSchoolData.hydrateStudents().then((res) => {
+            if (res && res.ok && !res.skipped) {
+                migrateStudentsSchema();
+                refreshAlunosFilterOptions();
+                renderAlunos();
+            } else if (res && !res.ok) {
+                console.warn('[SIGA] alunos hydrate:', res.message);
+            }
+        });
+    }
 }
 
 function migrateStudentsSchema() {
@@ -1784,8 +1796,26 @@ async function importAlunosFromFile(file) {
         alunosPageState.page = 1;
         refreshAlunosFilterOptions();
         renderAlunos();
+
         const mode = replace ? 'substituição' : 'mescla';
-        showToast(`Importação (${mode}): ${students.length} alunos no sistema (${added} novos, ${updated} atualizados${skipped ? ', ' + skipped + ' ignorados' : ''}).`);
+        const localMsg = `Importação local (${mode}): ${students.length} alunos (${added} novos, ${updated} atualizados${skipped ? ', ' + skipped + ' ignorados' : ''}).`;
+
+        if (window.SigaSchoolData && typeof window.SigaSchoolData.upsertStudents === 'function') {
+            showToast('Sincronizando alunos com o banco…');
+            const cloud = await window.SigaSchoolData.upsertStudents(students, { replace: replace });
+            if (cloud && cloud.ok) {
+                refreshAlunosFilterOptions();
+                renderAlunos();
+                showToast(`${localMsg} Gravado no Supabase.`);
+            } else {
+                showToast(
+                    `${localMsg} Banco: ${(cloud && cloud.message) || 'não sincronizado (verifique login Supabase e escola ativa).'}`,
+                    'error'
+                );
+            }
+        } else {
+            showToast(localMsg);
+        }
     } catch (err) {
         console.error(err);
         showToast(err.message || 'Falha ao importar a planilha.', 'error');
@@ -3048,6 +3078,17 @@ function initTurmasPage() {
             document.querySelectorAll('.gerenciar-actions-dropdown').forEach(m => m.classList.add('hidden'));
         }
     });
+
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.hydrateClasses === 'function') {
+        window.SigaSchoolData.hydrateClasses().then((res) => {
+            if (res && res.ok && !res.skipped) {
+                refreshTurmasFilters();
+                renderClasses();
+            } else if (res && !res.ok) {
+                console.warn('[SIGA] turmas hydrate:', res.message);
+            }
+        });
+    }
 }
 
 function refreshTurmasFilters() {
@@ -3161,6 +3202,7 @@ function normalizeTurnoTurma(raw) {
     if (t.startsWith('manh') || t === 'matutino') return 'Manhã';
     if (t.startsWith('tard') || t === 'vespertino') return 'Tarde';
     if (t.startsWith('noit') || t === 'noturno') return 'Noite';
+    if (t.startsWith('integ')) return 'Integral';
     return String(raw || '').trim() || 'Manhã';
 }
 
@@ -3176,7 +3218,7 @@ function inferModalidadeTurma(serie, modalidade) {
 
 function importTurmasFromCsv(file) {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
         try {
             const text = String(reader.result || '');
             const lines = text.split(/\r?\n/).filter(l => l.trim());
@@ -3228,7 +3270,7 @@ function importTurmasFromCsv(file) {
                 const anoLetivo = get('anoLetivo') || '2026';
 
                 const payload = { code, serie, turno, modalidade, status, anoLetivo };
-                const existingIdx = classes.findIndex(c => (c.code || '').toLowerCase() === code.toLowerCase());
+                const existingIdx = classes.findIndex(c => (c.code || '').toLowerCase() === code.toLowerCase() && String(c.anoLetivo || '2026') === String(anoLetivo));
 
                 if (existingIdx >= 0) {
                     classes[existingIdx] = { ...classes[existingIdx], ...payload, code: classes[existingIdx].code };
@@ -3242,7 +3284,24 @@ function importTurmasFromCsv(file) {
             localStorage.setItem('siga_classes', JSON.stringify(classes));
             refreshTurmasFilters();
             renderClasses();
-            showToast(`Importação concluída: ${added} novas, ${updated} atualizadas.`);
+
+            const localMsg = `Importação local: ${added} novas, ${updated} atualizadas.`;
+            if (window.SigaSchoolData && typeof window.SigaSchoolData.upsertClasses === 'function') {
+                showToast('Sincronizando turmas com o banco…');
+                const cloud = await window.SigaSchoolData.upsertClasses(classes);
+                if (cloud && cloud.ok) {
+                    refreshTurmasFilters();
+                    renderClasses();
+                    showToast(`${localMsg} Gravado no Supabase.`);
+                } else {
+                    showToast(
+                        `${localMsg} Banco: ${(cloud && cloud.message) || 'não sincronizado (verifique login Supabase e escola ativa).'}`,
+                        'error'
+                    );
+                }
+            } else {
+                showToast(localMsg);
+            }
         } catch (err) {
             console.error(err);
             showToast('Falha ao importar a planilha de turmas.', 'error');

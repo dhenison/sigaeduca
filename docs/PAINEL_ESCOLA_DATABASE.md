@@ -81,6 +81,8 @@ SQL: [`sql/03_turmas.sql`](./sql/03_turmas.sql)
 
 Único por escola: `(school_id, code, year_label)`.
 
+**Importação de planilha:** grava em `localStorage` **e** sincroniza com `public.classes` (requer sessão Supabase + escola ativa).
+
 ## Menu 4 — Alunos
 
 SQL: [`sql/04_alunos.sql`](./sql/04_alunos.sql)  
@@ -110,6 +112,8 @@ SQL: [`sql/04_alunos.sql`](./sql/04_alunos.sql)
 | `class_history` | `classHistory` |
 
 Trigger `sync_student_class_fields`: ao informar `class_id` ou `class_code`, alinha série/turno/turma e valida a mesma escola.
+
+**Importação de planilha:** grava em `localStorage` **e** sincroniza com `public.students` (substituição ou mescla). Requer sessão Supabase + escola ativa. Preferir importar **Turmas** antes.
 
 ## Menu 5 — Frequência
 
