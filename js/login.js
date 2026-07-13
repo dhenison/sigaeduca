@@ -263,7 +263,7 @@
             return;
         }
 
-        // Servidor — tenta Supabase Auth primeiro (admin / usuários cloud), depois localStorage
+        // Servidor — tenta Supabase Auth primeiro, depois school_staff (RPC), depois localStorage
         function finishServidorLocal() {
             ensureSystemAdminLocalUser(email);
             var users = getUsers();
@@ -308,6 +308,73 @@
             });
         }
 
+        function finishServidorFromStaff(staff) {
+            var isAdmin = isSystemAdminEmail(email) || /administrador do sistema/i.test(staff.role || '');
+            var session = {
+                tipo: isAdmin ? 'sistema' : 'servidor',
+                id: staff.id,
+                nome: staff.nome || 'Servidor',
+                email: email,
+                role: isAdmin ? 'Administrador do Sistema' : (staff.role || 'Servidor'),
+                sistemaAdmin: isAdmin,
+                authProvider: 'school_staff',
+                schoolId: staff.school_id || null
+            };
+            // Cache local para páginas que ainda leem siga_users
+            try {
+                var list = getUsers();
+                var idx = list.findIndex(function (u) { return normEmail(u.email) === email; });
+                var cached = {
+                    id: staff.id,
+                    nome: staff.nome,
+                    email: email,
+                    cargo: staff.role,
+                    funcao: staff.role,
+                    matriculaSemVinculo: staff.employee_id || '',
+                    avatar: staff.avatar_url || '',
+                    status: 'Ativo',
+                    precisaDefinirSenha: false,
+                    senha: '' // não espelha hash no local após login cloud
+                };
+                if (idx >= 0) list[idx] = Object.assign({}, list[idx], cached);
+                else list.push(cached);
+                saveUsers(list);
+            } catch (e) { /* ignore */ }
+
+            if (staff.school_id) {
+                try { localStorage.setItem('siga_active_school', staff.school_id); } catch (e2) { /* ignore */ }
+            }
+            setSession(session);
+            localStorage.setItem('siga_profile_name', session.nome || '');
+            localStorage.setItem('siga_profile_role', session.role || '');
+            localStorage.setItem('siga_profile_email', email);
+            if (staff.avatar_url) localStorage.setItem('siga_profile_avatar', staff.avatar_url);
+            toast('Bem-vindo(a), ' + (session.nome || 'servidor') + '!');
+            redirectAfterLogin(email, session);
+        }
+
+        function tryStaffDbLoginThenLocal() {
+            var staffApi = window.SigaStaffData;
+            var secHash = window.SigaSecurity;
+            if (staffApi && typeof staffApi.loginByHash === 'function' && secHash && typeof secHash.hashPassword === 'function') {
+                secHash.hashPassword(senha).then(function (hash) {
+                    staffApi.loginByHash(email, hash).then(function (res) {
+                        if (res && res.ok && res.staff) {
+                            finishServidorFromStaff(res.staff);
+                            return;
+                        }
+                        finishServidorLocal();
+                    }).catch(function () {
+                        finishServidorLocal();
+                    });
+                }).catch(function () {
+                    finishServidorLocal();
+                });
+                return;
+            }
+            finishServidorLocal();
+        }
+
         var cloud = window.SigaSupabase;
         if (cloud && cloud.isConfigured && cloud.isConfigured()) {
             cloud.signIn(email, senha).then(function (result) {
@@ -315,7 +382,7 @@
                     if (isSystemAdminEmail(email)) {
                         toast((result && result.message) || 'Falha no login Supabase do administrador. Confira a senha no Authentication.', 'error');
                     }
-                    finishServidorLocal();
+                    tryStaffDbLoginThenLocal();
                     return;
                 }
                 var sigaSession = cloud.toSigaSession(result.user, result.profile);
@@ -332,12 +399,12 @@
                 toast('Bem-vindo(a), ' + (sigaSession.nome || 'servidor') + '!');
                 redirectAfterLogin(email, sigaSession);
             }).catch(function () {
-                finishServidorLocal();
+                tryStaffDbLoginThenLocal();
             });
             return;
         }
 
-        finishServidorLocal();
+        tryStaffDbLoginThenLocal();
     }
 
     function openRecoverModal() {

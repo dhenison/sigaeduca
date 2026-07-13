@@ -230,6 +230,11 @@ SQL: [`sql/10_usuarios.sql`](./sql/10_usuarios.sql)
 
 Também enriquece `profiles` e `school_memberships`, e cria `map_staff_role_to_membership()`.
 
+**Persistência + login:**  
+- UI grava em `school_staff` (`js/siga-staff-data.js`) e tenta criar usuário no Supabase Auth  
+- SQL [`sql/10b_usuarios_login.sql`](./sql/10b_usuarios_login.sql): `staff_login_by_hash()` + `link_staff_auth_user()`  
+- Login: Auth → RPC `school_staff` → fallback localStorage
+
 Na UI (`usuarios.html` / `js/usuarios.js`):
 - **Senha + confirmação** obrigatórias no novo cadastro (mín. 6 caracteres); na edição, trocar senha é opcional.
 - **Foto** por upload ou câmera: redimensionada (~512px) e comprimida em JPEG antes de salvar no banco (`avatar` / `avatar_url`).

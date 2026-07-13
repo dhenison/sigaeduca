@@ -584,17 +584,50 @@
                 list = list.map(function (u) {
                     return String(u.id) === String(editingId) ? Object.assign({}, prev, payload) : u;
                 });
-                toast(hashedSenha ? 'Usuário e senha atualizados!' : 'Usuário atualizado!');
             } else {
                 payload.createdAt = new Date().toISOString();
                 list.push(payload);
-                toast('Usuário cadastrado com senha de acesso!');
             }
 
             saveUsers(list);
             applyAvatarToSystem(payload);
-            closeModal();
-            render();
+
+            function finishLocalOnly(extraMsg) {
+                closeModal();
+                render();
+                toast(extraMsg || (editingId
+                    ? (hashedSenha ? 'Usuário e senha atualizados (somente local).' : 'Usuário atualizado (somente local).')
+                    : 'Usuário cadastrado localmente. Não gravou no banco.'));
+            }
+
+            var staffApi = window.SigaStaffData;
+            if (!staffApi || typeof staffApi.upsertStaff !== 'function') {
+                finishLocalOnly('Usuário salvo só no navegador (módulo cloud indisponível).');
+                return;
+            }
+
+            toast('Gravando usuário no banco…');
+            staffApi.upsertStaff(payload, {
+                plainPassword: senha || null
+            }).then(function (cloud) {
+                closeModal();
+                render();
+                if (cloud && cloud.ok) {
+                    var authOk = !cloud.auth || cloud.auth.skipped || cloud.auth.ok !== false;
+                    toast(
+                        authOk
+                            ? (editingId ? 'Usuário atualizado no banco!' : 'Usuário cadastrado no banco com acesso de login!')
+                            : ((cloud.message || 'Salvo no banco.') + ' Confira o Auth no Supabase se o login falhar.')
+                    );
+                } else {
+                    toast(
+                        'Salvo localmente. Banco: ' + ((cloud && cloud.message) || 'falha (escola ativa + login Supabase).'),
+                        'error'
+                    );
+                }
+            }).catch(function () {
+                finishLocalOnly('Salvo localmente. Falha ao falar com o banco.');
+            });
         }
 
         if (senha) {
@@ -619,8 +652,18 @@
         if (!confirm('Excluir este usuário?')) return;
         var list = getUsers().filter(function (u) { return String(u.id) !== String(id); });
         saveUsers(list);
-        toast('Usuário removido.', 'error');
         render();
+
+        var staffApi = window.SigaStaffData;
+        var isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''));
+        if (staffApi && isUuid && typeof staffApi.deleteStaff === 'function') {
+            staffApi.deleteStaff(id).then(function (res) {
+                if (res && res.ok) toast('Usuário removido do banco.', 'error');
+                else toast('Removido localmente. Banco: ' + ((res && res.message) || 'não sincronizado'), 'error');
+            });
+        } else {
+            toast('Usuário removido.', 'error');
+        }
     }
 
     function filteredUsers() {
@@ -748,6 +791,13 @@
                 filterFn = q;
                 if (search) search.value = q;
                 render();
+            });
+        }
+
+        if (window.SigaStaffData && typeof window.SigaStaffData.hydrateStaff === 'function') {
+            window.SigaStaffData.hydrateStaff().then(function (res) {
+                if (res && res.ok && !res.skipped) render();
+                else if (res && res.message && !res.skipped) console.warn('[SIGA] usuários:', res.message);
             });
         }
     }
