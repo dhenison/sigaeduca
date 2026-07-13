@@ -20,7 +20,14 @@
 
     function getActiveSchoolId() {
         try {
-            return localStorage.getItem(ACTIVE_SCHOOL_KEY) || '';
+            var fromKey = localStorage.getItem(ACTIVE_SCHOOL_KEY) || '';
+            if (fromKey) return fromKey;
+            var session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+            if (session && session.schoolId) {
+                localStorage.setItem(ACTIVE_SCHOOL_KEY, session.schoolId);
+                return session.schoolId;
+            }
+            return '';
         } catch (e) {
             return '';
         }

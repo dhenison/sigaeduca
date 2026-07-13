@@ -469,21 +469,40 @@
   function initPainelPrincipal() {
     if (!document.getElementById('dash-kpi-alunos')) return;
 
-    var students = getStudents();
-    var classes = getClasses();
-    var occurrences = getOccurrences();
-    var agenda = getAgenda();
-    var docs = getDocs();
+    function renderAll() {
+      var students = getStudents();
+      var classes = getClasses();
+      var occurrences = getOccurrences();
+      var agenda = getAgenda();
+      var docs = getDocs();
 
-    renderWelcome(students, classes);
-    renderKpis(students, classes, occurrences, docs);
-    renderFreqChart(students);
-    renderComunicados(agenda);
-    renderOcorrenciasChart(occurrences);
-    renderDistribuicao(students, classes);
-    renderAtividades(occurrences, agenda, students);
-    renderProximoEvento(agenda);
-    renderOlimpiadas();
+      renderWelcome(students, classes);
+      renderKpis(students, classes, occurrences, docs);
+      renderFreqChart(students);
+      renderComunicados(agenda);
+      renderOcorrenciasChart(occurrences);
+      renderDistribuicao(students, classes);
+      renderAtividades(occurrences, agenda, students);
+      renderProximoEvento(agenda);
+      renderOlimpiadas();
+    }
+
+    renderAll();
+
+    // Após login de servidor, sincroniza alunos/turmas da escola ativa no Supabase
+    var schoolApi = window.SigaSchoolData;
+    if (schoolApi && typeof schoolApi.hydrateStudents === 'function') {
+      var hydrates = [];
+      if (typeof schoolApi.hydrateClasses === 'function') {
+        hydrates.push(schoolApi.hydrateClasses());
+      }
+      hydrates.push(schoolApi.hydrateStudents());
+      Promise.all(hydrates).then(function () {
+        renderAll();
+      }).catch(function () {
+        /* mantém cache local */
+      });
+    }
   }
 
   window.initPainelPrincipal = initPainelPrincipal;

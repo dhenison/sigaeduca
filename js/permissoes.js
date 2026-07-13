@@ -117,7 +117,7 @@
         } else if (/coordenador/.test(r)) {
             grant(readAll, ['ver']);
             grant(['painelprincipal', 'turmas', 'alunos', 'fichadoaluno', 'frequencia', 'horariodeaula', 'agenda', 'ocorrencias', 'boletins', 'conselho', 'topodosaber', 'relatorios', 'meuperfil'], ['ver', 'criar', 'editar']);
-        } else if (/secretario/.test(r)) {
+        } else if (/secretario|secretaria/.test(r)) {
             grant(readAll, ['ver']);
             grant(['painelprincipal', 'alunos', 'fichadoaluno', 'documentossecretaria', 'agenda', 'calendarioletivo', 'escola', 'meuperfil'], ACTIONS);
             grant(['turmas', 'frequencia', 'ocorrencias', 'relatorios'], ['ver', 'criar', 'editar']);

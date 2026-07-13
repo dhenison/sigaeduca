@@ -143,6 +143,120 @@
         };
     }
 
+    function applySchoolLocalKeys(schoolId, row) {
+        try {
+            if (schoolId) localStorage.setItem('siga_active_school', schoolId);
+            if (!row) return;
+            localStorage.setItem('siga_school_name', row.nome || '');
+            localStorage.setItem('siga_school_inep', row.inep || '');
+            localStorage.setItem('siga_school_cnpj', row.cnpj || '');
+            localStorage.setItem('siga_school_address', row.endereco || '');
+            localStorage.setItem('siga_school_cep', row.cep || '');
+            localStorage.setItem('siga_school_bairro', row.bairro || '');
+            var cityState = (row.municipio && row.uf)
+                ? (row.municipio + '/' + row.uf)
+                : (row.municipio || row.uf || '');
+            localStorage.setItem('siga_school_city_state', cityState);
+            localStorage.setItem('siga_school_email', row.email || '');
+            localStorage.setItem('siga_school_phone', row.telefone || '');
+        } catch (e) { /* ignore */ }
+    }
+
+    function resolveStaffSchoolId(user, profile) {
+        var sb = getClient();
+        var fromProfile = profile && profile.school_id ? profile.school_id : null;
+        if (!sb || !user) return Promise.resolve(fromProfile);
+
+        function fromMembership() {
+            return sb.from('school_memberships')
+                .select('school_id')
+                .eq('user_id', user.id)
+                .eq('is_active', true)
+                .limit(1)
+                .maybeSingle()
+                .then(function (res) {
+                    if (res.error) console.warn('[SIGA] membership school:', res.error.message);
+                    return (res.data && res.data.school_id) || null;
+                })
+                .catch(function () { return null; });
+        }
+
+        function fromStaff() {
+            return sb.from('school_staff')
+                .select('school_id')
+                .eq('user_id', user.id)
+                .limit(1)
+                .maybeSingle()
+                .then(function (res) {
+                    if (res.data && res.data.school_id) return res.data.school_id;
+                    var email = String(user.email || '').toLowerCase();
+                    if (!email) return null;
+                    return sb.from('school_staff')
+                        .select('school_id')
+                        .ilike('email', email)
+                        .limit(1)
+                        .maybeSingle()
+                        .then(function (r2) {
+                            return (r2.data && r2.data.school_id) || null;
+                        });
+                })
+                .catch(function () { return null; });
+        }
+
+        if (fromProfile) return Promise.resolve(fromProfile);
+        return fromMembership().then(function (id) {
+            if (id) return id;
+            return fromStaff();
+        });
+    }
+
+    /**
+     * Liga a escola ativa no localStorage (obrigatório para carregar alunos/turmas).
+     * Retorna Promise<{ schoolId, schoolName }>.
+     */
+    function bindActiveSchoolContext(user, profile, sessionObj) {
+        var sb = getClient();
+        return resolveStaffSchoolId(user, profile).then(function (schoolId) {
+            if (!schoolId) {
+                return { schoolId: null, schoolName: '' };
+            }
+            applySchoolLocalKeys(schoolId, null);
+
+            if (sessionObj) {
+                sessionObj.schoolId = schoolId;
+                try {
+                    localStorage.setItem('siga_session', JSON.stringify(sessionObj));
+                } catch (e) { /* ignore */ }
+            }
+
+            if (!sb) {
+                return { schoolId: schoolId, schoolName: '' };
+            }
+
+            return sb.from('schools').select('*').eq('id', schoolId).maybeSingle()
+                .then(function (res) {
+                    if (res.error) {
+                        console.warn('[SIGA] bind school fetch:', res.error.message);
+                        return { schoolId: schoolId, schoolName: '' };
+                    }
+                    if (res.data) {
+                        applySchoolLocalKeys(schoolId, res.data);
+                        if (sessionObj) {
+                            sessionObj.schoolName = res.data.nome || '';
+                            try {
+                                localStorage.setItem('siga_session', JSON.stringify(sessionObj));
+                            } catch (e2) { /* ignore */ }
+                        }
+                        return { schoolId: schoolId, schoolName: res.data.nome || '' };
+                    }
+                    return { schoolId: schoolId, schoolName: '' };
+                })
+                .catch(function () {
+                    return { schoolId: schoolId, schoolName: '' };
+                });
+        });
+    }
+
     global.SigaSupabase = {
         isConfigured: isConfigured,
         getClient: getClient,
@@ -153,6 +267,8 @@
         fetchProfile: fetchProfile,
         getCachedProfile: getCachedProfile,
         toSigaSession: toSigaSession,
+        bindActiveSchoolContext: bindActiveSchoolContext,
+        resolveStaffSchoolId: resolveStaffSchoolId,
         PROFILE_CACHE_KEY: PROFILE_CACHE_KEY
     };
 })(typeof window !== 'undefined' ? window : this);

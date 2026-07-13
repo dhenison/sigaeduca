@@ -349,8 +349,22 @@
             localStorage.setItem('siga_profile_role', session.role || '');
             localStorage.setItem('siga_profile_email', email);
             if (staff.avatar_url) localStorage.setItem('siga_profile_avatar', staff.avatar_url);
-            toast('Bem-vindo(a), ' + (session.nome || 'servidor') + '!');
-            redirectAfterLogin(email, session);
+
+            function go() {
+                toast('Bem-vindo(a), ' + (session.nome || 'servidor') + '!');
+                redirectAfterLogin(email, session);
+            }
+
+            var cloudBind = window.SigaSupabase;
+            if (!isAdmin && staff.school_id && cloudBind && typeof cloudBind.bindActiveSchoolContext === 'function') {
+                cloudBind.bindActiveSchoolContext(
+                    { id: staff.user_id || staff.id, email: email },
+                    { school_id: staff.school_id, full_name: staff.nome, role: staff.role },
+                    session
+                ).then(go).catch(go);
+                return;
+            }
+            go();
         }
 
         function tryStaffDbLoginThenLocal() {
@@ -396,8 +410,32 @@
                 localStorage.setItem('siga_profile_name', sigaSession.nome || '');
                 localStorage.setItem('siga_profile_role', sigaSession.role || '');
                 localStorage.setItem('siga_profile_email', sigaSession.email || email);
-                toast('Bem-vindo(a), ' + (sigaSession.nome || 'servidor') + '!');
-                redirectAfterLogin(email, sigaSession);
+
+                function finishCloudLogin() {
+                    toast('Bem-vindo(a), ' + (sigaSession.nome || 'servidor') + '!');
+                    redirectAfterLogin(email, sigaSession);
+                }
+
+                // Servidor da escola: grava siga_active_school + metadados antes de ir ao painel
+                if (!sigaSession.sistemaAdmin && cloud.bindActiveSchoolContext) {
+                    cloud.bindActiveSchoolContext(result.user, result.profile, sigaSession)
+                        .then(function (bound) {
+                            if (bound && bound.schoolId) {
+                                sigaSession.schoolId = bound.schoolId;
+                                if (bound.schoolName) sigaSession.schoolName = bound.schoolName;
+                                setSession(sigaSession);
+                            } else {
+                                console.warn('[SIGA] Login ok, mas nenhuma escola vinculada ao perfil/membership.');
+                            }
+                            finishCloudLogin();
+                        })
+                        .catch(function () {
+                            finishCloudLogin();
+                        });
+                    return;
+                }
+
+                finishCloudLogin();
             }).catch(function () {
                 tryStaffDbLoginThenLocal();
             });
