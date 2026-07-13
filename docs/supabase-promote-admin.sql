@@ -1,14 +1,15 @@
--- Promover Administrador do Sistema (rode no SQL Editor do Supabase)
--- Substitua o e-mail pelo usuário criado em Authentication → Users
+-- Promover Administrador do Sistema (dhenison@gmail.com)
+-- 1) Crie o usuário em Authentication → Users → Add user (e-mail confirmado)
+-- 2) Rode este SQL no projeto sigaeduca
 
 UPDATE public.profiles
 SET is_system_admin = true,
     role = 'Administrador do Sistema',
-    full_name = 'Administrador do Sistema',
+    full_name = COALESCE(NULLIF(full_name, ''), 'Administrador do Sistema'),
     updated_at = now()
-WHERE lower(email) = lower('admin@escola.seduc.pa.gov.br');
+WHERE lower(email) = lower('dhenison@gmail.com');
 
--- Conferência (não retorna a senha):
-SELECT id, email, role, is_system_admin, created_at
+-- Conferência
+SELECT id, email, role, is_system_admin
 FROM public.profiles
-WHERE is_system_admin = true;
+WHERE lower(email) = lower('dhenison@gmail.com');

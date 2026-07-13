@@ -133,17 +133,28 @@
         return email.endsWith(DOMAIN_ALUNO) || email.endsWith(DOMAIN_SERVIDOR);
     }
 
+    /** Administrador do Sistema (e-mail global autorizado) */
+    var SYSTEM_ADMIN_EMAILS = ['dhenison@gmail.com'];
+
+    function isSystemAdminEmail(email) {
+        return SYSTEM_ADMIN_EMAILS.indexOf(normEmail(email)) !== -1;
+    }
+
+    function isAllowedLoginEmail(email) {
+        return isInstitutionalEmail(email) || isSystemAdminEmail(email);
+    }
+
     function doLogin(email, senha) {
         email = normEmail(email);
         senha = String(senha || '');
         var sec = window.SigaSecurity;
 
         if (!email || !senha) {
-            toast('Informe o e-mail institucional e a senha.', 'error');
+            toast('Informe o e-mail e a senha.', 'error');
             return;
         }
-        if (!isInstitutionalEmail(email)) {
-            toast('Use somente e-mail institucional (@aluno.seduc.pa.gov.br ou @escola.seduc.pa.gov.br).', 'error');
+        if (!isAllowedLoginEmail(email)) {
+            toast('Use e-mail institucional (@aluno.seduc.pa.gov.br / @escola.seduc.pa.gov.br) ou o e-mail do administrador do sistema.', 'error');
             return;
         }
 
