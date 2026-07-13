@@ -9,6 +9,8 @@
     var STUDENTS_KEY = 'siga_students';
     var ACTIVE_SCHOOL_KEY = 'siga_active_school';
     var CHUNK = 80;
+    /** Turmas de Atendimento Educacional Especializado (vínculo paralelo à turma regular) */
+    var AEE_CLASS_CODES = ['EEMAE01', 'EETAE01'];
 
     function getClient() {
         if (!global.SigaSupabase || !global.SigaSupabase.isConfigured || !global.SigaSupabase.isConfigured()) {
@@ -37,6 +39,44 @@
         var out = [];
         for (var i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
         return out;
+    }
+
+    function normalizeClassCode(code) {
+        return String(code || '').trim().toUpperCase();
+    }
+
+    function isAeeClassCode(code) {
+        var c = normalizeClassCode(code);
+        if (!c) return false;
+        if (AEE_CLASS_CODES.indexOf(c) >= 0) return true;
+        return false;
+    }
+
+    function isAeeClass(cls) {
+        if (!cls) return false;
+        if (isAeeClassCode(cls.code)) return true;
+        return String(cls.modalidade || '').trim().toUpperCase() === 'AEE';
+    }
+
+    function normalizeAeeCodes(list) {
+        var out = [];
+        (Array.isArray(list) ? list : []).forEach(function (c) {
+            var n = normalizeClassCode(c);
+            if (n && out.indexOf(n) < 0) out.push(n);
+        });
+        return out;
+    }
+
+    function mergeAeeCodes(a, b) {
+        return normalizeAeeCodes([].concat(a || [], b || []));
+    }
+
+    function studentInClass(student, classCode) {
+        var code = normalizeClassCode(classCode);
+        if (!student || !code) return false;
+        if (normalizeClassCode(student.turma || student.class_code) === code) return true;
+        var aee = normalizeAeeCodes(student.aeeTurmas || student.aee_class_codes);
+        return aee.indexOf(code) >= 0;
     }
 
     function normalizeTurno(raw) {
@@ -84,12 +124,15 @@
     }
 
     function classToRow(schoolId, c) {
+        var code = String(c.code || '').trim();
+        var modalidade = nullIfEmpty(c.modalidade);
+        if (isAeeClassCode(code)) modalidade = 'AEE';
         return {
             school_id: schoolId,
-            code: String(c.code || '').trim(),
-            serie: String(c.serie || '').trim() || '1º ano do ensino médio',
+            code: code,
+            serie: String(c.serie || '').trim() || (isAeeClassCode(code) ? 'AEE' : '1º ano do ensino médio'),
             turno: normalizeTurno(c.turno),
-            modalidade: nullIfEmpty(c.modalidade),
+            modalidade: modalidade,
             status: normalizeStatusClass(c.status),
             year_label: String(c.anoLetivo || c.year_label || '2026').trim() || '2026',
             capacity: Math.min(200, Math.max(1, parseInt(c.capacity, 10) || 35)),
@@ -98,12 +141,14 @@
     }
 
     function rowToClass(row) {
+        var modalidade = row.modalidade || '';
+        if (isAeeClassCode(row.code) && !modalidade) modalidade = 'AEE';
         return {
             id: row.id,
             code: row.code,
             serie: row.serie,
             turno: row.turno,
-            modalidade: row.modalidade || '',
+            modalidade: modalidade,
             status: row.status || 'Ativo',
             anoLetivo: row.year_label || '2026',
             capacity: row.capacity || 35
@@ -114,13 +159,23 @@
         var birth = nullIfEmpty(s.dataNascimento || s.birth_date);
         if (birth && !/^\d{4}-\d{2}-\d{2}$/.test(birth)) birth = null;
         var hash = nullIfEmpty(s.senha || s.password_hash);
+
+        var regular = normalizeClassCode(s.turma || s.class_code);
+        var aee = normalizeAeeCodes(s.aeeTurmas || s.aee_class_codes);
+        if (isAeeClassCode(regular)) {
+            aee = mergeAeeCodes(aee, [regular]);
+            regular = '';
+        }
+        aee = aee.filter(function (c) { return c !== regular; });
+
         return {
             school_id: schoolId,
             codigo_inep: nullIfEmpty(s.codigoInep),
             full_name: String(s.nome || s.full_name || '').trim(),
             cpf: nullIfEmpty(String(s.cpf || '').replace(/\D/g, '')),
             serie: nullIfEmpty(s.serie),
-            class_code: nullIfEmpty(s.turma || s.class_code),
+            class_code: nullIfEmpty(regular),
+            aee_class_codes: aee,
             turno: nullIfEmpty(s.turno) ? normalizeTurno(s.turno) : null,
             birth_date: birth,
             age: parseAge(s.idade != null ? s.idade : s.age),
@@ -138,13 +193,20 @@
     }
 
     function rowToStudent(row) {
+        var regular = row.class_code || '';
+        var aee = normalizeAeeCodes(row.aee_class_codes);
+        if (isAeeClassCode(regular)) {
+            aee = mergeAeeCodes(aee, [regular]);
+            regular = '';
+        }
         return {
             id: row.id,
             codigoInep: row.codigo_inep || '',
             nome: row.full_name || '',
             cpf: row.cpf || '',
             serie: row.serie || '',
-            turma: row.class_code || '',
+            turma: regular,
+            aeeTurmas: aee,
             turno: row.turno || '',
             dataNascimento: row.birth_date || '',
             idade: row.age != null ? String(row.age) : '',
@@ -159,6 +221,53 @@
             avatar: row.avatar_url || '',
             classHistory: Array.isArray(row.class_history) ? row.class_history : []
         };
+    }
+
+    /** Mescla importação: preserva turma regular e acumula AEE */
+    function mergeLocalStudent(existing, incoming) {
+        var base = existing ? Object.assign({}, existing) : {};
+        var next = Object.assign({}, incoming);
+
+        var aee = mergeAeeCodes(base.aeeTurmas, next.aeeTurmas);
+        var nextTurma = normalizeClassCode(next.turma);
+        var baseTurma = normalizeClassCode(base.turma);
+
+        if (isAeeClassCode(nextTurma)) {
+            aee = mergeAeeCodes(aee, [nextTurma]);
+            next.turma = baseTurma || '';
+            if (baseTurma) {
+                next.serie = base.serie || next.serie;
+                next.turno = base.turno || next.turno;
+            } else {
+                next.serie = next.serie || 'AEE';
+                next.turno = next.turno || '';
+            }
+        } else if (nextTurma) {
+            // turma regular da planilha prevalece
+            if (isAeeClassCode(baseTurma)) {
+                aee = mergeAeeCodes(aee, [baseTurma]);
+            }
+        } else {
+            next.turma = baseTurma || '';
+            next.serie = next.serie || base.serie || '';
+            next.turno = next.turno || base.turno || '';
+        }
+
+        aee = aee.filter(function (c) { return c !== normalizeClassCode(next.turma); });
+        next.aeeTurmas = aee;
+
+        // Não apagar senha/hash já existentes se a planilha veio sem senha
+        if ((!next.senha || next.senha === 'DEFINIR_SENHA') && base.senha) {
+            next.senha = base.senha;
+            next.precisaDefinirSenha = base.precisaDefinirSenha;
+        }
+
+        return Object.assign({}, base, next, {
+            turma: next.turma,
+            aeeTurmas: next.aeeTurmas,
+            serie: next.serie || base.serie || '',
+            turno: next.turno || base.turno || ''
+        });
     }
 
     function saveLocalClasses(list) {
@@ -274,6 +383,37 @@
         return null;
     }
 
+    function mergeCloudStudentRow(found, row) {
+        var patch = Object.assign({}, row);
+        var aee = mergeAeeCodes(found.aee_class_codes, row.aee_class_codes);
+        var foundRegular = normalizeClassCode(found.class_code);
+        var rowRegular = normalizeClassCode(row.class_code);
+
+        if (isAeeClassCode(rowRegular)) {
+            aee = mergeAeeCodes(aee, [rowRegular]);
+            patch.class_code = foundRegular || null;
+            if (foundRegular) {
+                patch.serie = found.serie || row.serie;
+                patch.turno = found.turno || row.turno;
+            }
+        } else if (!rowRegular && foundRegular) {
+            patch.class_code = foundRegular;
+            patch.serie = row.serie || found.serie;
+            patch.turno = row.turno || found.turno;
+        }
+
+        aee = aee.filter(function (c) {
+            return normalizeClassCode(c) !== normalizeClassCode(patch.class_code);
+        });
+        patch.aee_class_codes = aee;
+
+        if (!patch.password_hash && found.password_hash) {
+            patch.password_hash = found.password_hash;
+            patch.needs_password_set = found.needs_password_set;
+        }
+        return patch;
+    }
+
     function upsertStudents(localStudents, options) {
         options = options || {};
         var replace = !!options.replace;
@@ -283,6 +423,19 @@
         var rows = (localStudents || [])
             .map(function (s) { return studentToRow(ready.schoolId, s); })
             .filter(function (r) { return r.full_name; });
+
+        // Deduplica no lote (mesmo CPF em turma regular + AEE)
+        var deduped = [];
+        rows.forEach(function (row) {
+            var found = matchExistingStudent(deduped, row);
+            if (found) {
+                var idx = deduped.indexOf(found);
+                deduped[idx] = mergeCloudStudentRow(found, row);
+            } else {
+                deduped.push(row);
+            }
+        });
+        rows = deduped;
 
         var start = Promise.resolve();
         if (replace) {
@@ -318,9 +471,15 @@
                     rows.forEach(function (row) {
                         var found = matchExistingStudent(existing, row);
                         if (found) {
-                            updates.push({ id: found.id, patch: row });
+                            updates.push({ id: found.id, patch: mergeCloudStudentRow(found, row) });
                         } else {
-                            toInsert.push(row);
+                            var pending = matchExistingStudent(toInsert, row);
+                            if (pending) {
+                                var pidx = toInsert.indexOf(pending);
+                                toInsert[pidx] = mergeCloudStudentRow(pending, row);
+                            } else {
+                                toInsert.push(row);
+                            }
                         }
                     });
 
@@ -397,8 +556,15 @@
     }
 
     global.SigaSchoolData = {
+        AEE_CLASS_CODES: AEE_CLASS_CODES,
         cloudReady: cloudReady,
         getActiveSchoolId: getActiveSchoolId,
+        isAeeClassCode: isAeeClassCode,
+        isAeeClass: isAeeClass,
+        normalizeAeeCodes: normalizeAeeCodes,
+        mergeAeeCodes: mergeAeeCodes,
+        studentInClass: studentInClass,
+        mergeLocalStudent: mergeLocalStudent,
         fetchClasses: fetchClasses,
         fetchStudents: fetchStudents,
         upsertClasses: upsertClasses,

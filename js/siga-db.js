@@ -1526,6 +1526,14 @@ function migrateStudentsSchema() {
         students.forEach((s) => {
             if (s.codigoInep == null) { s.codigoInep = ''; changed = true; }
             if (s.senha == null) { s.senha = ''; changed = true; }
+            if (!Array.isArray(s.aeeTurmas)) { s.aeeTurmas = []; changed = true; }
+            // Se a turma principal for AEE, move para aeeTurmas
+            if (s.turma && isAeeClassCode(s.turma)) {
+                const code = String(s.turma).toUpperCase();
+                if (s.aeeTurmas.indexOf(code) < 0) s.aeeTurmas.push(code);
+                s.turma = '';
+                changed = true;
+            }
             if (!s.serie) {
                 const cls = classes.find(c => c.code === s.turma);
                 if (cls && cls.serie) { s.serie = cls.serie; changed = true; }
@@ -1696,6 +1704,28 @@ async function importAlunosFromFile(file) {
         let added = 0;
         let updated = 0;
         let skipped = 0;
+        const sd = window.SigaSchoolData || null;
+        const isAee = (code) => {
+            if (sd && typeof sd.isAeeClassCode === 'function') return sd.isAeeClassCode(code);
+            return /^(EEMAE01|EETAE01)$/i.test(String(code || '').trim());
+        };
+        const mergeStudent = (existing, incoming) => {
+            if (sd && typeof sd.mergeLocalStudent === 'function') return sd.mergeLocalStudent(existing, incoming);
+            return Object.assign({}, existing || {}, incoming);
+        };
+        const findStudentIdx = (list, cpf, codigoInep, email, nome, dataNascimento) => {
+            let idx = -1;
+            if (cpf) idx = list.findIndex(s => (s.cpf || '') === cpf);
+            if (idx < 0 && codigoInep) idx = list.findIndex(s => normalizeInepValue(s.codigoInep) === codigoInep);
+            if (idx < 0 && email) idx = list.findIndex(s => (s.email || '').toLowerCase() === email.toLowerCase());
+            if (idx < 0 && nome && dataNascimento) {
+                idx = list.findIndex(s =>
+                    (s.nome || '').toLowerCase() === nome.toLowerCase() &&
+                    (s.dataNascimento || '') === dataNascimento
+                );
+            }
+            return idx;
+        };
 
         for (let r = 1; r < rows.length; r++) {
             const cols = rows[r];
@@ -1705,8 +1735,9 @@ async function importAlunosFromFile(file) {
             const nome = get('nome');
             if (!nome) { skipped++; continue; }
 
-            const turma = get('turma').split(' - ')[0].trim(); // pode ser vazio (não enturmado)
-            const cls = turma ? classes.find(c => c.code === turma) : null;
+            let turma = get('turma').split(' - ')[0].trim(); // pode ser vazio (não enturmado)
+            const cls = turma ? classes.find(c => String(c.code || '').toLowerCase() === turma.toLowerCase()) : null;
+            if (cls) turma = cls.code;
             let dataNascimento = get('dataNascimento');
             if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataNascimento)) {
                 const p = dataNascimento.split('/');
@@ -1725,20 +1756,21 @@ async function importAlunosFromFile(file) {
             const cpf = normalizeCpfValue(get('cpf'));
             const codigoInep = normalizeInepValue(get('codigoInep'));
             const email = get('email');
+            const aeeTurmas = isAee(turma) ? [String(turma).toUpperCase()] : [];
             const payload = {
                 codigoInep,
                 nome,
                 cpf,
-                serie: get('serie') || (cls ? cls.serie : ''),
-                turma,
-                turno: cls ? cls.turno : '',
+                serie: isAee(turma) ? '' : (get('serie') || (cls ? cls.serie : '')),
+                turma: isAee(turma) ? '' : turma,
+                aeeTurmas,
+                turno: isAee(turma) ? '' : (cls ? cls.turno : ''),
                 dataNascimento,
                 idade,
                 email,
                 senha: (function () {
                     const raw = get('senha');
                     if (raw && raw !== 'DEFINIR_SENHA') return raw;
-                    // Sem senha padrão fraca: força definição no primeiro acesso / recuperação
                     return '';
                 })(),
                 precisaDefinirSenha: !(get('senha') && get('senha') !== 'DEFINIR_SENHA'),
@@ -1751,25 +1783,16 @@ async function importAlunosFromFile(file) {
                 classHistory: []
             };
 
-            let existingIdx = -1;
-            if (!replace) {
-                if (cpf) existingIdx = students.findIndex(s => (s.cpf || '') === cpf);
-                if (existingIdx < 0 && codigoInep) existingIdx = students.findIndex(s => normalizeInepValue(s.codigoInep) === codigoInep);
-                if (existingIdx < 0 && email) existingIdx = students.findIndex(s => (s.email || '').toLowerCase() === email.toLowerCase());
-                if (existingIdx < 0) {
-                    existingIdx = students.findIndex(s =>
-                        (s.nome || '').toLowerCase() === nome.toLowerCase() &&
-                        (s.dataNascimento || '') === dataNascimento &&
-                        (s.turma || '') === turma
-                    );
-                }
-            }
+            // Sempre mescla por identidade (mesmo em replace) para não duplicar regular+AEE
+            let existingIdx = findStudentIdx(students, cpf, codigoInep, email, nome, dataNascimento);
 
             if (existingIdx >= 0) {
-                students[existingIdx] = { ...students[existingIdx], ...payload };
+                students[existingIdx] = mergeStudent(students[existingIdx], payload);
                 updated++;
             } else {
-                students.push({ id: 'al_' + Date.now().toString(36) + '_' + r + '_' + Math.random().toString(36).slice(2, 6), ...payload });
+                students.push(mergeStudent({
+                    id: 'al_' + Date.now().toString(36) + '_' + r + '_' + Math.random().toString(36).slice(2, 6)
+                }, payload));
                 added++;
             }
         }
@@ -1870,7 +1893,7 @@ function getFilteredAlunos() {
             (s.turma || '').toLowerCase().includes(query) ||
             (s.codigoInep || '').toLowerCase().includes(query) ||
             (s.serie || '').toLowerCase().includes(query);
-        const matchesTurma = !alunosPageState.turma || s.turma === alunosPageState.turma;
+        const matchesTurma = !alunosPageState.turma || studentBelongsToClass(s, alunosPageState.turma);
         const matchesSerie = !alunosPageState.serie || s.serie === alunosPageState.serie;
         const matchesStatus = !alunosPageState.status || (s.status || 'Ativo') === alunosPageState.status;
         return matchesSearch && matchesTurma && matchesSerie && matchesStatus;
@@ -1987,7 +2010,10 @@ function renderAlunos(searchTerm) {
 
     let html = '';
     pageItems.forEach(s => {
-        const turmaText = s.turma || '—';
+        const aeeText = studentAeeLabel(s);
+        const turmaText = s.turma
+            ? (aeeText ? `${s.turma} · AEE ${aeeText}` : s.turma)
+            : (aeeText ? `AEE ${aeeText}` : '—');
         const safeId = String(s.id).replace(/'/g, "\\'");
         html += `
             <tr class="hover:bg-surface-container-low/30 transition-colors group">
@@ -2002,7 +2028,7 @@ function renderAlunos(searchTerm) {
                         </div>
                     </div>
                 </td>
-                <td class="px-4 py-3 text-body-md text-on-surface whitespace-nowrap">${turmaText}${s.turno ? ' (' + s.turno + ')' : ''}</td>
+                <td class="px-4 py-3 text-body-md text-on-surface whitespace-nowrap">${turmaText}${s.turno && s.turma ? ' (' + s.turno + ')' : ''}${aeeText ? ' <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-violet-100 text-violet-800">AEE</span>' : ''}</td>
                 <td class="px-4 py-3 text-body-md text-on-surface whitespace-nowrap">${s.idade ? s.idade + ' anos' : '—'}</td>
                 <td class="px-4 py-3 text-body-md text-on-surface whitespace-nowrap">${s.responsavel || '—'}</td>
                 <td class="px-4 py-3 text-body-md text-on-surface whitespace-nowrap">${s.contato || '—'}</td>
@@ -2063,10 +2089,11 @@ function openNewStudentModal() {
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-label-md font-bold text-on-surface mb-1">Turma</label>
+                        <label class="block text-label-md font-bold text-on-surface mb-1">Turma regular</label>
                         <select id="std-turma" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" onchange="updateStudentModalTurno(this)">
+                            <option value="">— Sem turma regular —</option>
                             ${(function(){
-                                const classes = JSON.parse(localStorage.getItem('siga_classes')) || [];
+                                const classes = getRegularClasses();
                                 return classes.map((c, i) => `<option value="${c.code}" ${i === 0 ? 'selected' : ''}>${c.code} - ${c.serie}</option>`).join('');
                             })()}
                         </select>
@@ -2074,10 +2101,15 @@ function openNewStudentModal() {
                     <div>
                         <label class="block text-label-md font-bold text-on-surface mb-1">Série</label>
                         <input type="text" id="std-serie" class="w-full border border-border-subtle bg-surface-container-low rounded-lg px-4 py-2 text-body-md outline-none cursor-not-allowed text-text-secondary" readonly value="${(function(){
-                            const classes = JSON.parse(localStorage.getItem('siga_classes')) || [];
+                            const classes = getRegularClasses();
                             return classes.length > 0 ? (classes[0].serie || '') : '';
                         })()}">
                     </div>
+                </div>
+                <div>
+                    <label class="block text-label-md font-bold text-on-surface mb-2">AEE (Atendimento Educacional Especializado)</label>
+                    <div class="flex flex-wrap gap-2">${buildAeeCheckboxesHtml([])}</div>
+                    <p class="mt-1 text-[11px] text-text-secondary">O aluno permanece na turma regular e pode também estar em EEMAE01 / EETAE01.</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2154,7 +2186,7 @@ function openNewStudentModal() {
                 hashed = await window.SigaSecurity.hashPassword(senha);
             }
             const newStudent = {
-                id, codigoInep, nome, cpf, serie, turma, turno, responsavel, contato, dataNascimento, idade, rotaEscolar, email,
+                id, codigoInep, nome, cpf, serie, turma, aeeTurmas: readSelectedAeeCodes(), turno, responsavel, contato, dataNascimento, idade, rotaEscolar, email,
                 senha: hashed,
                 precisaDefinirSenha: !senha,
                 frequencia: 95, status: "Ativo", avatar: "", classHistory: []
@@ -2217,10 +2249,11 @@ function openEditStudentModal(studentId) {
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-label-md font-bold text-on-surface mb-1">Turma</label>
+                        <label class="block text-label-md font-bold text-on-surface mb-1">Turma regular</label>
                         <select id="std-turma" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" onchange="updateStudentModalTurno(this)">
+                            <option value="">— Sem turma regular —</option>
                             ${(function(){
-                                const classes = JSON.parse(localStorage.getItem('siga_classes')) || [];
+                                const classes = getRegularClasses();
                                 return classes.map(c => `<option value="${esc(c.code)}" ${student.turma === c.code ? 'selected' : ''}>${esc(c.code)} - ${esc(c.serie)}</option>`).join('');
                             })()}
                         </select>
@@ -2228,17 +2261,22 @@ function openEditStudentModal(studentId) {
                     <div>
                         <label class="block text-label-md font-bold text-on-surface mb-1">Série</label>
                         <input type="text" id="std-serie" class="w-full border border-border-subtle bg-surface-container-low rounded-lg px-4 py-2 text-body-md outline-none cursor-not-allowed text-text-secondary" readonly value="${esc((function(){
-                            const classes = JSON.parse(localStorage.getItem('siga_classes')) || [];
+                            const classes = getRegularClasses();
                             const activeClass = classes.find(c => c.code === student.turma);
                             return student.serie || (activeClass ? activeClass.serie : '') || '';
                         })())}">
                     </div>
                 </div>
+                <div>
+                    <label class="block text-label-md font-bold text-on-surface mb-2">AEE (Atendimento Educacional Especializado)</label>
+                    <div class="flex flex-wrap gap-2">${buildAeeCheckboxesHtml(student.aeeTurmas || [])}</div>
+                    <p class="mt-1 text-[11px] text-text-secondary">Mantém a turma regular e vincula EEMAE01 / EETAE01 sem substituí-la.</p>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-label-md font-bold text-on-surface mb-1">Turno</label>
                         <input type="text" id="std-turno" class="w-full border border-border-subtle bg-surface-container-low rounded-lg px-4 py-2 text-body-md outline-none cursor-not-allowed text-text-secondary" readonly value="${esc((function(){
-                            const classes = JSON.parse(localStorage.getItem('siga_classes')) || [];
+                            const classes = getRegularClasses();
                             const activeClass = classes.find(c => c.code === student.turma);
                             return activeClass ? activeClass.turno : (student.turno || (classes.length > 0 ? classes[0].turno : 'Manhã'));
                         })())}">
@@ -2317,7 +2355,7 @@ function openEditStudentModal(studentId) {
                 }
                 currentStudents[index] = {
                     ...currentStudents[index],
-                    codigoInep, nome, cpf, serie, turma, turno, responsavel, contato, dataNascimento, idade, rotaEscolar, email,
+                    codigoInep, nome, cpf, serie, turma, aeeTurmas: readSelectedAeeCodes(), turno, responsavel, contato, dataNascimento, idade, rotaEscolar, email,
                     senha: nextSenha,
                     precisaDefinirSenha: !!precisa && !nextSenha
                 };
@@ -3041,7 +3079,78 @@ function getClasses() {
         classes = [];
         localStorage.setItem('siga_classes', JSON.stringify(classes));
     }
+    // Garante marcação AEE nas turmas especializadas
+    let touched = false;
+    classes = classes.map((c) => {
+        const code = String(c.code || '').toUpperCase();
+        if ((code === 'EEMAE01' || code === 'EETAE01') && c.modalidade !== 'AEE') {
+            touched = true;
+            return Object.assign({}, c, { modalidade: 'AEE', serie: c.serie || 'AEE' });
+        }
+        return c;
+    });
+    if (touched) localStorage.setItem('siga_classes', JSON.stringify(classes));
     return classes;
+}
+
+function isAeeClassCode(code) {
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.isAeeClassCode === 'function') {
+        return window.SigaSchoolData.isAeeClassCode(code);
+    }
+    return /^(EEMAE01|EETAE01)$/i.test(String(code || '').trim());
+}
+
+function studentBelongsToClass(student, classCode) {
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.studentInClass === 'function') {
+        return window.SigaSchoolData.studentInClass(student, classCode);
+    }
+    const code = String(classCode || '').trim().toUpperCase();
+    if (!student || !code) return false;
+    if (String(student.turma || '').trim().toUpperCase() === code) return true;
+    const aee = Array.isArray(student.aeeTurmas) ? student.aeeTurmas : [];
+    return aee.some((c) => String(c || '').trim().toUpperCase() === code);
+}
+
+function countStudentsInClass(students, classCode) {
+    return (students || []).filter((s) => studentBelongsToClass(s, classCode)).length;
+}
+
+function studentAeeLabel(student) {
+    const aee = Array.isArray(student && student.aeeTurmas) ? student.aeeTurmas.filter(Boolean) : [];
+    return aee.length ? aee.join(', ') : '';
+}
+
+function getRegularClasses() {
+    return getClasses().filter((c) => !isAeeClassCode(c.code) && String(c.modalidade || '').toUpperCase() !== 'AEE');
+}
+
+function getAeeClasses() {
+    const fromDb = getClasses().filter((c) => isAeeClassCode(c.code) || String(c.modalidade || '').toUpperCase() === 'AEE');
+    const codes = new Set(fromDb.map((c) => String(c.code || '').toUpperCase()));
+    ['EEMAE01', 'EETAE01'].forEach((code) => {
+        if (!codes.has(code)) {
+            fromDb.push({ code, serie: 'AEE', turno: '', modalidade: 'AEE', status: 'Ativo', anoLetivo: '2026' });
+        }
+    });
+    return fromDb;
+}
+
+function buildAeeCheckboxesHtml(selected) {
+    const selectedSet = new Set((selected || []).map((c) => String(c || '').toUpperCase()));
+    return getAeeClasses().map((c) => {
+        const code = String(c.code || '').toUpperCase();
+        const checked = selectedSet.has(code) ? 'checked' : '';
+        return (
+            `<label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border-subtle bg-surface-container-low/40 text-label-md">` +
+            `<input type="checkbox" class="std-aee-check accent-primary" value="${code}" ${checked}/>` +
+            `<span><strong>${code}</strong> <span class="text-text-secondary">(AEE)</span></span>` +
+            `</label>`
+        );
+    }).join('');
+}
+
+function readSelectedAeeCodes() {
+    return Array.from(document.querySelectorAll('.std-aee-check:checked')).map((el) => el.value);
 }
 
 window.updateStudentModalTurno = function(selectEl) {
@@ -3208,11 +3317,14 @@ function normalizeTurnoTurma(raw) {
 
 function inferModalidadeTurma(serie, modalidade) {
     const m = String(modalidade || '').trim();
-    if (m) return m;
+    if (m) {
+        if (/^aee$/i.test(m) || /atendimento educacional/i.test(m)) return 'AEE';
+        return m;
+    }
     const s = String(serie || '').toLowerCase();
     if (s.includes('eja')) return 'EJA';
     if (s.includes('fluxo') || s.includes('correcao') || s.includes('correção')) return 'Fluxo';
-    if (s.includes('especial')) return 'Educação Especial';
+    if (s.includes('especial') || s === 'aee') return 'AEE';
     return 'Ensino Médio';
 }
 
@@ -3264,12 +3376,15 @@ function importTurmasFromCsv(file) {
 
                 const serie = get('serie') || '1o ano do ensino médio';
                 const turno = normalizeTurnoTurma(get('turno'));
-                const modalidade = inferModalidadeTurma(serie, get('modalidade'));
+                let modalidade = inferModalidadeTurma(serie, get('modalidade'));
+                if (isAeeClassCode(code)) {
+                    modalidade = 'AEE';
+                }
                 const statusRaw = get('status');
                 const status = !statusRaw || /ativo|active/i.test(statusRaw) ? 'Ativo' : 'Inativo';
                 const anoLetivo = get('anoLetivo') || '2026';
 
-                const payload = { code, serie, turno, modalidade, status, anoLetivo };
+                const payload = { code, serie: isAeeClassCode(code) ? (get('serie') || 'AEE') : serie, turno, modalidade, status, anoLetivo };
                 const existingIdx = classes.findIndex(c => (c.code || '').toLowerCase() === code.toLowerCase() && String(c.anoLetivo || '2026') === String(anoLetivo));
 
                 if (existingIdx >= 0) {
@@ -3324,9 +3439,15 @@ function renderClasses(filteredClasses = null) {
     if (grid) {
         let gridHtml = '';
         classes.forEach(c => {
-            const enrolledCount = students.filter(s => s.turma === c.code).length;
+            const enrolledCount = countStudentsInClass(students, c.code);
             const badgeColor = c.status === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-            const modalidadeBadge = c.modalidade === 'EJA' ? 'bg-amber-100 text-amber-800' : c.modalidade === 'Fluxo' ? 'bg-indigo-100 text-indigo-800' : 'bg-primary-light/20 text-primary';
+            const modalidadeBadge = c.modalidade === 'AEE'
+                ? 'bg-violet-100 text-violet-800'
+                : c.modalidade === 'EJA'
+                    ? 'bg-amber-100 text-amber-800'
+                    : c.modalidade === 'Fluxo'
+                        ? 'bg-indigo-100 text-indigo-800'
+                        : 'bg-primary-light/20 text-primary';
 
             gridHtml += `
                 <div class="glass-card rounded-[16px] overflow-hidden flex flex-col hover:shadow-lg transition-all border border-border-subtle group">
@@ -3432,7 +3553,7 @@ function renderClasses(filteredClasses = null) {
             `;
         }
         classes.forEach(c => {
-            const count = students.filter(s => s.turma === c.code).length;
+            const count = countStudentsInClass(students, c.code);
             const badgeColor = c.status === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
 
             tableHtml += `
@@ -3560,6 +3681,7 @@ window.openNewClassModal = function() {
                         <option value="Ensino Médio">Ensino Médio</option>
                         <option value="EJA">EJA</option>
                         <option value="Fluxo">Fluxo</option>
+                        <option value="AEE">AEE</option>
                     </select>
                 </div>
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
@@ -3576,7 +3698,7 @@ window.openNewClassModal = function() {
         const code = document.getElementById('cls-code').value.trim();
         const turno = document.getElementById('cls-turno').value;
         const serie = document.getElementById('cls-serie').value;
-        const modalidade = document.getElementById('cls-modalidade').value;
+        const modalidade = isAeeClassCode(code) ? 'AEE' : document.getElementById('cls-modalidade').value;
 
         const classes = getClasses();
         if (classes.some(c => c.code.toLowerCase() === code.toLowerCase())) {
@@ -3586,7 +3708,7 @@ window.openNewClassModal = function() {
 
         const newClass = {
             code,
-            serie,
+            serie: isAeeClassCode(code) ? (serie || 'AEE') : serie,
             turno,
             modalidade,
             status: "Ativo",
@@ -3658,6 +3780,7 @@ window.openEditClassModal = function(classCode) {
                         <option value="Ensino Médio" ${cls.modalidade === 'Ensino Médio' ? 'selected' : ''}>Ensino Médio</option>
                         <option value="EJA" ${cls.modalidade === 'EJA' ? 'selected' : ''}>EJA</option>
                         <option value="Fluxo" ${cls.modalidade === 'Fluxo' ? 'selected' : ''}>Fluxo</option>
+                        <option value="AEE" ${cls.modalidade === 'AEE' ? 'selected' : ''}>AEE</option>
                     </select>
                 </div>
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
@@ -3703,7 +3826,7 @@ window.openEditClassModal = function(classCode) {
 
 window.deleteClass = function(classCode) {
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-    const count = students.filter(s => s.turma === classCode).length;
+    const count = countStudentsInClass(students, classCode);
 
     let warningText = `Tem certeza que deseja excluir a Turma ${classCode}?`;
     if (count > 0) {
@@ -3731,7 +3854,7 @@ window.downloadClassesList = function() {
     content += `======================================================================\n`;
     
     classes.forEach(c => {
-        const count = students.filter(s => s.turma === c.code).length;
+        const count = countStudentsInClass(students, c.code);
         const code = c.code.padEnd(6);
         const serie = c.serie.padEnd(31).substring(0, 31);
         const turno = c.turno.padEnd(7);
@@ -3761,7 +3884,7 @@ window.printClassesList = function() {
     content += `======================================================================\r\n`;
     
     classes.forEach(c => {
-        const count = students.filter(s => s.turma === c.code).length;
+        const count = countStudentsInClass(students, c.code);
         const code = c.code.padEnd(6);
         const serie = c.serie.padEnd(31).substring(0, 31);
         const turno = c.turno.padEnd(7);
@@ -3827,7 +3950,7 @@ function renderTurmaDetalhe(classCode) {
     if (!tbody) return;
 
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-    const classStudents = students.filter(s => s.turma === classCode);
+    const classStudents = students.filter(s => studentBelongsToClass(s, classCode));
 
     document.getElementById('detail-student-count').textContent = classStudents.length;
 
@@ -3904,7 +4027,7 @@ window.downloadClassList = function() {
     if (!classObj) return;
 
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-    const classStudents = students.filter(s => s.turma === classCode);
+    const classStudents = students.filter(s => studentBelongsToClass(s, classCode));
 
     let content = `SIGA EDUCA - LISTA DE ALUNOS\n`;
     content += `Turma: ${classObj.code} - ${classObj.serie}\n`;
@@ -3943,7 +4066,7 @@ window.printClassList = function() {
     if (!classObj) return;
 
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-    const classStudents = students.filter(s => s.turma === classCode);
+    const classStudents = students.filter(s => studentBelongsToClass(s, classCode));
 
     let content = `SIGA EDUCA - LISTA DE ALUNOS\r\n`;
     content += `Turma: ${classObj.code} - ${classObj.serie}\r\n`;

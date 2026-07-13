@@ -110,10 +110,12 @@ SQL: [`sql/04_alunos.sql`](./sql/04_alunos.sql)
 | `attendance_pct` | `frequencia` |
 | `avatar_url` | `avatar` |
 | `class_history` | `classHistory` |
+| `aee_class_codes` | `aeeTurmas` (vínculos AEE paralelos: EEMAE01, EETAE01) |
 
-Trigger `sync_student_class_fields`: ao informar `class_id` ou `class_code`, alinha série/turno/turma e valida a mesma escola.
+Trigger `sync_student_class_fields`: ao informar `class_id` ou `class_code`, alinha série/turno/turma e valida a mesma escola.  
+**AEE:** SQL adicional [`sql/04b_alunos_aee.sql`](./sql/04b_alunos_aee.sql) — aluno permanece na turma regular e acumula `aee_class_codes` sem duplicar CPF.
 
-**Importação de planilha:** grava em `localStorage` **e** sincroniza com `public.students` (substituição ou mescla). Requer sessão Supabase + escola ativa. Preferir importar **Turmas** antes.
+**Importação de planilha:** grava em `localStorage` **e** sincroniza com `public.students` (substituição ou mescla). Linhas do mesmo aluno em turma regular + AEE são mescladas em um único registro. Requer sessão Supabase + escola ativa. Preferir importar **Turmas** antes.
 
 ## Menu 5 — Frequência
 
