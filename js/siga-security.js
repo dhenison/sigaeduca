@@ -105,9 +105,11 @@
      */
     function requireAuth(options) {
         options = options || {};
-        // Nunca redirecionar se a URL atual for a própria tela de login (evita loop no Vercel)
-        var href = String((global.location && (global.location.pathname + global.location.href)) || '').toLowerCase();
-        if (href.indexOf('login') !== -1) return true;
+        if (global.__SIGA_STOP_REDIRECTS) return true;
+        var path = String((global.location && global.location.pathname) || '').toLowerCase();
+        var href = String((global.location && global.location.href) || '').toLowerCase();
+        // Já estamos no login — nunca redirecionar de novo (evita loop)
+        if (path.indexOf('login') !== -1 || href.indexOf('/login') !== -1) return true;
         if (isPublicPage()) return true;
         var session = getSession();
         if (!session || !session.email) {
@@ -183,7 +185,7 @@
             localStorage.removeItem('siga_supabase_profile');
         } catch (e) { /* ignore */ }
         var done = function () {
-            global.location.replace('login.html');
+            global.location.replace('/login.html');
         };
         if (global.SigaSupabase && typeof global.SigaSupabase.signOut === 'function') {
             global.SigaSupabase.signOut().then(done).catch(done);

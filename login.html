@@ -4,6 +4,17 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>SIGA EDUCA - Login</title>
+<script>
+/* Detecta loop de redirect e bloqueia novos replaces no login */
+(function () {
+  var hits = Number(sessionStorage.getItem('siga_login_hits') || '0') + 1;
+  sessionStorage.setItem('siga_login_hits', String(hits));
+  setTimeout(function () { sessionStorage.removeItem('siga_login_hits'); }, 2000);
+  if (hits > 2) {
+    window.__SIGA_STOP_REDIRECTS = true;
+  }
+})();
+</script>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
