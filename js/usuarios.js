@@ -357,26 +357,29 @@
     function startCamera() {
         var box = document.getElementById('user-camera-box');
         var video = document.getElementById('user-camera-video');
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            toast('Câmera não disponível neste navegador.', 'error');
+        if (typeof requestCameraStream !== 'function') {
+            toast('Módulo de câmera indisponível.', 'error');
             return;
         }
         stopCamera();
-        navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: 'user',
-                width: { ideal: 720 },
-                height: { ideal: 720 }
-            },
-            audio: false
-        })
+        requestCameraStream()
             .then(function (stream) {
                 cameraStream = stream;
-                video.srcObject = stream;
-                box.classList.remove('hidden');
+                if (video) {
+                    video.setAttribute('playsinline', 'true');
+                    video.setAttribute('autoplay', 'true');
+                    video.muted = true;
+                    video.srcObject = stream;
+                    var playPromise = video.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(function () { /* ignore */ });
+                    }
+                }
+                if (box) box.classList.remove('hidden');
             })
-            .catch(function () {
-                toast('Não foi possível acessar a câmera.', 'error');
+            .catch(function (err) {
+                toast((typeof cameraErrorMessage === 'function' ? cameraErrorMessage(err) : null) ||
+                    'Não foi possível acessar a câmera.', 'error');
             });
     }
 

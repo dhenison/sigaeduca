@@ -3,6 +3,71 @@
 
 let mediaStream = null;
 
+/**
+ * Abre a câmera com fallbacks (Permissions-Policy + constraints do navegador).
+ * Retorna Promise<MediaStream>.
+ */
+function requestCameraStream() {
+    function getUserMediaFn() {
+        if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+            return navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+        }
+        const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+        if (!legacy) return null;
+        return function (constraints) {
+            return new Promise(function (resolve, reject) {
+                legacy.call(navigator, constraints, resolve, reject);
+            });
+        };
+    }
+
+    const gum = getUserMediaFn();
+    if (!gum) {
+        return Promise.reject(new Error('Câmera não disponível neste navegador.'));
+    }
+
+    // Em páginas HTTP (exceto localhost) o navegador bloqueia getUserMedia
+    const isSecure = window.isSecureContext ||
+        location.protocol === 'https:' ||
+        location.hostname === 'localhost' ||
+        location.hostname === '127.0.0.1';
+    if (!isSecure) {
+        return Promise.reject(new Error('A câmera só funciona em HTTPS (ou localhost). Abra o sistema pelo domínio seguro.'));
+    }
+
+    const attempts = [
+        { video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } }, audio: false },
+        { video: { facingMode: 'user' }, audio: false },
+        { video: { facingMode: { ideal: 'user' } }, audio: false },
+        { video: true, audio: false }
+    ];
+
+    function tryAt(i) {
+        if (i >= attempts.length) {
+            return Promise.reject(new Error('Não foi possível acessar a câmera. Verifique a permissão do navegador.'));
+        }
+        return gum(attempts[i]).catch(function (err) {
+            // NotAllowedError / PermissionDenied → não adianta tentar outros constraints
+            const name = String((err && err.name) || '');
+            if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+                return Promise.reject(new Error('Permissão da câmera negada. Clique no cadeado da barra de endereço e permita a câmera para este site.'));
+            }
+            return tryAt(i + 1);
+        });
+    }
+
+    return tryAt(0);
+}
+
+function cameraErrorMessage(err) {
+    if (!err) return 'Não foi possível acessar a câmera.';
+    if (typeof err === 'string') return err;
+    return err.message || 'Não foi possível acessar a câmera.';
+}
+
+window.requestCameraStream = requestCameraStream;
+window.cameraErrorMessage = cameraErrorMessage;
+
 // Limpeza única dos dados de exemplo já gravados no navegador
 (function clearExampleDataOnce() {
     try {
@@ -787,20 +852,26 @@ function initProfilePage() {
     }
 
     function startCamera() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            showToast('Câmera não disponível neste navegador.', 'error');
+        if (typeof requestCameraStream !== 'function') {
+            showToast('Módulo de câmera indisponível.', 'error');
             return;
         }
         stopCamera();
-        navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } },
-            audio: false
-        }).then((stream) => {
+        requestCameraStream().then((stream) => {
             cameraStream = stream;
-            if (cameraVideo) cameraVideo.srcObject = stream;
+            if (cameraVideo) {
+                cameraVideo.setAttribute('playsinline', 'true');
+                cameraVideo.setAttribute('autoplay', 'true');
+                cameraVideo.muted = true;
+                cameraVideo.srcObject = stream;
+                const playPromise = cameraVideo.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(function () { /* autoplay pode exigir gesto do usuário */ });
+                }
+            }
             if (cameraBox) cameraBox.classList.remove('hidden');
-        }).catch(() => {
-            showToast('Não foi possível acessar a câmera.', 'error');
+        }).catch((err) => {
+            showToast(cameraErrorMessage(err), 'error');
         });
     }
 
@@ -3138,7 +3209,183 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Avatar camera options and camera modal
+// Avatar camera options and camera modal (Ficha do Aluno)
+function ensureStudentAvatarUi() {
+    if (document.getElementById('siga-student-avatar-modal')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'siga-student-avatar-modal';
+    modal.className = 'fixed inset-0 z-[10020] hidden items-center justify-center p-4 bg-on-background/40 backdrop-blur-sm';
+    modal.innerHTML =
+        '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">' +
+        '<div class="flex items-center justify-between">' +
+        '<h3 class="font-bold text-lg text-on-surface">Foto do aluno</h3>' +
+        '<button type="button" id="siga-avatar-close" class="w-8 h-8 rounded-lg hover:bg-surface-container">' +
+        '<span class="material-symbols-outlined">close</span></button></div>' +
+        '<div class="grid grid-cols-1 gap-2">' +
+        '<button type="button" id="siga-avatar-upload" class="px-4 py-3 rounded-xl border border-border-subtle font-semibold text-left flex items-center gap-2 hover:bg-surface-container-low">' +
+        '<span class="material-symbols-outlined text-primary">upload</span>Enviar arquivo</button>' +
+        '<button type="button" id="siga-avatar-camera" class="px-4 py-3 rounded-xl border border-border-subtle font-semibold text-left flex items-center gap-2 hover:bg-surface-container-low">' +
+        '<span class="material-symbols-outlined text-primary">photo_camera</span>Usar câmera</button>' +
+        '<button type="button" id="siga-avatar-clear" class="px-4 py-3 rounded-xl border border-border-subtle font-semibold text-left flex items-center gap-2 text-error hover:bg-error/5">' +
+        '<span class="material-symbols-outlined">delete</span>Remover foto</button>' +
+        '</div>' +
+        '<input id="siga-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" class="hidden"/>' +
+        '<div id="siga-avatar-camera-box" class="hidden space-y-3">' +
+        '<video id="siga-avatar-video" class="w-full rounded-xl bg-black aspect-square object-cover" autoplay playsinline muted></video>' +
+        '<div class="flex gap-2 justify-end">' +
+        '<button type="button" id="siga-avatar-capture" class="px-4 py-2 rounded-lg bg-primary text-white font-bold">Capturar</button>' +
+        '<button type="button" id="siga-avatar-cam-cancel" class="px-4 py-2 rounded-lg border border-border-subtle font-bold">Cancelar</button>' +
+        '</div></div></div>';
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeStudentAvatarModal();
+    });
+    document.getElementById('siga-avatar-close').addEventListener('click', closeStudentAvatarModal);
+    document.getElementById('siga-avatar-upload').addEventListener('click', triggerFileInput);
+    document.getElementById('siga-avatar-file').addEventListener('change', handleAvatarFile);
+    document.getElementById('siga-avatar-camera').addEventListener('click', openCameraStream);
+    document.getElementById('siga-avatar-capture').addEventListener('click', captureSnapshot);
+    document.getElementById('siga-avatar-cam-cancel').addEventListener('click', closeCameraStream);
+    document.getElementById('siga-avatar-clear').addEventListener('click', function () {
+        updateStudentAvatar('');
+        closeStudentAvatarModal();
+        showToast('Foto do aluno removida.');
+    });
+}
+
+function closeStudentAvatarModal() {
+    closeCameraStream();
+    const modal = document.getElementById('siga-student-avatar-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
+
+function openAvatarOptions() {
+    ensureStudentAvatarUi();
+    const modal = document.getElementById('siga-student-avatar-modal');
+    if (!modal) return;
+    const camBox = document.getElementById('siga-avatar-camera-box');
+    if (camBox) camBox.classList.add('hidden');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+}
+
+function triggerFileInput() {
+    ensureStudentAvatarUi();
+    const input = document.getElementById('siga-avatar-file');
+    if (input) {
+        input.value = '';
+        input.click();
+    }
+}
+
+function handleAvatarFile(e) {
+    const file = e && e.target && e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!/^image\/(jpeg|png|jpg|webp)$/i.test(file.type)) {
+        showToast('Use JPG, PNG ou WEBP.', 'error');
+        return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+        showToast('Arquivo original muito grande (máx. 8MB).', 'error');
+        return;
+    }
+    compressProfileAvatar(file, function (dataUrl) {
+        updateStudentAvatar(dataUrl);
+        closeStudentAvatarModal();
+        showToast('Foto do aluno atualizada!');
+    });
+}
+
+function openCameraStream() {
+    ensureStudentAvatarUi();
+    const camBox = document.getElementById('siga-avatar-camera-box');
+    const video = document.getElementById('siga-avatar-video');
+    closeCameraStream();
+    requestCameraStream().then(function (stream) {
+        mediaStream = stream;
+        if (video) {
+            video.muted = true;
+            video.setAttribute('playsinline', 'true');
+            video.srcObject = stream;
+            const p = video.play();
+            if (p && typeof p.catch === 'function') p.catch(function () { /* ignore */ });
+        }
+        if (camBox) camBox.classList.remove('hidden');
+    }).catch(function (err) {
+        showToast(cameraErrorMessage(err), 'error');
+    });
+}
+
+function closeCameraStream() {
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(function (t) { t.stop(); });
+        mediaStream = null;
+    }
+    const video = document.getElementById('siga-avatar-video');
+    if (video) video.srcObject = null;
+    const camBox = document.getElementById('siga-avatar-camera-box');
+    if (camBox) camBox.classList.add('hidden');
+}
+
+function captureSnapshot() {
+    const video = document.getElementById('siga-avatar-video');
+    if (!video || !video.videoWidth) {
+        showToast('Aguarde a câmera iniciar.', 'error');
+        return;
+    }
+    compressProfileAvatar(video, function (dataUrl) {
+        updateStudentAvatar(dataUrl);
+        closeStudentAvatarModal();
+        showToast('Foto capturada!');
+    });
+}
+
+function updateStudentAvatar(dataUrl) {
+    let studentId = null;
+    try {
+        const params = new URLSearchParams(window.location.search);
+        studentId = params.get('id') || params.get('aluno') || localStorage.getItem('siga_ficha_aluno_id');
+    } catch (e) { /* ignore */ }
+
+    const photoEl = document.getElementById('student-avatar-img');
+    if (photoEl) {
+        if (dataUrl) photoEl.src = dataUrl;
+        else photoEl.removeAttribute('src');
+    }
+
+    if (!studentId) {
+        showToast('Aluno não identificado para salvar a foto.', 'error');
+        return;
+    }
+
+    try {
+        const students = JSON.parse(localStorage.getItem('siga_students') || '[]') || [];
+        const next = students.map(function (s) {
+            if (String(s.id) !== String(studentId)) return s;
+            return Object.assign({}, s, { avatar: dataUrl || '' });
+        });
+        localStorage.setItem('siga_students', JSON.stringify(next));
+    } catch (e) {
+        showToast('Não foi possível salvar a foto localmente.', 'error');
+    }
+
+    // Sync cloud se disponível
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.upsertStudents === 'function') {
+        try {
+            const students = JSON.parse(localStorage.getItem('siga_students') || '[]') || [];
+            const student = students.find(function (s) { return String(s.id) === String(studentId); });
+            if (student) {
+                window.SigaSchoolData.upsertStudents([student]).catch(function () { /* ignore */ });
+            }
+        } catch (e2) { /* ignore */ }
+    }
+}
+
 window.openHistoryDetailModal = openHistoryDetailModal;
 
 // ==========================================
