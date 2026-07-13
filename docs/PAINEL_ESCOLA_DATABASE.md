@@ -10,7 +10,7 @@ Projeto: `digjzihjboflcuftmokj` · Tenant: `school_id` → `public.schools`
 | 1 | Minha Escola | `painelprincipal.html` + `escola.html` | campos extras em `schools` + `academic_years` + helper `user_can_access_school` | Feito |
 | 2 | Calendário Letivo | `calendarioletivo.html` | `calendar_days` | Feito (`sql/02_calendario_letivo.sql`) |
 | 3 | Turmas | `turmas.html` | `classes` | **SQL pronto** (`sql/03_turmas.sql`) |
-| 4 | Alunos | `alunos.html` / ficha | `students` | **SQL pronto** (`sql/04_alunos.sql`) |
+| 4 | Alunos | `alunos.html` / ficha | `students` + AEE (`student_aee_enrollments`) | **SQL pronto** (`sql/04_alunos.sql` + `04b` + `04c`) |
 | 5 | Frequência | `frequencia.html` | `attendance_calls`, `attendance_marks` | **SQL pronto** (`sql/05_frequencia.sql`) |
 | 6 | Horário de Aula | `horariodeaula.html` | `class_schedules` | Pendente |
 | 7 | Agenda | `agenda.html` | `agenda_events`, `agenda_event_classes` | **SQL pronto** (`sql/07_agenda.sql`) |
@@ -113,9 +113,14 @@ SQL: [`sql/04_alunos.sql`](./sql/04_alunos.sql)
 | `aee_class_codes` | `aeeTurmas` (vínculos AEE paralelos: EEMAE01, EETAE01) |
 
 Trigger `sync_student_class_fields`: ao informar `class_id` ou `class_code`, alinha série/turno/turma e valida a mesma escola.  
-**AEE:** SQL adicional [`sql/04b_alunos_aee.sql`](./sql/04b_alunos_aee.sql) — aluno permanece na turma regular e acumula `aee_class_codes` sem duplicar CPF.
+**AEE:**  
+- [`sql/04b_alunos_aee.sql`](./sql/04b_alunos_aee.sql) — coluna espelho `aee_class_codes`  
+- [`sql/04c_aee_identificacao.sql`](./sql/04c_aee_identificacao.sql) — **banco separado** de identificação:
+  - `aee_class_catalog` (EEMAE01, EETAE01)
+  - `student_aee_enrollments` (vínculo aluno ↔ AEE, sem alterar turma regular)
+  - helper `set_student_aee_codes()`
 
-**Importação de planilha:** grava em `localStorage` **e** sincroniza com `public.students` (substituição ou mescla). Linhas do mesmo aluno em turma regular + AEE são mescladas em um único registro. Requer sessão Supabase + escola ativa. Preferir importar **Turmas** antes.
+**Importação de planilha:** grava em `localStorage` **e** sincroniza com `public.students` + `student_aee_enrollments`. Linhas do mesmo aluno em turma regular + AEE são mescladas em um único registro. Requer sessão Supabase + escola ativa. Preferir importar **Turmas** antes.
 
 ## Menu 5 — Frequência
 

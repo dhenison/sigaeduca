@@ -296,6 +296,109 @@
             });
     }
 
+    function fetchAeeEnrollmentsMap(schoolId) {
+        var ready = cloudReady();
+        if (!ready.ok) return Promise.resolve({});
+        var sid = schoolId || ready.schoolId;
+        return ready.sb.from('student_aee_enrollments')
+            .select('student_id,class_code,status')
+            .eq('school_id', sid)
+            .eq('status', 'Ativo')
+            .then(function (res) {
+                if (res.error) {
+                    // Tabela ainda não aplicada — ignora sem quebrar
+                    console.warn('[SIGA] AEE enrollments:', res.error.message);
+                    return {};
+                }
+                var map = {};
+                (res.data || []).forEach(function (e) {
+                    var id = e.student_id;
+                    if (!map[id]) map[id] = [];
+                    map[id].push(e.class_code);
+                });
+                return map;
+            })
+            .catch(function () { return {}; });
+    }
+
+    function syncAeeEnrollmentsForStudents(localStudents) {
+        var ready = cloudReady();
+        if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason });
+
+        return ready.sb.from('students')
+            .select('id,cpf,codigo_inep,email,aee_class_codes')
+            .eq('school_id', ready.schoolId)
+            .then(function (res) {
+                if (res.error) throw res.error;
+                var cloud = res.data || [];
+                var chain = Promise.resolve({ synced: 0, failed: 0 });
+
+                (localStudents || []).forEach(function (s) {
+                    var asRow = studentToRow(ready.schoolId, s);
+                    var found = matchExistingStudent(cloud, asRow);
+                    if (!found) return;
+                    var codes = normalizeAeeCodes(s.aeeTurmas || asRow.aee_class_codes);
+
+                    chain = chain.then(function (acc) {
+                        return ready.sb.rpc('set_student_aee_codes', {
+                            p_student_id: found.id,
+                            p_codes: codes
+                        }).then(function (rpcRes) {
+                            if (rpcRes.error) {
+                                // Fallback direto na tabela de identificação AEE
+                                return syncAeeEnrollmentsDirect(ready, found.id, codes).then(function (ok) {
+                                    if (ok) acc.synced += 1;
+                                    else acc.failed += 1;
+                                    return acc;
+                                });
+                            }
+                            acc.synced += 1;
+                            return acc;
+                        });
+                    });
+                });
+
+                return chain;
+            })
+            .then(function (acc) {
+                return { ok: true, synced: (acc && acc.synced) || 0, failed: (acc && acc.failed) || 0 };
+            })
+            .catch(function (err) {
+                return {
+                    ok: false,
+                    reason: 'aee_sync_error',
+                    message: (err && err.message) || 'Falha ao sincronizar identificação AEE.'
+                };
+            });
+    }
+
+    function syncAeeEnrollmentsDirect(ready, studentId, codes) {
+        var normalized = normalizeAeeCodes(codes);
+        return ready.sb.from('student_aee_enrollments')
+            .delete()
+            .eq('student_id', studentId)
+            .then(function (delRes) {
+                if (delRes.error) throw delRes.error;
+                if (!normalized.length) return true;
+                var rows = normalized.map(function (code) {
+                    return {
+                        school_id: ready.schoolId,
+                        student_id: studentId,
+                        class_code: code,
+                        status: 'Ativo'
+                    };
+                });
+                return ready.sb.from('student_aee_enrollments').insert(rows).then(function (ins) {
+                    if (ins.error) throw ins.error;
+                    return true;
+                });
+            })
+            .catch(function (err) {
+                console.warn('[SIGA] AEE direct sync:', err && err.message);
+                return false;
+            });
+    }
+
     function fetchStudents(schoolId) {
         var ready = cloudReady();
         if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason, message: ready.message, data: [] });
@@ -308,9 +411,15 @@
                 if (res.error) {
                     return { ok: false, reason: 'query_error', message: res.error.message, data: [] };
                 }
-                var mapped = (res.data || []).map(rowToStudent);
-                saveLocalStudents(mapped);
-                return { ok: true, data: mapped };
+                return fetchAeeEnrollmentsMap(sid).then(function (aeeMap) {
+                    var mapped = (res.data || []).map(function (row) {
+                        var s = rowToStudent(row);
+                        s.aeeTurmas = normalizeAeeCodes(mergeAeeCodes(s.aeeTurmas, aeeMap[row.id]));
+                        return s;
+                    });
+                    saveLocalStudents(mapped);
+                    return { ok: true, data: mapped };
+                });
             });
     }
 
@@ -510,15 +619,22 @@
                 });
             })
             .then(function (stats) {
-                return fetchStudents(ready.schoolId).then(function (loaded) {
-                    return {
-                        ok: true,
-                        inserted: stats.inserted || 0,
-                        updated: stats.updated || 0,
-                        data: loaded.data || [],
-                        message: 'Alunos sincronizados no banco (' +
-                            ((stats.inserted || 0) + (stats.updated || 0)) + ').'
-                    };
+                // Grava identificação AEE na tabela própria (student_aee_enrollments)
+                return syncAeeEnrollmentsForStudents(localStudents).then(function (aeeRes) {
+                    return fetchStudents(ready.schoolId).then(function (loaded) {
+                        var aeeNote = (aeeRes && aeeRes.ok)
+                            ? ' AEE: ' + (aeeRes.synced || 0) + ' vínculo(s).'
+                            : '';
+                        return {
+                            ok: true,
+                            inserted: stats.inserted || 0,
+                            updated: stats.updated || 0,
+                            data: loaded.data || [],
+                            aee: aeeRes || null,
+                            message: 'Alunos sincronizados no banco (' +
+                                ((stats.inserted || 0) + (stats.updated || 0)) + ').' + aeeNote
+                        };
+                    });
                 });
             })
             .catch(function (err) {
@@ -572,6 +688,8 @@
         hydrateClasses: hydrateClasses,
         hydrateStudents: hydrateStudents,
         classToRow: classToRow,
-        studentToRow: studentToRow
+        studentToRow: studentToRow,
+        syncAeeEnrollmentsForStudents: syncAeeEnrollmentsForStudents,
+        fetchAeeEnrollmentsMap: fetchAeeEnrollmentsMap
     };
 })(typeof window !== 'undefined' ? window : this);
