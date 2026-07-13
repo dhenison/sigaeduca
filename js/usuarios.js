@@ -473,8 +473,11 @@
             var session = JSON.parse(localStorage.getItem('siga_session') || 'null');
             var email = session && session.email ? normEmail(session.email) : '';
             if (email && email === normEmail(user.email)) {
-                if (user.avatar) localStorage.setItem('siga_profile_avatar', user.avatar);
-                else localStorage.removeItem('siga_profile_avatar');
+                if (typeof writeStoredProfileAvatar === 'function') {
+                    writeStoredProfileAvatar(session, user.avatar || '');
+                } else {
+                    try { localStorage.removeItem('siga_profile_avatar'); } catch (e0) { /* ignore */ }
+                }
                 if (user.nome) localStorage.setItem('siga_profile_name', user.nome);
                 if (user.cargo) localStorage.setItem('siga_profile_role', user.cargo);
                 if (user.bio != null) localStorage.setItem('siga_profile_bio', user.bio || '');

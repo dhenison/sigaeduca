@@ -361,13 +361,48 @@ function findStaffUserForSession(session) {
     try {
         const users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
         if (!Array.isArray(users)) return null;
+        const sid = session.id != null ? String(session.id) : '';
+        const email = String(session.email || '').toLowerCase();
         return users.find((u) =>
-            String(u.id) === String(session.id) ||
-            String(u.email || '').toLowerCase() === String(session.email || '').toLowerCase()
+            (sid && String(u.id) === sid) ||
+            (sid && String(u.userId || u.user_id || '') === sid) ||
+            (email && String(u.email || '').toLowerCase() === email)
         ) || null;
     } catch (e) {
         return null;
     }
+}
+
+/** Chave de foto por usuário (evita uma foto compartilhada entre servidores no mesmo navegador). */
+function profileAvatarStorageKey(session) {
+    const email = String(
+        (session && session.email) || localStorage.getItem('siga_profile_email') || ''
+    ).toLowerCase().trim();
+    if (email) return 'siga_profile_avatar__email:' + email;
+    const id = session && session.id != null ? String(session.id) : '';
+    if (id) return 'siga_profile_avatar__id:' + id;
+    return '';
+}
+
+function readStoredProfileAvatar(session) {
+    const key = profileAvatarStorageKey(session);
+    if (!key) return '';
+    try {
+        return localStorage.getItem(key) || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function writeStoredProfileAvatar(session, dataUrl) {
+    const key = profileAvatarStorageKey(session);
+    try {
+        // Remove chave legada compartilhada (causa do “uma foto para todos”)
+        localStorage.removeItem('siga_profile_avatar');
+        if (!key) return;
+        if (dataUrl) localStorage.setItem(key, dataUrl);
+        else localStorage.removeItem(key);
+    } catch (e) { /* ignore */ }
 }
 
 function getProfileData() {
@@ -383,12 +418,9 @@ function getProfileData() {
     const email = localStorage.getItem('siga_profile_email') || (staff && staff.email) || (session && session.email) || '';
     const phone = localStorage.getItem('siga_profile_phone') || (staff && staff.telefone) || '';
     const bio = localStorage.getItem('siga_profile_bio') || (staff && staff.bio) || '';
-    // Foto única: perfil ↔ cadastro em Usuários
-    let avatar = localStorage.getItem('siga_profile_avatar') || '';
-    if (!avatar && staff && staff.avatar) {
-        avatar = staff.avatar;
-        try { localStorage.setItem('siga_profile_avatar', avatar); } catch (e) { /* ignore */ }
-    }
+    // Prioridade: cadastro individual → chave privada por e-mail (nunca a chave global antiga)
+    let avatar = (staff && staff.avatar) || readStoredProfileAvatar(session) || '';
+    if (avatar) writeStoredProfileAvatar(session, avatar);
     const twoFa = localStorage.getItem('siga_profile_2fa') !== 'false';
     return { name, role, email, phone, bio, avatar, twoFa, session, staff };
 }
@@ -488,21 +520,50 @@ function syncAvatarToStaffUsers(dataUrl) {
     const email = String(
         (session && session.email) || localStorage.getItem('siga_profile_email') || ''
     ).toLowerCase();
-    const id = session && session.id != null ? String(session.id) : '';
+    const sid = session && session.id != null ? String(session.id) : '';
+    if (!email && !sid) return;
     try {
         const users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
         if (!Array.isArray(users)) return;
         let changed = false;
         const next = users.map((u) => {
             const match =
-                (id && String(u.id) === id) ||
-                (email && String(u.email || '').toLowerCase() === email);
+                (email && String(u.email || '').toLowerCase() === email) ||
+                (sid && String(u.id) === sid) ||
+                (sid && String(u.userId || u.user_id || '') === sid);
             if (!match) return u;
             changed = true;
             return Object.assign({}, u, { avatar: dataUrl || '' });
         });
         if (changed) localStorage.setItem('siga_users', JSON.stringify(next));
     } catch (e) { /* ignore */ }
+}
+
+/** Grava avatar_url só do colaborador logado no Supabase. */
+function persistCurrentUserAvatarToCloud(dataUrl) {
+    const staffApi = window.SigaStaffData;
+    if (!staffApi || typeof staffApi.upsertStaff !== 'function') {
+        return Promise.resolve({ ok: false, reason: 'no_api' });
+    }
+    let session = null;
+    try {
+        session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+    } catch (e) {
+        session = null;
+    }
+    const staff = findStaffUserForSession(session);
+    if (!staff || !staff.email) {
+        return Promise.resolve({ ok: false, reason: 'no_staff' });
+    }
+    const payload = Object.assign({}, staff, { avatar: dataUrl || '' });
+    return staffApi.upsertStaff(payload, {}).then(function (res) {
+        if (res && res.ok && res.data) {
+            syncAvatarToStaffUsers(res.data.avatar || dataUrl || '');
+        }
+        return res || { ok: false };
+    }).catch(function (err) {
+        return { ok: false, message: (err && err.message) || 'Falha ao gravar foto.' };
+    });
 }
 
 function syncProfileFieldsToStaffUsers(fields) {
@@ -697,12 +758,23 @@ function initProfilePage() {
     }
 
     function applyAvatar(dataUrl, toastMsg) {
-        if (dataUrl) localStorage.setItem('siga_profile_avatar', dataUrl);
-        else localStorage.removeItem('siga_profile_avatar');
+        let session = null;
+        try {
+            session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+        } catch (e) {
+            session = null;
+        }
+        writeStoredProfileAvatar(session, dataUrl || '');
         syncAvatarToStaffUsers(dataUrl || '');
         setPhotoPreview(dataUrl || '');
         syncProfile();
-        showToast(toastMsg || 'Foto atualizada!');
+        persistCurrentUserAvatarToCloud(dataUrl || '').then(function (res) {
+            if (res && res.ok === false && res.reason !== 'no_api' && res.reason !== 'no_staff') {
+                showToast('Foto local ok; falha ao gravar no banco: ' + (res.message || 'erro'), 'error');
+                return;
+            }
+            showToast(toastMsg || 'Foto atualizada!');
+        });
     }
 
     function stopCamera() {

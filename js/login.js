@@ -348,7 +348,15 @@
             localStorage.setItem('siga_profile_name', session.nome || '');
             localStorage.setItem('siga_profile_role', session.role || '');
             localStorage.setItem('siga_profile_email', email);
-            if (staff.avatar_url) localStorage.setItem('siga_profile_avatar', staff.avatar_url);
+            try { localStorage.removeItem('siga_profile_avatar'); } catch (eAv) { /* ignore */ }
+            var avatarVal = staff.avatar_url || staff.avatar || '';
+            if (typeof writeStoredProfileAvatar === 'function') {
+                writeStoredProfileAvatar(session, avatarVal);
+            } else if (avatarVal) {
+                try {
+                    localStorage.setItem('siga_profile_avatar__email:' + email, avatarVal);
+                } catch (eAv2) { /* ignore */ }
+            }
 
             function go() {
                 toast('Bem-vindo(a), ' + (session.nome || 'servidor') + '!');
@@ -410,10 +418,30 @@
                 localStorage.setItem('siga_profile_name', sigaSession.nome || '');
                 localStorage.setItem('siga_profile_role', sigaSession.role || '');
                 localStorage.setItem('siga_profile_email', sigaSession.email || email);
+                try { localStorage.removeItem('siga_profile_avatar'); } catch (eAv3) { /* ignore */ }
 
                 function finishCloudLogin() {
-                    toast('Bem-vindo(a), ' + (sigaSession.nome || 'servidor') + '!');
-                    redirectAfterLogin(email, sigaSession);
+                    // Carrega avatar individual do school_staff (por e-mail)
+                    var staffApi = window.SigaStaffData;
+                    var loadAvatar = Promise.resolve();
+                    if (!sigaSession.sistemaAdmin && staffApi && typeof staffApi.hydrateStaff === 'function') {
+                        loadAvatar = staffApi.hydrateStaff().then(function () {
+                            try {
+                                var users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
+                                var mine = users.find(function (u) {
+                                    return String(u.email || '').toLowerCase() === email;
+                                });
+                                var av = mine && mine.avatar ? mine.avatar : '';
+                                if (typeof writeStoredProfileAvatar === 'function') {
+                                    writeStoredProfileAvatar(sigaSession, av);
+                                }
+                            } catch (eH) { /* ignore */ }
+                        }).catch(function () { /* ignore */ });
+                    }
+                    loadAvatar.then(function () {
+                        toast('Bem-vindo(a), ' + (sigaSession.nome || 'servidor') + '!');
+                        redirectAfterLogin(email, sigaSession);
+                    });
                 }
 
                 // Servidor da escola: grava siga_active_school + metadados antes de ir ao painel
