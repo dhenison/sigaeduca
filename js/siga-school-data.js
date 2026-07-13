@@ -278,59 +278,86 @@
         localStorage.setItem(STUDENTS_KEY, JSON.stringify(list || []));
     }
 
+    /**
+     * PostgREST/Supabase limita ~1000 linhas por request.
+     * Pagina com .range() até trazer todos os registros.
+     */
+    function fetchAllRows(buildQuery, pageSize) {
+        pageSize = pageSize || 1000;
+        var all = [];
+        var from = 0;
+
+        function nextPage() {
+            var to = from + pageSize - 1;
+            return buildQuery()
+                .range(from, to)
+                .then(function (res) {
+                    if (res.error) throw res.error;
+                    var batch = res.data || [];
+                    all = all.concat(batch);
+                    if (batch.length < pageSize) {
+                        return all;
+                    }
+                    from += pageSize;
+                    return nextPage();
+                });
+        }
+
+        return nextPage();
+    }
+
     function fetchClasses(schoolId) {
         var ready = cloudReady();
         if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason, message: ready.message, data: [] });
         var sid = schoolId || ready.schoolId;
-        return ready.sb.from('classes')
-            .select('*')
-            .eq('school_id', sid)
-            .order('code', { ascending: true })
-            .then(function (res) {
-                if (res.error) {
-                    return { ok: false, reason: 'query_error', message: res.error.message, data: [] };
-                }
-                var mapped = (res.data || []).map(rowToClass);
-                saveLocalClasses(mapped);
-                return { ok: true, data: mapped };
-            });
+        return fetchAllRows(function () {
+            return ready.sb.from('classes')
+                .select('*')
+                .eq('school_id', sid)
+                .order('code', { ascending: true });
+        }).then(function (rows) {
+            var mapped = (rows || []).map(rowToClass);
+            saveLocalClasses(mapped);
+            return { ok: true, data: mapped };
+        }).catch(function (err) {
+            return { ok: false, reason: 'query_error', message: (err && err.message) || 'Falha ao carregar turmas.', data: [] };
+        });
     }
 
     function fetchAeeEnrollmentsMap(schoolId) {
         var ready = cloudReady();
         if (!ready.ok) return Promise.resolve({});
         var sid = schoolId || ready.schoolId;
-        return ready.sb.from('student_aee_enrollments')
-            .select('student_id,class_code,status')
-            .eq('school_id', sid)
-            .eq('status', 'Ativo')
-            .then(function (res) {
-                if (res.error) {
-                    // Tabela ainda não aplicada — ignora sem quebrar
-                    console.warn('[SIGA] AEE enrollments:', res.error.message);
-                    return {};
-                }
-                var map = {};
-                (res.data || []).forEach(function (e) {
-                    var id = e.student_id;
-                    if (!map[id]) map[id] = [];
-                    map[id].push(e.class_code);
-                });
-                return map;
-            })
-            .catch(function () { return {}; });
+        return fetchAllRows(function () {
+            return ready.sb.from('student_aee_enrollments')
+                .select('student_id,class_code,status')
+                .eq('school_id', sid)
+                .eq('status', 'Ativo')
+                .order('student_id', { ascending: true });
+        }).then(function (rows) {
+            var map = {};
+            (rows || []).forEach(function (e) {
+                var id = e.student_id;
+                if (!map[id]) map[id] = [];
+                map[id].push(e.class_code);
+            });
+            return map;
+        }).catch(function (err) {
+            console.warn('[SIGA] AEE enrollments:', err && err.message);
+            return {};
+        });
     }
 
     function syncAeeEnrollmentsForStudents(localStudents) {
         var ready = cloudReady();
         if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason });
 
-        return ready.sb.from('students')
-            .select('id,cpf,codigo_inep,email,aee_class_codes')
-            .eq('school_id', ready.schoolId)
-            .then(function (res) {
-                if (res.error) throw res.error;
-                var cloud = res.data || [];
+        return fetchAllRows(function () {
+            return ready.sb.from('students')
+                .select('id,cpf,codigo_inep,email,aee_class_codes')
+                .eq('school_id', ready.schoolId)
+                .order('id', { ascending: true });
+        }).then(function (cloud) {
                 var chain = Promise.resolve({ synced: 0, failed: 0 });
 
                 (localStudents || []).forEach(function (s) {
@@ -403,24 +430,29 @@
         var ready = cloudReady();
         if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason, message: ready.message, data: [] });
         var sid = schoolId || ready.schoolId;
-        return ready.sb.from('students')
-            .select('*')
-            .eq('school_id', sid)
-            .order('full_name', { ascending: true })
-            .then(function (res) {
-                if (res.error) {
-                    return { ok: false, reason: 'query_error', message: res.error.message, data: [] };
-                }
-                return fetchAeeEnrollmentsMap(sid).then(function (aeeMap) {
-                    var mapped = (res.data || []).map(function (row) {
-                        var s = rowToStudent(row);
-                        s.aeeTurmas = normalizeAeeCodes(mergeAeeCodes(s.aeeTurmas, aeeMap[row.id]));
-                        return s;
-                    });
-                    saveLocalStudents(mapped);
-                    return { ok: true, data: mapped };
+        return fetchAllRows(function () {
+            return ready.sb.from('students')
+                .select('*')
+                .eq('school_id', sid)
+                .order('id', { ascending: true });
+        }).then(function (rows) {
+            return fetchAeeEnrollmentsMap(sid).then(function (aeeMap) {
+                var mapped = (rows || []).map(function (row) {
+                    var s = rowToStudent(row);
+                    s.aeeTurmas = normalizeAeeCodes(mergeAeeCodes(s.aeeTurmas, aeeMap[row.id]));
+                    return s;
                 });
+                saveLocalStudents(mapped);
+                return { ok: true, data: mapped };
             });
+        }).catch(function (err) {
+            return {
+                ok: false,
+                reason: 'query_error',
+                message: (err && err.message) || 'Falha ao carregar alunos.',
+                data: []
+            };
+        });
     }
 
     function upsertClasses(localClasses) {
@@ -571,9 +603,12 @@
                     return chain.then(function () { return { inserted: inserted, updated: 0 }; });
                 }
 
-                return ready.sb.from('students').select('*').eq('school_id', ready.schoolId).then(function (res) {
-                    if (res.error) throw res.error;
-                    var existing = res.data || [];
+                return fetchAllRows(function () {
+                    return ready.sb.from('students')
+                        .select('*')
+                        .eq('school_id', ready.schoolId)
+                        .order('id', { ascending: true });
+                }).then(function (existing) {
                     var toInsert = [];
                     var updates = [];
 

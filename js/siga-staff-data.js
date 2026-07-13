@@ -107,6 +107,7 @@
             .select('*')
             .eq('school_id', sid)
             .order('full_name', { ascending: true })
+            .range(0, 4999)
             .then(function (res) {
                 if (res.error) {
                     return { ok: false, reason: 'query_error', message: res.error.message, data: [] };
