@@ -23,8 +23,8 @@ Projeto: `digjzihjboflcuftmokj` · Tenant: `school_id` → `public.schools`
 | 14 | Conselho de Classe | `conselho.html` | `class_councils` | Pendente |
 | 15 | Controle de Livros | `controlelivros.html` | `books`, `book_loans`, `book_returns` | **SQL pronto** (`sql/15_controle_livros.sql`) |
 | 16 | Relatórios | `relatorios.html` | (views / consultas) | Pendente |
-| 17 | Meu Perfil | `meuperfil.html` | `profiles` (já existe) | Parcial |
-| 18 | Permissões | `permissões.html` | roles + `menu_permissions` | Pendente |
+| 17 | Meu Perfil | `meuperfil.html` | `profiles` (+ segurança) + `user_sessions` | **SQL pronto** (`sql/17_meu_perfil.sql`) |
+| 18 | Permissões | `permissões.html` | `permission_modules`, `role_permission_defaults`, `staff_permissions` | **SQL pronto** (`sql/18_permissoes.sql`) |
 
 ## Padrão RLS (todas as tabelas de negócio)
 
@@ -244,6 +244,45 @@ SQL: [`sql/15_controle_livros.sql`](./sql/15_controle_livros.sql)
 - `books` — acervo
 - `book_loans` — empréstimos (ativo/atrasado/devolvido)
 - `book_returns` — log rápido de devoluções
+
+## Menu 17 — Meu Perfil
+
+SQL: [`sql/17_meu_perfil.sql`](./sql/17_meu_perfil.sql)  
+**Separado de Permissões.** Somente usuários/servidores (alunos não usam esta tela).
+
+### Extensões em `public.profiles`
+
+| Coluna | App |
+|--------|-----|
+| `phone` | telefone |
+| `bio` | resumo profissional |
+| `avatar_url` | foto única (sync com `school_staff.avatar_url`) |
+| `two_factor_enabled` | 2FA on/off |
+| `two_factor_method` | `app` \| `sms` |
+| `password_changed_at` | hint “senha alterada há X dias” |
+
+### `public.user_sessions`
+
+Sessões ativas (dispositivo, navegador, local, `is_current`, `revoked_at`).  
+Helpers: `mark_password_changed()`, `revoke_user_session()`.
+
+Triggers mantêm **uma foto padrão** entre perfil e cadastro em Usuários.
+
+## Menu 18 — Permissões
+
+SQL: [`sql/18_permissoes.sql`](./sql/18_permissoes.sql)  
+**Banco próprio**, independente do Meu Perfil. App hoje: `siga_user_permissions`.
+
+| Tabela | Função |
+|--------|--------|
+| `permission_modules` | Catálogo dos menus (ids iguais ao JS) |
+| `role_permission_defaults` | Padrão por cargo (`ver/criar/editar/excluir`) |
+| `staff_permissions` | Override por colaborador (`school_staff`) |
+| `permissions_meta` | Última alteração por escola |
+
+Helpers: `upsert_role_default()`, `apply_role_defaults_to_staff()`, `touch_permissions_meta()`.
+
+Seed global dos cargos (Diretor, Vices, Coordenador, Secretário, Professor, servidor) alinhado a `js/permissoes.js`.
 
 ## Escolas atuais
 
