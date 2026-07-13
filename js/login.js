@@ -144,6 +144,44 @@
         return isInstitutionalEmail(email) || isSystemAdminEmail(email);
     }
 
+    /** Destino obrigatório após login */
+    function redirectAfterLogin(email, session) {
+        var goAdmin = isSystemAdminEmail(email) ||
+            !!(session && (session.sistemaAdmin || session.tipo === 'sistema'));
+        var dest = goAdmin ? '/paineladmin.html' : '/painelprincipal.html';
+        setTimeout(function () { window.location.replace(dest); }, 300);
+    }
+
+    function ensureSystemAdminLocalUser(email) {
+        email = normEmail(email);
+        if (!isSystemAdminEmail(email)) return;
+        var list = getUsers();
+        var idx = list.findIndex(function (u) { return normEmail(u.email) === email; });
+        var row = {
+            id: idx >= 0 ? list[idx].id : 'usr_sistema_admin',
+            nome: 'Administrador do Sistema',
+            email: email,
+            senha: idx >= 0 ? (list[idx].senha || '') : '',
+            cargo: 'Administrador do Sistema',
+            sistemaAdmin: true,
+            precisaDefinirSenha: idx >= 0 ? !!list[idx].precisaDefinirSenha && !list[idx].senha : true
+        };
+        if (idx >= 0) list[idx] = Object.assign({}, list[idx], row);
+        else list.unshift(row);
+        // também mantém o seed antigo alinhado
+        list = list.map(function (u) {
+            if (normEmail(u.email) === email) {
+                return Object.assign({}, u, {
+                    sistemaAdmin: true,
+                    cargo: 'Administrador do Sistema',
+                    nome: u.nome || 'Administrador do Sistema'
+                });
+            }
+            return u;
+        });
+        saveUsers(list);
+    }
+
     function doLogin(email, senha) {
         email = normEmail(email);
         senha = String(senha || '');
@@ -215,11 +253,16 @@
 
         // Servidor — tenta Supabase Auth primeiro (admin / usuários cloud), depois localStorage
         function finishServidorLocal() {
+            ensureSystemAdminLocalUser(email);
             var users = getUsers();
             var user = users.find(function (u) { return normEmail(u.email) === email; });
             if (!user) {
                 toast('Servidor não encontrado com este e-mail.', 'error');
                 return;
+            }
+            if (isSystemAdminEmail(email)) {
+                user.sistemaAdmin = true;
+                user.cargo = 'Administrador do Sistema';
             }
             if (user.precisaDefinirSenha || !user.senha) {
                 toast('Defina sua senha em “Esqueci minha senha” antes de entrar.', 'error');
@@ -232,23 +275,24 @@
                     if (i >= 0) {
                         list[i].senha = hashed;
                         list[i].precisaDefinirSenha = false;
+                        list[i].sistemaAdmin = !!user.sistemaAdmin || isSystemAdminEmail(email);
+                        list[i].cargo = list[i].sistemaAdmin ? 'Administrador do Sistema' : list[i].cargo;
                         saveUsers(list);
                     }
                 }
-                setSession({
-                    tipo: user.sistemaAdmin ? 'sistema' : 'servidor',
+                var isAdmin = !!user.sistemaAdmin || isSystemAdminEmail(email) || /administrador do sistema/i.test(user.cargo || '');
+                var session = {
+                    tipo: isAdmin ? 'sistema' : 'servidor',
                     id: user.id,
-                    nome: user.nome,
+                    nome: user.nome || (isAdmin ? 'Administrador do Sistema' : 'Servidor'),
                     email: email,
-                    role: user.cargo || 'Servidor',
-                    sistemaAdmin: !!user.sistemaAdmin || /administrador do sistema/i.test(user.cargo || ''),
+                    role: isAdmin ? 'Administrador do Sistema' : (user.cargo || 'Servidor'),
+                    sistemaAdmin: isAdmin,
                     authProvider: 'local'
-                });
-                toast('Bem-vindo(a), ' + (user.nome || 'servidor') + '!');
-                var dest = (user.sistemaAdmin || /administrador do sistema/i.test(user.cargo || ''))
-                    ? 'paineladmin.html'
-                    : 'painelprincipal.html';
-                setTimeout(function () { window.location.href = dest; }, 400);
+                };
+                setSession(session);
+                toast('Bem-vindo(a), ' + (session.nome || 'servidor') + '!');
+                redirectAfterLogin(email, session);
             });
         }
 
@@ -256,27 +300,25 @@
         if (cloud && cloud.isConfigured && cloud.isConfigured()) {
             cloud.signIn(email, senha).then(function (result) {
                 if (!result || !result.ok) {
-                    // Credenciais inválidas no cloud → tenta cadastro local
+                    if (isSystemAdminEmail(email)) {
+                        toast((result && result.message) || 'Falha no login Supabase do administrador. Confira a senha no Authentication.', 'error');
+                    }
                     finishServidorLocal();
                     return;
                 }
                 var sigaSession = cloud.toSigaSession(result.user, result.profile);
-                // Garante admin allowlist mesmo se o profile ainda não tiver a flag
                 if (isSystemAdminEmail(email)) {
                     sigaSession.sistemaAdmin = true;
                     sigaSession.tipo = 'sistema';
                     sigaSession.role = 'Administrador do Sistema';
+                    sigaSession.nome = sigaSession.nome || 'Administrador do Sistema';
                 }
                 setSession(sigaSession);
-                if (sigaSession.nome) localStorage.setItem('siga_profile_name', sigaSession.nome);
-                if (sigaSession.role) localStorage.setItem('siga_profile_role', sigaSession.role);
-                if (sigaSession.email) localStorage.setItem('siga_profile_email', sigaSession.email);
+                localStorage.setItem('siga_profile_name', sigaSession.nome || '');
+                localStorage.setItem('siga_profile_role', sigaSession.role || '');
+                localStorage.setItem('siga_profile_email', sigaSession.email || email);
                 toast('Bem-vindo(a), ' + (sigaSession.nome || 'servidor') + '!');
-                var dest = sigaSession.sistemaAdmin ? 'paineladmin.html' : 'painelprincipal.html';
-                if (!result.profile) {
-                    console.warn('[SIGA] Login Supabase sem linha em profiles — confira o trigger handle_new_user.');
-                }
-                setTimeout(function () { window.location.href = dest; }, 400);
+                redirectAfterLogin(email, sigaSession);
             }).catch(function () {
                 finishServidorLocal();
             });
