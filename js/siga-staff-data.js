@@ -354,25 +354,15 @@
         });
     }
 
-    /** Login fallback: valida hash no Postgres */
-    function loginByHash(email, passwordHash) {
-        var sb = getClient();
-        if (!sb) {
-            return Promise.resolve({ ok: false, reason: 'not_configured' });
-        }
-        return sb.rpc('staff_login_by_hash', {
-            p_email: String(email || '').trim().toLowerCase(),
-            p_password_hash: passwordHash
-        }).then(function (res) {
-            if (res.error) {
-                return { ok: false, reason: 'rpc_error', message: res.error.message };
-            }
-            if (!res.data) {
-                return { ok: false, reason: 'invalid', message: 'Servidor não encontrado ou senha incorreta.' };
-            }
-            return { ok: true, staff: res.data };
-        }).catch(function (err) {
-            return { ok: false, reason: 'rpc_error', message: (err && err.message) || 'Falha no login cloud.' };
+    /**
+     * @deprecated Login cloud deve usar SigaSupabase.signIn (Auth).
+     * RPC staff_login_by_hash não é mais concedida a anon.
+     */
+    function loginByHash() {
+        return Promise.resolve({
+            ok: false,
+            reason: 'deprecated',
+            message: 'Login por hash desativado. Use a conta do Supabase Authentication.'
         });
     }
 

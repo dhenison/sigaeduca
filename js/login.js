@@ -375,24 +375,11 @@
             go();
         }
 
-        function tryStaffDbLoginThenLocal() {
-            var staffApi = window.SigaStaffData;
-            var secHash = window.SigaSecurity;
-            if (staffApi && typeof staffApi.loginByHash === 'function' && secHash && typeof secHash.hashPassword === 'function') {
-                secHash.hashPassword(senha).then(function (hash) {
-                    staffApi.loginByHash(email, hash).then(function (res) {
-                        if (res && res.ok && res.staff) {
-                            finishServidorFromStaff(res.staff);
-                            return;
-                        }
-                        finishServidorLocal();
-                    }).catch(function () {
-                        finishServidorLocal();
-                    });
-                }).catch(function () {
-                    finishServidorLocal();
-                });
-                return;
+        function tryLocalLoginFallback(authErrorMessage) {
+            // Sem RPC staff_login_by_hash (removido do anon): Auth é a fonte cloud.
+            // Mantém só espelho localStorage para ambientes offline / demo.
+            if (authErrorMessage) {
+                console.info('[SIGA] Auth falhou; tentando usuários locais.', authErrorMessage);
             }
             finishServidorLocal();
         }
@@ -401,10 +388,11 @@
         if (cloud && cloud.isConfigured && cloud.isConfigured()) {
             cloud.signIn(email, senha).then(function (result) {
                 if (!result || !result.ok) {
+                    var msg = (result && result.message) || 'E-mail ou senha incorretos no Authentication.';
                     if (isSystemAdminEmail(email)) {
-                        toast((result && result.message) || 'Falha no login Supabase do administrador. Confira a senha no Authentication.', 'error');
+                        toast(msg + ' Confira o usuário no Supabase Authentication.', 'error');
                     }
-                    tryStaffDbLoginThenLocal();
+                    tryLocalLoginFallback(msg);
                     return;
                 }
                 var sigaSession = cloud.toSigaSession(result.user, result.profile);
@@ -464,13 +452,13 @@
                 }
 
                 finishCloudLogin();
-            }).catch(function () {
-                tryStaffDbLoginThenLocal();
+            }).catch(function (err) {
+                tryLocalLoginFallback((err && err.message) || 'Falha de rede no Auth');
             });
             return;
         }
 
-        tryStaffDbLoginThenLocal();
+        tryLocalLoginFallback();
     }
 
     function openRecoverModal() {

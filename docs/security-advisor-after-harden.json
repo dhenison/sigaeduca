@@ -1,0 +1,110 @@
+{
+  "project_id": "digjzihjboflcuftmokj",
+  "captured_at": "2026-07-13",
+  "source": "Supabase Security Advisor (MCP get_advisors)",
+  "summary": {
+    "total_warns": 15,
+    "anon_security_definer": 0,
+    "auth_leaked_password_protection": "resolved_in_dashboard",
+    "authenticated_security_definer": 15,
+    "status": "Sanitized: only intentional authenticated app RPCs remain"
+  },
+  "notes": [
+    "staff_login_by_hash revoked from anon/authenticated (docs/sql/21_revoke_staff_login_by_hash.sql)",
+    "Login cloud uses Supabase Auth only (js/login.js)",
+    "Leaked password protection enabled in Authentication > Attack Protection / Email provider",
+    "WARN 0029 remaining = RPCs do SIGA para role authenticated (aceitável)"
+  ],
+  "lints": [
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "apply_role_defaults_to_staff", "arguments": "p_staff_id uuid" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "ensure_single_current_session", "arguments": "" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "is_system_admin", "arguments": "" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "link_staff_auth_user", "arguments": "p_staff_id uuid, p_auth_user_id uuid" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "lotacao_replace_mapa", "arguments": "p_school_id uuid, p_year integer, p_alocacoes jsonb" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "mark_password_changed", "arguments": "p_user_id uuid" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "minha_lotacao_rows", "arguments": "p_year integer" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "next_secretary_protocol", "arguments": "p_school_id uuid, p_doc_type text, p_year integer" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "refresh_student_aee_codes", "arguments": "p_student_id uuid" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "revoke_user_session", "arguments": "p_session_id uuid" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "set_student_aee_codes", "arguments": "p_student_id uuid, p_codes text[]" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "touch_permissions_meta", "arguments": "p_school_id uuid" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "turma_lotacao_rows", "arguments": "p_turma_code text, p_year integer" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "upsert_role_default", "arguments": "p_role text, p_module_id text, p_view boolean, p_create boolean, p_edit boolean, p_delete boolean, p_school_id uuid" }
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "metadata": { "name": "user_can_access_school", "arguments": "p_school_id uuid" }
+    }
+  ]
+}
