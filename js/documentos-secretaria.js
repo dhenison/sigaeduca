@@ -9,6 +9,8 @@
   // ─── Constants ─────────────────────────────────────────────────────────────
   const DOCUMENTO_SECRETARIA_VALIDADE_DIAS = 30;
   const DOCUMENTO_SECRETARIA_TIPO_VAGA = 'Declaração de Vaga';
+  const DOCUMENTO_SECRETARIA_TIPO_ATESTADO = 'Atestado de Conclusão';
+  const DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA = 'Requerimento de Histórico e Diploma';
   const SEC_STORAGE_KEY = 'siga_documentos_secretaria';
   const SEC_ANO_LETIVO = '2026';
 
@@ -36,8 +38,12 @@
     return String(tipo || '').startsWith('Requerimento');
   }
 
+  function isAtestadoConclusao(tipo) {
+    return tipo === DOCUMENTO_SECRETARIA_TIPO_ATESTADO;
+  }
+
   function isDeclaracao(tipo) {
-    return String(tipo || '').startsWith('Declaração');
+    return String(tipo || '').startsWith('Declaração') || isAtestadoConclusao(tipo);
   }
 
   // ─── Protocol generation ───────────────────────────────────────────────────
@@ -297,6 +303,7 @@
     const grupoReq = document.getElementById('sec-grupo-requerimento');
     const grupoNasc = document.getElementById('sec-grupo-nascimento');
     const grupoVaga = document.getElementById('sec-grupo-vaga');
+    const grupoAtestado = document.getElementById('sec-grupo-atestado');
 
     function hide(el) { if (el) { el.classList.add('hidden'); el.style.display = 'none'; } }
     function show(el) { if (el) { el.classList.remove('hidden'); el.style.display = ''; } }
@@ -306,6 +313,7 @@
     hide(grupoReq);
     hide(grupoNasc);
     hide(grupoVaga);
+    hide(grupoAtestado);
 
     if (tipo && isDeclaracao(tipo) && tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA) {
       show(grupoNasc);
@@ -316,10 +324,35 @@
     } else if (tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA) {
       hide(grupoAluno);
       show(grupoVaga);
+    } else if (isAtestadoConclusao(tipo)) {
+      show(grupoAtestado);
+      const anoField = document.getElementById('sec-doc-ano-letivo');
+      if (anoField && !String(anoField.value || '').trim()) {
+        anoField.value = SEC_ANO_LETIVO;
+      }
+      preencherCamposAtestadoDoAluno();
     }
 
-    if (isRequerimento(tipo) || tipo === 'Declaração de Transferência') {
+    if (isRequerimento(tipo) || tipo === 'Declaração de Transferência' || isAtestadoConclusao(tipo)) {
       show(grupoReq);
+    }
+  }
+
+  function preencherCamposAtestadoDoAluno() {
+    const alunoId = document.getElementById('sec-doc-aluno-id')?.value;
+    const turmaField = document.getElementById('sec-doc-turma-atestado');
+    const dataNascField = document.getElementById('sec-doc-data-nasc');
+    if (!alunoId) {
+      if (turmaField) turmaField.value = '';
+      return;
+    }
+    const aluno = findStudentById(alunoId);
+    if (!aluno) return;
+    if (turmaField && !String(turmaField.value || '').trim()) {
+      turmaField.value = aluno.turma || '';
+    }
+    if (dataNascField && !dataNascField.value) {
+      dataNascField.value = (aluno.dataNascimento || aluno.nasc) || '';
     }
   }
 
@@ -329,10 +362,17 @@
     if (!dataNascField) return;
     if (!alunoId) {
       dataNascField.value = '';
+      const turmaField = document.getElementById('sec-doc-turma-atestado');
+      if (turmaField) turmaField.value = '';
       return;
     }
     const aluno = findStudentById(alunoId);
     dataNascField.value = (aluno && (aluno.dataNascimento || aluno.nasc)) || '';
+    const tipo = document.getElementById('sec-doc-tipo')?.value || '';
+    if (isAtestadoConclusao(tipo)) {
+      const turmaField = document.getElementById('sec-doc-turma-atestado');
+      if (turmaField) turmaField.value = (aluno && aluno.turma) || '';
+    }
   }
 
   function populateAlunoSelect() {
@@ -362,6 +402,10 @@
     const dtNasc = document.getElementById('sec-doc-data-nasc'); if (dtNasc) dtNasc.value = '';
     const vagaEtapa = document.getElementById('sec-doc-vaga-etapa'); if (vagaEtapa) vagaEtapa.value = '';
     const vagaTurno = document.getElementById('sec-doc-vaga-turno'); if (vagaTurno) vagaTurno.value = '';
+    const anoLetivo = document.getElementById('sec-doc-ano-letivo'); if (anoLetivo) anoLetivo.value = SEC_ANO_LETIVO;
+    const turmaAtest = document.getElementById('sec-doc-turma-atestado'); if (turmaAtest) turmaAtest.value = '';
+    const nomeMae = document.getElementById('sec-doc-nome-mae'); if (nomeMae) nomeMae.value = '';
+    const nomePai = document.getElementById('sec-doc-nome-pai'); if (nomePai) nomePai.value = '';
     const alunoSel = document.getElementById('sec-doc-aluno-id'); if (alunoSel) alunoSel.value = '';
 
     mostrarCamposDinamicosSec();
@@ -396,6 +440,10 @@
     const dataNascInput = document.getElementById('sec-doc-data-nasc')?.value || '';
     const vagaEtapa = document.getElementById('sec-doc-vaga-etapa')?.value || '';
     const vagaTurno = document.getElementById('sec-doc-vaga-turno')?.value || '';
+    const anoLetivoInput = String(document.getElementById('sec-doc-ano-letivo')?.value || '').trim();
+    const turmaAtestado = String(document.getElementById('sec-doc-turma-atestado')?.value || '').trim();
+    const nomeMae = String(document.getElementById('sec-doc-nome-mae')?.value || '').trim();
+    const nomePai = String(document.getElementById('sec-doc-nome-pai')?.value || '').trim();
 
     if (!tipo) {
       showSecToast('Selecione o tipo de emissão.', 'alerta');
@@ -417,6 +465,32 @@
       showSecToast('Selecione o turno da vaga.', 'alerta');
       return;
     }
+    if (isAtestadoConclusao(tipo)) {
+      if (!anoLetivoInput) {
+        showSecToast('Informe o ano letivo.', 'alerta');
+        return;
+      }
+      if (!cidadeNasc || !ufNasc) {
+        showSecToast('Informe a cidade e o estado de nascimento.', 'alerta');
+        return;
+      }
+      if (!dataNascInput) {
+        showSecToast('Informe a data de nascimento.', 'alerta');
+        return;
+      }
+      if (!nomeMae) {
+        showSecToast('Informe o nome da mãe.', 'alerta');
+        return;
+      }
+      if (!nomePai) {
+        showSecToast('Informe o nome do pai.', 'alerta');
+        return;
+      }
+      if (!turmaAtestado) {
+        showSecToast('Informe a turma.', 'alerta');
+        return;
+      }
+    }
 
     const aluno = tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? null : findStudentById(alunoId);
     if (tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA && !aluno) {
@@ -437,6 +511,17 @@
         obsCompleta = obsCompleta.trim();
       }
     }
+    if (isAtestadoConclusao(tipo)) {
+      if (anoLetivoInput) {
+        obsCompleta = ('[ANO_LETIVO: ' + anoLetivoInput + '] ' + obsCompleta).trim();
+      }
+      if (nomeMae) {
+        obsCompleta = ('[NOME_MAE: ' + nomeMae + '] ' + obsCompleta).trim();
+      }
+      if (nomePai) {
+        obsCompleta = ('[NOME_PAI: ' + nomePai + '] ' + obsCompleta).trim();
+      }
+    }
     if (tipo === 'Declaração de Frequência (Bolsa Família)') {
       obsCompleta = ('Frequência de ' + frequencia + '%. ' + obsCompleta).trim();
     }
@@ -447,6 +532,9 @@
     const serie = resolveSerie(aluno);
     const protocolo = gerarProtocoloSec(tipo);
     const hoje = new Date().toISOString().split('T')[0];
+    const turmaDoc = isAtestadoConclusao(tipo)
+      ? turmaAtestado
+      : (aluno ? (aluno.turma || '') : '');
 
     const doc = {
       id: uid(),
@@ -454,7 +542,7 @@
       alunoId: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? null : alunoId,
       alunoNome: aluno ? aluno.nome : '',
       alunoCpf: aluno ? (aluno.cpf || '') : '',
-      alunoTurma: aluno ? (aluno.turma || '') : '',
+      alunoTurma: turmaDoc,
       alunoSerie: serie || '',
       alunoTurno: aluno ? (aluno.turno || '') : '',
       tipo: tipo,
@@ -469,7 +557,10 @@
       dataNascimento: dataNascInput || (aluno && (aluno.dataNascimento || aluno.nasc)) || '',
       frequencia: tipo === 'Declaração de Frequência (Bolsa Família)' ? frequencia : '',
       vagaEtapa: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? vagaEtapa : '',
-      vagaTurno: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? vagaTurno : ''
+      vagaTurno: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? vagaTurno : '',
+      anoLetivo: isAtestadoConclusao(tipo) ? anoLetivoInput : '',
+      nomeMae: isAtestadoConclusao(tipo) ? nomeMae : '',
+      nomePai: isAtestadoConclusao(tipo) ? nomePai : ''
     };
 
     const list = getSecDocumentos();
@@ -499,7 +590,10 @@
         dataNascimento: '',
         frequencia: '',
         vagaEtapa: '',
-        vagaTurno: ''
+        vagaTurno: '',
+        anoLetivo: '',
+        nomeMae: '',
+        nomePai: ''
       };
       list.unshift(reqDoc);
       saveSecDocumentos(list);
@@ -507,6 +601,43 @@
       fecharModalNovoDocSecretaria();
       renderSecPage();
       // Imprime Declaração + Comprovante de Requerimento na mesma janela
+      imprimirDocumentosSec([doc.id, reqDoc.id]);
+      return;
+    }
+
+    if (isAtestadoConclusao(tipo)) {
+      const reqProtocolo = gerarProtocoloSec(DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA);
+      const reqDoc = {
+        id: uid(),
+        protocolo: reqProtocolo,
+        alunoId: alunoId,
+        alunoNome: aluno ? aluno.nome : '',
+        alunoCpf: aluno ? (aluno.cpf || '') : '',
+        alunoTurma: turmaDoc,
+        alunoSerie: serie || '',
+        alunoTurno: aluno ? (aluno.turno || '') : '',
+        tipo: DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA,
+        dataEmissao: hoje,
+        status: 'pendente',
+        solicitante: solicitante || 'Secretaria (Auto)',
+        motivo: motivo || 'Atestado de conclusão emitido — Histórico e Diploma',
+        obs: 'Gerado automaticamente por emissão de Atestado de Conclusão.',
+        responsavel: responsavel,
+        cidadeNascimento: '',
+        ufNascimento: '',
+        dataNascimento: '',
+        frequencia: '',
+        vagaEtapa: '',
+        vagaTurno: '',
+        anoLetivo: anoLetivoInput || '',
+        nomeMae: '',
+        nomePai: ''
+      };
+      list.unshift(reqDoc);
+      saveSecDocumentos(list);
+      showSecToast('Atestado e requerimento registrados com sucesso!', 'success');
+      fecharModalNovoDocSecretaria();
+      renderSecPage();
       imprimirDocumentosSec([doc.id, reqDoc.id]);
       return;
     }
@@ -588,6 +719,7 @@
   /** Rótulo da coluna Tipo na listagem (apenas UI desta página). */
   function labelTipoListagem(tipo) {
     if (tipo === 'Requerimento de Transferência') return 'Histórico Escolar';
+    if (tipo === DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA) return 'Histórico e Diploma';
     return tipo || '—';
   }
 
@@ -605,10 +737,10 @@
     const localEmissaoDocumento = school.localEmissao;
     const alunoNome = (aluno && aluno.nome) || doc.alunoNome || '—';
     const alunoCpf = (aluno && aluno.cpf) || doc.alunoCpf || '—';
-    const turmaTexto = (aluno && aluno.turma) || doc.alunoTurma || '—';
-    const turnoTexto = (aluno && aluno.turno) || doc.alunoTurno || '—';
+    const turmaTexto = doc.alunoTurma || (aluno && aluno.turma) || '—';
+    const turnoTexto = doc.alunoTurno || (aluno && aluno.turno) || '—';
     const serieTexto = formatarSerieDocumento(
-      (aluno && resolveSerie(aluno)) || doc.alunoSerie || ''
+      doc.alunoSerie || (aluno && resolveSerie(aluno)) || ''
     );
 
     const dataPorExtenso = formatarDataPorExtenso(doc.dataEmissao);
@@ -661,7 +793,14 @@
     const turmaEsc = escapeHtml(turmaTexto);
     const serieEsc = escapeHtml(serieTexto);
     const turnoEsc = escapeHtml(turnoTexto);
-    const anoLetivo = SEC_ANO_LETIVO;
+    const anoLetivoDoc = doc.anoLetivo
+      || extrairMetaDocumentoSecretaria(doc.obs, 'ANO_LETIVO')
+      || SEC_ANO_LETIVO;
+    const anoLetivo = anoLetivoDoc;
+    const nomeMaeDoc = doc.nomeMae || extrairMetaDocumentoSecretaria(doc.obs, 'NOME_MAE') || '';
+    const nomePaiDoc = doc.nomePai || extrairMetaDocumentoSecretaria(doc.obs, 'NOME_PAI') || '';
+    let assinaturaTitulo = 'Assinatura Autorizada';
+    let assinaturaSub = escolaEsc + '<br>Secretaria / Direção Escolar';
 
     if (doc.tipo === 'Declaração de Matrícula') {
       contentHtml =
@@ -670,7 +809,7 @@
         'inscrito(a) sob o CPF <b>' + cpfEsc + '</b>, nascido(a) em <b>' +
         escapeHtml(formatarDataNasc(dataNasc)) + '</b>' + cidadeNascText + ', ' +
         'está regularmente matriculado(a) e frequentando as aulas na <b>' + escolaEsc +
-        '</b> no ano letivo de <b>' + anoLetivo + '</b>, ' +
+        '</b> no ano letivo de <b>' + escapeHtml(anoLetivo) + '</b>, ' +
         'cursando a turma <b>' + turmaEsc + '</b>, correspondente ao <b>' + serieEsc +
         '</b>, no turno <b>' + turnoEsc + '</b>.' +
         '</p>' +
@@ -687,7 +826,7 @@
         'que o(a) estudante <b>' + nomeEsc + '</b>, inscrito(a) sob o CPF <b>' + cpfEsc + '</b>, ' +
         'nascido(a) em <b>' + escapeHtml(formatarDataNasc(dataNasc)) + '</b>' + cidadeNascText +
         ', está regularmente matriculado(a) e frequentando as aulas na <b>' + escolaEsc +
-        '</b> no ano letivo de <b>' + anoLetivo + '</b>, na turma <b>' + turmaEsc +
+        '</b> no ano letivo de <b>' + escapeHtml(anoLetivo) + '</b>, na turma <b>' + turmaEsc +
         '</b>, correspondente ao <b>' + serieEsc + '</b>, no turno <b>' + turnoEsc + '</b>.' +
         '</p>' +
         '<p class="doc-text">' +
@@ -714,7 +853,7 @@
         'Declaramos, para os devidos fins, que a <b>' + escolaEsc +
         '</b> dispõe de vaga para matrícula na etapa/modalidade <b>' +
         escapeHtml(vagaEtapaTexto) + '</b>, no turno <b>' + escapeHtml(vagaTurnoTexto) +
-        '</b>, para o ano letivo de <b>' + anoLetivo + '</b>.' +
+        '</b>, para o ano letivo de <b>' + escapeHtml(anoLetivo) + '</b>.' +
         '</p>' +
         '<p class="doc-text">' +
         'A presente declaração confirma a disponibilidade de vaga nesta escola na etapa/modalidade e turno acima informados, ' +
@@ -735,8 +874,25 @@
         'tem validade improrrogável de <b>30 (trinta) dias</b> a partir de sua emissão, prazo este necessário para a confecção e ' +
         'entrega do Histórico Escolar definitivo.' +
         '</p>';
+    } else if (isAtestadoConclusao(doc.tipo)) {
+      const cidadeUf = (cidadeNasc || '—') + ' - ' + (ufNasc || '—');
+      contentHtml =
+        '<p class="doc-text">' +
+        'Atestamos para os devidos fins e efeitos que, <b>' + nomeEsc + '</b>, filho(a) de <b>' +
+        escapeHtml(nomeMaeDoc || '—') + '</b> e <b>' + escapeHtml(nomePaiDoc || '—') + '</b>, <b>' +
+        escapeHtml(cidadeUf) + '</b>, nascido(a) em <b>' + escapeHtml(formatarDataNasc(dataNasc)) +
+        '</b>, concluiu o Ensino Médio neste Estabelecimento de Ensino no ano letivo de <b>' +
+        escapeHtml(anoLetivo) + '</b>.' +
+        '</p>' +
+        '<p class="doc-text"><b>OBS:</b> O CERTIFICADO E HISTÓRICO ENCONTRA-SE EM PERÍODO DE TRAMITAÇÃO E SERÁ EMITIDO NO PRAZO DE 30 DIAS.</p>' +
+        '<p class="doc-text">Por ser esta a expressão da verdade, assinamos a presente declaração.</p>';
+      assinaturaTitulo = 'Assinatura do Diretor';
+      assinaturaSub = escolaEsc + '<br>Direção Escolar';
     } else if (isRequerimento(doc.tipo)) {
       titleHtml = 'Comprovante de Requerimento';
+      const servicoSolicitado = doc.tipo === DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA
+        ? 'Histórico e Diploma'
+        : doc.tipo;
       contentHtml =
         '<p class="receipt-intro">' +
         'A secretaria escolar da <b>' + escolaEsc +
@@ -757,7 +913,7 @@
         '<div class="receipt-row"><span class="receipt-label">Turma / Ano / Turno:</span><span>' +
         turmaEsc + ' (' + serieEsc + ' • ' + turnoEsc + ')</span></div>' +
         '<div class="receipt-row"><span class="receipt-label">Serviço/Documento Solicitado:</span>' +
-        '<span style="font-weight:700">' + escapeHtml(doc.tipo) + '</span></div>' +
+        '<span style="font-weight:700">' + escapeHtml(servicoSolicitado) + '</span></div>' +
         '<div class="receipt-row"><span class="receipt-label">Solicitante:</span><span>' +
         escapeHtml(doc.solicitante || 'O próprio aluno') + '</span></div>' +
         '<div class="receipt-row"><span class="receipt-label">Motivo do Pedido:</span><span>' +
@@ -790,8 +946,8 @@
           escapeHtml(dataPorExtenso) + '.</div>' +
           '<div class="signature-area"><div class="signature-box" style="width:52%">' +
           '<div class="signature-line"></div>' +
-          '<span class="signature-desc"><b>Assinatura Autorizada</b><br>' + escolaEsc +
-          '<br>Secretaria / Direção Escolar</span></div></div>'
+          '<span class="signature-desc"><b>' + assinaturaTitulo + '</b><br>' + assinaturaSub +
+          '</span></div></div>'
         : '<div class="signature-area">' +
           '<div class="signature-box"><div class="signature-line"></div>' +
           '<span class="signature-desc"><b>' + escapeHtml(doc.responsavel || 'Secretaria') +

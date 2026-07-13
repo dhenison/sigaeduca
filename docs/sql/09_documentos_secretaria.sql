@@ -52,9 +52,11 @@ CREATE TABLE IF NOT EXISTS public.secretary_documents (
       'Declaração de Escolaridade'::text,
       'Declaração de Vaga'::text,
       'Declaração de Transferência'::text,
+      'Atestado de Conclusão'::text,
       'Requerimento de 2ª Via de Diploma'::text,
       'Requerimento de 2ª Via de Histórico Escolar'::text,
-      'Requerimento de Transferência'::text
+      'Requerimento de Transferência'::text,
+      'Requerimento de Histórico e Diploma'::text
     ])
   ),
   CONSTRAINT secretary_documents_validity_days_chk CHECK (validity_days > 0 AND validity_days <= 365)
