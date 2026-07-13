@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
     initFiltersOptions();
     switchView('dashboard');
+    syncLotacaoFromCloud();
 });
 
 function initDOM() {
@@ -608,6 +609,84 @@ function loadData() {
 
 function saveDataToStorage() {
     localStorage.setItem('lotacao_data', JSON.stringify(appState.data));
+    try {
+        localStorage.setItem('professores_cadastro', JSON.stringify(appState.professores || []));
+    } catch (e) { /* ignore */ }
+    scheduleLotacaoCloudPersist();
+}
+
+function saveProfessoresToStorage() {
+    localStorage.setItem('professores_cadastro', JSON.stringify(appState.professores || []));
+    scheduleLotacaoCloudPersist();
+}
+
+function scheduleLotacaoCloudPersist() {
+    var sync = window.SigaLotacaoSync;
+    if (!sync || typeof sync.persistDebounced !== 'function') return;
+    sync.persistDebounced(appState.data, appState.professores, { year: 2026 })
+        .then(function (res) {
+            if (!res) return;
+            if (res.ok) {
+                console.info('[Lotação] Sincronizado com o banco:', res.count != null ? res.count + ' linhas' : 'ok');
+            } else if (res.reason !== 'not_configured' && res.reason !== 'no_school') {
+                console.warn('[Lotação] Sync cloud:', res.message || res.reason);
+            }
+        })
+        .catch(function (err) {
+            console.warn('[Lotação] Sync cloud falhou:', err && err.message ? err.message : err);
+        });
+}
+
+/**
+ * Após carregar o espelho local, prioriza o mapa no Supabase (mesma escola do SIGA).
+ * Se o banco estiver vazio, faz bootstrap com o localStorage atual.
+ */
+function syncLotacaoFromCloud() {
+    var sync = window.SigaLotacaoSync;
+    if (!sync || typeof sync.hydrate !== 'function') return;
+
+    sync.hydrate({
+        year: 2026,
+        data: appState.data,
+        professores: appState.professores
+    }).then(function (res) {
+        if (!res || !res.ok) return;
+
+        if (res.source === 'cloud' && Array.isArray(res.data)) {
+            appState.data = res.data;
+            if (Array.isArray(res.professores) && res.professores.length) {
+                appState.professores = res.professores;
+            }
+            try {
+                localStorage.setItem('lotacao_data', JSON.stringify(appState.data));
+                localStorage.setItem('professores_cadastro', JSON.stringify(appState.professores || []));
+            } catch (e) { /* ignore */ }
+
+            if (typeof initFiltersOptions === 'function') initFiltersOptions();
+            if (appState.currentView === 'dashboard' && typeof renderDashboardView === 'function') {
+                renderDashboardView();
+            } else if (appState.currentView === 'mapa' && typeof renderTabelaView === 'function') {
+                renderTabelaView();
+            } else if ((appState.currentView === 'cadastro' || appState.currentView === 'professores') && typeof renderCadastroProfView === 'function') {
+                renderCadastroProfView();
+            } else if (typeof renderDashboardView === 'function') {
+                renderDashboardView();
+            }
+            showToast('Lotação sincronizada com o SIGA EDUCA (banco).');
+            return;
+        }
+
+        if (res.source === 'local_bootstrapped' && res.synced) {
+            showToast('Mapa local enviado ao banco do SIGA EDUCA.');
+            return;
+        }
+
+        if (res.reason === 'no_school' || res.reason === 'not_configured') {
+            console.info('[Lotação] Modo local:', res.message || res.reason);
+        }
+    }).catch(function (err) {
+        console.warn('[Lotação] hydrate:', err && err.message ? err.message : err);
+    });
 }
 
 function initEventListeners() {
@@ -1998,7 +2077,7 @@ function abrirModalCadastroProf(matriculaToEdit = null) {
             appState.professores.push({ nome, matricula, dv, cargo, vinculo, setor });
         }
         
-        localStorage.setItem('professores_cadastro', JSON.stringify(appState.professores));
+        saveProfessoresToStorage();
         closeModal();
         renderCadastroProfView();
         showToast(isEdit ? 'Professor atualizado!' : 'Professor cadastrado com sucesso!');
@@ -2012,7 +2091,7 @@ function excluirProfessor(matricula) {
     if (!confirm(`Tem certeza que deseja excluir o cadastro do professor ${prof.nome}? (Isso não altera o mapa de lotações atual)`)) return;
     
     appState.professores = appState.professores.filter(p => p.matricula !== matricula);
-    localStorage.setItem('professores_cadastro', JSON.stringify(appState.professores));
+    saveProfessoresToStorage();
     renderCadastroProfView();
     showToast('Professor removido do cadastro!');
 }

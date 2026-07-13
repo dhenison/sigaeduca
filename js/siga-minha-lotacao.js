@@ -113,6 +113,17 @@
     }
 
     function ensureLotacaoRows() {
+        var sync = global.SigaLotacaoSync;
+        if (sync && typeof sync.ensureRows === 'function') {
+            return sync.ensureRows({ year: new Date().getFullYear() || 2026 }).then(function (rows) {
+                if (rows && rows.length) return rows;
+                var local = readLocalLotacaoRows();
+                if (local.length) return local;
+                return loadInitialLotacaoScript().then(function (seed) {
+                    return seed && seed.length ? seed : readLocalLotacaoRows();
+                });
+            });
+        }
         var local = readLocalLotacaoRows();
         if (local.length) return Promise.resolve(local);
         return loadInitialLotacaoScript().then(function (rows) {

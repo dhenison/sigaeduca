@@ -78,6 +78,17 @@
     }
 
     function ensureLotacaoRows() {
+        var sync = global.SigaLotacaoSync;
+        if (sync && typeof sync.ensureRows === 'function') {
+            return sync.ensureRows({ year: new Date().getFullYear() || 2026 }).then(function (rows) {
+                if (rows && rows.length) return rows;
+                var local = readLocalLotacaoRows();
+                if (local.length) return local;
+                return loadInitialLotacaoScript().then(function (seed) {
+                    return seed && seed.length ? seed : readLocalLotacaoRows();
+                });
+            });
+        }
         var local = readLocalLotacaoRows();
         if (local.length) return Promise.resolve(local);
         return loadInitialLotacaoScript().then(function (rows) {
@@ -86,6 +97,30 @@
     }
 
     function fetchCloudTurmaRows(turmaCode) {
+        var sync = global.SigaLotacaoSync;
+        if (sync && typeof sync.fetchCloudMapa === 'function') {
+            return sync.fetchCloudMapa(null, new Date().getFullYear() || 2026).then(function (res) {
+                if (!res || !res.ok || !res.rows || !res.rows.length) {
+                    return legacyFetchCloudTurmaRows(turmaCode);
+                }
+                var code = normalizeTurma(turmaCode);
+                return res.rows
+                    .filter(function (r) { return normalizeTurma(r.turma_code) === code; })
+                    .map(function (r) {
+                        return {
+                            turma: r.turma_code,
+                            disciplina: r.disciplina,
+                            codigo: r.disciplina_codigo,
+                            professor: r.professor_nome,
+                            _fromCloud: true
+                        };
+                    });
+            });
+        }
+        return legacyFetchCloudTurmaRows(turmaCode);
+    }
+
+    function legacyFetchCloudTurmaRows(turmaCode) {
         var cloud = global.SigaSupabase;
         if (!cloud || !cloud.isConfigured || !cloud.isConfigured()) {
             return Promise.resolve([]);
