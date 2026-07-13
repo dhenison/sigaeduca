@@ -105,21 +105,24 @@
      */
     function requireAuth(options) {
         options = options || {};
+        // Nunca redirecionar se a URL atual for a própria tela de login (evita loop no Vercel)
+        var href = String((global.location && (global.location.pathname + global.location.href)) || '').toLowerCase();
+        if (href.indexOf('login') !== -1) return true;
         if (isPublicPage()) return true;
         var session = getSession();
         if (!session || !session.email) {
             if (!options.silent) {
-                global.location.replace('login.html');
+                global.location.replace('/login.html');
             }
             return false;
         }
         var base = pageBase();
         if (base === 'portal-aluno' && session.tipo !== 'aluno') {
-            global.location.replace('painelprincipal.html');
+            global.location.replace('/painelprincipal.html');
             return false;
         }
         if (session.tipo === 'aluno' && base !== 'portal-aluno' && base !== 'meuperfil') {
-            global.location.replace('portal-aluno.html');
+            global.location.replace('/portal-aluno.html');
             return false;
         }
         return true;

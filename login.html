@@ -170,26 +170,20 @@
         });
     </script>
 <style id="fouc-styles">
-        html {
-            visibility: hidden;
-            opacity: 0;
-        }
-        html.ready {
-            visibility: visible;
-            opacity: 1;
-            transition: opacity 0.15s ease-in-out;
-        }
-</style><script id="fouc-prevention">
-        (function() {
-            document.addEventListener("DOMContentLoaded", () => {
+        /* Não esconder a página inteira — CDNs lentos travavam o login em produção */
+        html.siga-auth-page { visibility: visible; opacity: 1; }
+</style>
+<script id="fouc-prevention">
+        (function () {
+            function ready() {
                 document.documentElement.classList.add('ready');
-            });
-            // Fallback
-            window.addEventListener("load", () => {
-                document.documentElement.classList.add('ready');
-            });
+            }
+            ready();
+            document.addEventListener('DOMContentLoaded', ready);
+            window.addEventListener('load', ready);
         })();
-</script><script src="js/siga-config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js"></script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><script src="js/login.js"></script></head>
+</script>
+</head>
 <body class="siga-auth-page min-h-screen flex items-center justify-center bg-login px-4 py-8 font-body-md text-on-background">
 <!-- Center Login Card -->
 <main class="login-panel w-full max-w-[440px] z-10 animate-fade-in">
@@ -362,4 +356,10 @@ Usar no login
             });
         });
     </script>
+<script src="js/siga-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/siga-supabase.js"></script>
+<script src="js/siga-security.js"></script>
+<script src="js/siga-db.js"></script>
+<script src="js/login.js"></script>
 </body></html>
