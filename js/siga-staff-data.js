@@ -213,19 +213,65 @@
             p_staff_id: staffId,
             p_auth_user_id: authUserId
         }).then(function (res) {
-            if (res.error) {
-                // Fallback manual se RPC ainda não existir
-                return ready.sb.from('school_staff')
-                    .update({ user_id: authUserId })
-                    .eq('id', staffId)
-                    .then(function (up) {
-                        if (up.error) {
-                            return { ok: false, message: up.error.message };
-                        }
+            if (!res.error) return { ok: true };
+
+            // Fallback: staff.user_id + membership + profile (quando RPC falha)
+            return ready.sb.from('school_staff')
+                .update({ user_id: authUserId })
+                .eq('id', staffId)
+                .select('id, school_id, email, full_name, role')
+                .single()
+                .then(function (up) {
+                    if (up.error || !up.data) {
+                        return { ok: false, message: (up.error && up.error.message) || res.error.message };
+                    }
+                    var st = up.data;
+                    var roleRaw = String(st.role || '').toLowerCase();
+                    var memRole = /professor/.test(roleRaw) ? 'professor'
+                        : /diretor/.test(roleRaw) ? 'diretor'
+                        : /coordenador/.test(roleRaw) ? 'coordenador'
+                        : /secret/.test(roleRaw) ? 'secretario'
+                        : 'servidor';
+
+                    var profileP = ready.sb.from('profiles').upsert({
+                        id: authUserId,
+                        email: st.email,
+                        full_name: st.full_name,
+                        role: st.role,
+                        school_id: st.school_id,
+                        is_system_admin: false
+                    }, { onConflict: 'id' });
+
+                    var memP = ready.sb.from('school_memberships')
+                        .select('id')
+                        .eq('school_id', st.school_id)
+                        .eq('user_id', authUserId)
+                        .maybeSingle()
+                        .then(function (found) {
+                            if (found.data && found.data.id) {
+                                return ready.sb.from('school_memberships').update({
+                                    role: memRole,
+                                    is_active: true,
+                                    staff_id: st.id,
+                                    status: 'Ativo'
+                                }).eq('id', found.data.id);
+                            }
+                            return ready.sb.from('school_memberships').insert({
+                                school_id: st.school_id,
+                                user_id: authUserId,
+                                role: memRole,
+                                is_active: true,
+                                staff_id: st.id,
+                                status: 'Ativo'
+                            });
+                        });
+
+                    return Promise.all([profileP, memP]).then(function (parts) {
+                        var err = (parts[0] && parts[0].error) || (parts[1] && parts[1].error);
+                        if (err) return { ok: false, message: err.message };
                         return { ok: true, fallback: true };
                     });
-            }
-            return { ok: true };
+                });
         });
     }
 

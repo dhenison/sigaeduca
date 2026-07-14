@@ -57,7 +57,11 @@ function readRows() {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
   );
+  console.log('Lendo:', xlsxPath);
+  console.log('Cabeçalhos:', headers);
   const idx = (cands) => {
     for (let i = 0; i < headers.length; i++) {
       for (const c of cands) {
@@ -67,9 +71,12 @@ function readRows() {
     return -1;
   };
   const iNome = idx(['nome', 'professor']);
-  const iEmail = idx(['e mail institucional', 'email institucional', 'email', 'e mail']);
+  const iEmail = idx(['e mail institucional', 'email institucional', 'email', 'e mail', 'mail']);
   const iSenha = idx(['senha']);
   const iMat = idx(['matricula', 'matricula']);
+  if (iNome < 0 || iEmail < 0 || iSenha < 0) {
+    throw new Error('Colunas obrigatórias ausentes. Índices=' + JSON.stringify({ iNome, iEmail, iSenha, iMat }));
+  }
   const out = [];
   for (let r = 1; r < matrix.length; r++) {
     const row = matrix[r] || [];
@@ -82,6 +89,86 @@ function readRows() {
     out.push({ nome, email, senha, matricula });
   }
   return out;
+}
+
+async function membershipRoleFromStaffRole(role) {
+  const roleMap = {
+    diretor: 'diretor',
+    'vice-diretor': 'gestor',
+    coordenador: 'coordenador',
+    secretario: 'secretario',
+    secretaria: 'secretario',
+    professor: 'professor'
+  };
+  const roleKey = String(role || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  for (const [k, v] of Object.entries(roleMap)) {
+    if (roleKey.startsWith(k)) return v;
+  }
+  return 'servidor';
+}
+
+/** Vínculo completo: staff.user_id + profiles + school_memberships (service_role). */
+async function ensureMembershipAndProfile(sb, staffId, userId) {
+  const { error: upStaffErr } = await sb
+    .from('school_staff')
+    .update({ user_id: userId })
+    .eq('id', staffId);
+  if (upStaffErr) throw new Error('staff: ' + upStaffErr.message);
+
+  const { data: staffFull, error: staffReadErr } = await sb
+    .from('school_staff')
+    .select('id, school_id, email, full_name, role')
+    .eq('id', staffId)
+    .single();
+  if (staffReadErr) throw new Error('staff read: ' + staffReadErr.message);
+
+  const membershipRole = await membershipRoleFromStaffRole(staffFull.role);
+
+  const { error: profErr } = await sb.from('profiles').upsert(
+    {
+      id: userId,
+      email: staffFull.email,
+      full_name: staffFull.full_name,
+      role: staffFull.role,
+      school_id: staffFull.school_id,
+      is_system_admin: false
+    },
+    { onConflict: 'id' }
+  );
+  if (profErr) throw new Error('profile: ' + profErr.message);
+
+  const { data: existingMem } = await sb
+    .from('school_memberships')
+    .select('id')
+    .eq('school_id', staffFull.school_id)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingMem && existingMem.id) {
+    const { error: memUpErr } = await sb
+      .from('school_memberships')
+      .update({
+        role: membershipRole,
+        is_active: true,
+        staff_id: staffFull.id,
+        status: 'Ativo'
+      })
+      .eq('id', existingMem.id);
+    if (memUpErr) throw new Error('membership update: ' + memUpErr.message);
+  } else {
+    const { error: memInsErr } = await sb.from('school_memberships').insert({
+      school_id: staffFull.school_id,
+      user_id: userId,
+      role: membershipRole,
+      is_active: true,
+      staff_id: staffFull.id,
+      status: 'Ativo'
+    });
+    if (memInsErr) throw new Error('membership insert: ' + memInsErr.message);
+  }
 }
 
 async function main() {
@@ -100,7 +187,6 @@ async function main() {
   for (const row of rows) {
     process.stdout.write(`→ ${row.email} ... `);
 
-    // Staff row
     const { data: staff, error: staffErr } = await sb
       .from('school_staff')
       .select('id, user_id, school_id, full_name')
@@ -113,63 +199,64 @@ async function main() {
       continue;
     }
     if (!staff) {
-      console.log('ERRO: não achou em school_staff (importe pela tela Usuários antes, ou cadastre o staff).');
+      console.log('ERRO: não achou em school_staff (importe pela tela Usuários antes).');
       fail += 1;
       continue;
     }
-    if (staff.user_id) {
-      console.log('já vinculado');
-      existed += 1;
-      continue;
-    }
 
-    // Create Auth user (email_confirm: true = sem enviar e-mail)
-    let userId = null;
-    const { data: createdUser, error: createErr } = await sb.auth.admin.createUser({
-      email: row.email,
-      password: row.senha,
-      email_confirm: true,
-      user_metadata: { full_name: row.nome }
-    });
+    let userId = staff.user_id || null;
 
-    if (createErr) {
-      const msg = String(createErr.message || '');
-      if (/already|registered|exists/i.test(msg)) {
-        // Lista usuários e acha pelo e-mail
-        const { data: listed, error: listErr } = await sb.auth.admin.listUsers({ page: 1, perPage: 1000 });
-        if (listErr) {
-          console.log('ERRO listUsers:', listErr.message);
-          fail += 1;
-          continue;
-        }
-        const found = (listed.users || []).find((u) => normEmail(u.email) === row.email);
-        if (!found) {
-          console.log('ERRO: Auth diz que existe, mas não achei o UID');
-          fail += 1;
-          continue;
-        }
-        userId = found.id;
-        // Atualiza senha para a da planilha
-        const { error: updErr } = await sb.auth.admin.updateUserById(userId, {
-          password: row.senha,
-          email_confirm: true,
-          user_metadata: { full_name: row.nome }
-        });
-        if (updErr) {
-          console.log('avisado: UID ok, senha não atualizou:', updErr.message);
+    if (!userId) {
+      const { data: createdUser, error: createErr } = await sb.auth.admin.createUser({
+        email: row.email,
+        password: row.senha,
+        email_confirm: true,
+        user_metadata: { full_name: row.nome }
+      });
+
+      if (createErr) {
+        const msg = String(createErr.message || '');
+        if (/already|registered|exists/i.test(msg)) {
+          const { data: listed, error: listErr } = await sb.auth.admin.listUsers({
+            page: 1,
+            perPage: 1000
+          });
+          if (listErr) {
+            console.log('ERRO listUsers:', listErr.message);
+            fail += 1;
+            continue;
+          }
+          const found = (listed.users || []).find((u) => normEmail(u.email) === row.email);
+          if (!found) {
+            console.log('ERRO: Auth diz que existe, mas não achei o UID');
+            fail += 1;
+            continue;
+          }
+          userId = found.id;
+          const { error: updErr } = await sb.auth.admin.updateUserById(userId, {
+            password: row.senha,
+            email_confirm: true,
+            user_metadata: { full_name: row.nome }
+          });
+          if (updErr) {
+            console.log('avisado: UID ok, senha não atualizou:', updErr.message);
+          } else {
+            process.stdout.write('Auth já existia — senha atualizada; ');
+          }
+          existed += 1;
         } else {
-          console.log('Auth já existia — senha atualizada; ', { end: '' });
+          console.log('ERRO createUser:', msg);
+          fail += 1;
+          continue;
         }
-        existed += 1;
       } else {
-        console.log('ERRO createUser:', msg);
-        fail += 1;
-        continue;
+        userId = createdUser.user && createdUser.user.id;
+        created += 1;
+        process.stdout.write('Auth criado; ');
       }
     } else {
-      userId = createdUser.user && createdUser.user.id;
-      created += 1;
-      process.stdout.write('Auth criado; ');
+      existed += 1;
+      process.stdout.write('Auth ok; ');
     }
 
     if (!userId) {
@@ -178,19 +265,17 @@ async function main() {
       continue;
     }
 
-    // Link staff
+    // link_staff_auth_user exige auth.uid(); com service_role usamos upsert direto.
     const { error: linkRpcErr } = await sb.rpc('link_staff_auth_user', {
       p_staff_id: staff.id,
       p_auth_user_id: userId
     });
 
     if (linkRpcErr) {
-      const { error: upErr } = await sb
-        .from('school_staff')
-        .update({ user_id: userId })
-        .eq('id', staff.id);
-      if (upErr) {
-        console.log('ERRO vínculo:', linkRpcErr.message, '/', upErr.message);
+      try {
+        await ensureMembershipAndProfile(sb, staff.id, userId);
+      } catch (e) {
+        console.log('ERRO vínculo:', linkRpcErr.message, '/', e.message || e);
         fail += 1;
         continue;
       }
@@ -205,7 +290,7 @@ async function main() {
   console.log('  Já existiam / atualizados:', existed);
   console.log('  Vinculados nesta execução:', linked);
   console.log('  Falhas:', fail);
-  console.log('\nConferido: Authentication → Users e Table Editor → school_staff (user_id).');
+  console.log('\nConferido: Authentication → Users, school_staff.user_id e school_memberships.');
 }
 
 main().catch((err) => {
