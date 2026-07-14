@@ -22,6 +22,7 @@
         { group: 'Administrativo', id: 'lotacao', label: 'Lotação', icon: 'apartment' },
         { group: 'Gestão Escolar', id: 'documentosadministrativos', label: 'Documentos Administrativos', icon: 'folder_managed' },
         { group: 'Pedagógico', id: 'topodosaber', label: 'Projeto Olímpico', icon: 'emoji_events' },
+        { group: 'Pedagógico', id: 'solicitacoespedagogicas', label: 'Solicitações Pedagógicas', icon: 'quiz' },
         { group: 'Pedagógico', id: 'boletins', label: 'Boletins', icon: 'menu_book' },
         { group: 'Pedagógico', id: 'conselho', label: 'Conselho de Classe', icon: 'diversity_3' },
         { group: 'Pedagógico', id: 'controlelivros', label: 'Controle de Livros', icon: 'auto_stories' },
@@ -57,6 +58,7 @@
         lotacao: ['lotacao.html', 'Gestão de Lotação/lotacao.html'],
         documentosadministrativos: ['documentosadministrativos.html'],
         topodosaber: ['topodosaber.html'],
+        solicitacoespedagogicas: ['solicitacoespedagogicas.html'],
         boletins: ['boletins.html'],
         conselho: ['conselho.html'],
         controlelivros: ['controlelivros.html'],
@@ -137,7 +139,7 @@
 
         var allIds = MODULES.map(function (m) { return m.id; });
         var readAll = allIds.slice();
-        var pedag = ['painelprincipal', 'turmas', 'alunos', 'fichadoaluno', 'frequencia', 'horariodeaula', 'agenda', 'ocorrencias', 'boletins', 'conselho', 'topodosaber', 'controlelivros', 'relatorios', 'meuperfil'];
+        var pedag = ['painelprincipal', 'turmas', 'alunos', 'fichadoaluno', 'frequencia', 'horariodeaula', 'agenda', 'ocorrencias', 'boletins', 'conselho', 'topodosaber', 'solicitacoespedagogicas', 'controlelivros', 'relatorios', 'meuperfil'];
 
         if (/administrador|diretor$/.test(r) && !/vice/.test(r)) {
             grant(allIds, ACTIONS);
@@ -151,15 +153,15 @@
             grant(['relatorios', 'meuperfil'], ['ver', 'criar', 'editar']);
         } else if (/coordenador/.test(r)) {
             grant(readAll, ['ver']);
-            grant(['painelprincipal', 'turmas', 'alunos', 'fichadoaluno', 'frequencia', 'horariodeaula', 'agenda', 'ocorrencias', 'boletins', 'conselho', 'topodosaber', 'relatorios', 'meuperfil'], ['ver', 'criar', 'editar']);
+            grant(['painelprincipal', 'turmas', 'alunos', 'fichadoaluno', 'frequencia', 'horariodeaula', 'agenda', 'ocorrencias', 'boletins', 'conselho', 'topodosaber', 'solicitacoespedagogicas', 'relatorios', 'meuperfil'], ['ver', 'criar', 'editar']);
         } else if (/secretario|secretaria/.test(r)) {
             grant(readAll, ['ver']);
             grant(['painelprincipal', 'alunos', 'fichadoaluno', 'documentossecretaria', 'agenda', 'calendarioletivo', 'escola', 'meuperfil'], ACTIONS);
-            grant(['turmas', 'frequencia', 'ocorrencias', 'relatorios'], ['ver', 'criar', 'editar']);
+            grant(['turmas', 'frequencia', 'ocorrencias', 'relatorios', 'solicitacoespedagogicas'], ['ver', 'criar', 'editar']);
         } else if (/professor/.test(r)) {
             // Sem Documentos Secretaria, Usuários, Lotação, Dados da Escola, Permissões, Admin
-            grant(['painelprincipal', 'turmas', 'alunos', 'fichadoaluno', 'frequencia', 'horariodeaula', 'agenda', 'ocorrencias', 'boletins', 'conselho', 'topodosaber', 'controlelivros', 'meuperfil'], ['ver']);
-            grant(['frequencia', 'boletins', 'ocorrencias', 'agenda', 'meuperfil'], ['ver', 'criar', 'editar']);
+            grant(['painelprincipal', 'turmas', 'alunos', 'fichadoaluno', 'frequencia', 'horariodeaula', 'agenda', 'ocorrencias', 'boletins', 'conselho', 'topodosaber', 'solicitacoespedagogicas', 'controlelivros', 'meuperfil'], ['ver']);
+            grant(['frequencia', 'boletins', 'ocorrencias', 'agenda', 'solicitacoespedagogicas', 'meuperfil'], ['ver', 'criar', 'editar']);
             grant(['controlelivros'], ['ver', 'criar', 'editar']);
         } else {
             grant(['painelprincipal', 'meuperfil'], ['ver', 'editar']);
