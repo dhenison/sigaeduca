@@ -19,6 +19,7 @@
         { group: 'Administrativo', id: 'documentossecretaria', label: 'Documentos Secretaria', href: 'documentossecretaria.html', icon: 'description' },
         { group: 'Administrativo', id: 'usuarios', label: 'Usuários', href: 'usuarios.html', icon: 'manage_accounts' },
         { group: 'Administrativo', id: 'lotacao', label: 'Lotação', href: 'Gestão de Lotação/lotacao.html', icon: 'apartment' },
+        { group: 'Gestão Escolar', id: 'documentosadministrativos', label: 'Documentos Administrativos', href: 'documentosadministrativos.html', icon: 'folder_managed' },
         { group: 'Pedagógico', id: 'topodosaber', label: 'Projeto Olímpico', href: 'topodosaber.html', icon: 'emoji_events' },
         { group: 'Pedagógico', id: 'boletins', label: 'Boletins', href: 'boletins.html', icon: 'description' },
         { group: 'Pedagógico', id: 'conselho', label: 'Conselho de Classe', href: 'conselho.html', icon: 'diversity_3' },

@@ -20,6 +20,7 @@
         { group: 'Administrativo', id: 'documentossecretaria', label: 'Documentos Secretaria', icon: 'description' },
         { group: 'Administrativo', id: 'usuarios', label: 'Usuários', icon: 'manage_accounts' },
         { group: 'Administrativo', id: 'lotacao', label: 'Lotação', icon: 'apartment' },
+        { group: 'Gestão Escolar', id: 'documentosadministrativos', label: 'Documentos Administrativos', icon: 'folder_managed' },
         { group: 'Pedagógico', id: 'topodosaber', label: 'Projeto Olímpico', icon: 'emoji_events' },
         { group: 'Pedagógico', id: 'boletins', label: 'Boletins', icon: 'menu_book' },
         { group: 'Pedagógico', id: 'conselho', label: 'Conselho de Classe', icon: 'diversity_3' },
@@ -54,6 +55,7 @@
         documentossecretaria: ['documentossecretaria.html'],
         usuarios: ['usuarios.html'],
         lotacao: ['lotacao.html', 'Gestão de Lotação/lotacao.html'],
+        documentosadministrativos: ['documentosadministrativos.html'],
         topodosaber: ['topodosaber.html'],
         boletins: ['boletins.html'],
         conselho: ['conselho.html'],
@@ -163,6 +165,20 @@
             grant(['painelprincipal', 'meuperfil'], ['ver', 'editar']);
             grant(readAll, ['ver']);
         }
+
+        // Gestão Escolar (Documentos Administrativos): só gestores
+        (function applyGestaoEscolarAccess() {
+            var gestor = /vice-diretor administrativo/.test(r)
+                || /vice-diretor pedag/.test(r)
+                || (/diretor/.test(r) && !/vice/.test(r))
+                || (/administrador/.test(r) && !/vice/.test(r));
+            if (gestor) {
+                grant(['documentosadministrativos'], ACTIONS);
+            } else {
+                map.documentosadministrativos = emptyActions(false);
+            }
+        })();
+
         return map;
     }
 
@@ -620,6 +636,22 @@
                 var p = perms[m.id] || emptyActions(false);
                 if (p.menu) return;
                 (MODULE_HREFS[m.id] || []).forEach(hideNavForHref);
+            });
+
+            // Esconde grupos do menu sem nenhum item visível (ex.: Gestão Escolar)
+            document.querySelectorAll('aside#sidebar .nav-dropdown').forEach(function (group) {
+                var links = group.querySelectorAll('a.nav-item');
+                if (!links.length) return;
+                var anyVisible = false;
+                links.forEach(function (a) {
+                    if (!a.classList.contains('hidden') && a.getAttribute('aria-hidden') !== 'true') {
+                        anyVisible = true;
+                    }
+                });
+                if (!anyVisible) {
+                    group.classList.add('hidden');
+                    group.setAttribute('aria-hidden', 'true');
+                }
             });
 
             // Bloqueia abertura direta se não tem VER

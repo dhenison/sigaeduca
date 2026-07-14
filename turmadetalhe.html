@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="light" lang="pt-BR">
 <head>
     <meta charset="utf-8"/>
@@ -375,7 +375,23 @@
 </a>
 </div>
         </div>
-        <div class="nav-dropdown">
+        <!-- Dropdown: Gestão Escolar -->
+<div class="nav-dropdown" data-siga-nav-group="gestao-escolar">
+<button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">account_balance</span>
+<span class="nav-dropdown-label">Gestão Escolar</span>
+</span>
+<span class="material-symbols-outlined nav-chevron transition-transform duration-200 text-[16px]">expand_more</span>
+</button>
+<div class="nav-dropdown-menu space-y-1 mt-1 pl-2">
+<a class="nav-item flex items-center gap-3 px-4 py-2.5 text-text-secondary hover:bg-surface-container transition-colors rounded-lg" href="documentosadministrativos.html">
+<span class="material-symbols-outlined">folder_managed</span>
+<span class="text-label-md">Documentos Administrativos</span>
+</a>
+</div>
+</div>
+<div class="nav-dropdown">
             <button aria-expanded="false" class="nav-dropdown-toggle flex items-center justify-between w-full text-left py-2 px-4 text-[10px] font-bold text-text-secondary uppercase tracking-wider hover:bg-surface-container rounded-lg transition-all cursor-pointer" onclick="toggleNavGroup(this)" type="button">
                 <span class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-[18px]">school</span>
