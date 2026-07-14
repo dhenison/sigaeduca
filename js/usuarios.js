@@ -987,7 +987,7 @@
                 toast('Nenhuma linha válida. Use: Professor | E-mail Institucional | Senha padrão.', 'error');
                 return;
             }
-            if (!confirm('Importar ' + rows.length + ' professor(es) como Usuário → Professor(a)?\n\nSerão criados no banco + Auth com a senha da planilha.\nDemais dados ficam para o professor completar no Meu Perfil.')) {
+            if (!confirm('Importar ' + rows.length + ' professor(es)?\n\nATENÇÃO: o e-mail padrão do Supabase só permite ~2 cadastros Auth por hora.\nPara os 30 de uma vez, use o script admin:\n  scripts/import-professores-auth.mjs\n\nContinuar mesmo assim pela tela?')) {
                 return;
             }
             return importProfessoresFromRows(rows);
