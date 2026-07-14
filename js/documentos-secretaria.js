@@ -13,6 +13,10 @@
   const DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA = 'Requerimento de Histórico e Diploma';
   const SEC_STORAGE_KEY = 'siga_documentos_secretaria';
   const SEC_ANO_LETIVO = '2026';
+  /** Base pública do QR (celular precisa de URL https, não file://) */
+  const SEC_PUBLIC_SITE =
+    (typeof window !== 'undefined' && window.SIGA_PUBLIC_SITE_URL) ||
+    'https://sigaeduca.com';
 
   let SEC_ACTIVE_TAB = 'historico';
   let SEC_FILTER_CACHE = { search: '', tipo: '' };
@@ -112,22 +116,59 @@
       .trim();
   }
 
-  // ─── Validity ──────────────────────────────────────────────────────────────
+  // ─── Validity (todos os documentos com QR: 30 dias a partir da emissão) ─────
+  function parseDateOnly(value) {
+    if (!value) return null;
+    if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) return null;
+      return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+    }
+    const raw = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      const d = new Date(raw.slice(0, 10) + 'T00:00:00');
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) {
+      const p = raw.split('/');
+      const d = new Date(Number(p[2]), Number(p[1]) - 1, Number(p[0]));
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return null;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
   function getDocumentoSecretariaDataValidade(doc) {
-    if (!doc || !doc.dataEmissao || isRequerimento(doc.tipo)) return null;
-    const emissao = new Date(String(doc.dataEmissao).slice(0, 10) + 'T00:00:00');
-    if (Number.isNaN(emissao.getTime())) return null;
-    emissao.setDate(emissao.getDate() + DOCUMENTO_SECRETARIA_VALIDADE_DIAS);
-    return emissao;
+    if (!doc || !doc.dataEmissao) return null;
+    if (doc.dataValidade) {
+      const cached = parseDateOnly(doc.dataValidade);
+      if (cached) return cached;
+    }
+    const emissao = parseDateOnly(doc.dataEmissao);
+    if (!emissao) return null;
+    const validade = new Date(emissao.getTime());
+    validade.setDate(validade.getDate() + DOCUMENTO_SECRETARIA_VALIDADE_DIAS);
+    return validade;
   }
 
   function isDocumentoSecretariaValido(doc) {
-    if (!doc || isRequerimento(doc.tipo)) return true;
+    if (!doc) return false;
     const validade = getDocumentoSecretariaDataValidade(doc);
-    if (!validade) return true;
+    if (!validade) return false;
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     return hoje.getTime() <= validade.getTime();
+  }
+
+  function statusValidadeLabel(doc) {
+    return isDocumentoSecretariaValido(doc) ? 'Válido' : 'Fora da Validade';
+  }
+
+  function computeDataValidadeIso(dataEmissao) {
+    const e = parseDateOnly(dataEmissao || new Date());
+    if (!e) return null;
+    e.setDate(e.getDate() + DOCUMENTO_SECRETARIA_VALIDADE_DIAS);
+    return isoDateOnly(e);
   }
 
   // ─── School / students / classes ───────────────────────────────────────────
@@ -254,13 +295,8 @@
   function getValidationUrl(protocolo) {
     const protocoloLimpo = String(protocolo || '').trim();
     if (!protocoloLimpo) return '';
-    try {
-      const url = new URL('validar-documento.html', window.location.href);
-      url.searchParams.set('protocolo', protocoloLimpo);
-      return url.toString();
-    } catch (e) {
-      return 'validar-documento.html?protocolo=' + encodeURIComponent(protocoloLimpo);
-    }
+    const base = String(SEC_PUBLIC_SITE || 'https://sigaeduca.com').replace(/\/$/, '');
+    return base + '/validar-documento.html?protocolo=' + encodeURIComponent(protocoloLimpo);
   }
 
   function getQrUrl(protocolo, size) {
@@ -268,7 +304,79 @@
     const urlValidacao = getValidationUrl(protocolo);
     if (!urlValidacao) return '';
     return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size +
-      '&data=' + encodeURIComponent(urlValidacao);
+      '&ecc=M&data=' + encodeURIComponent(urlValidacao);
+  }
+
+  function getActiveSchoolId() {
+    try {
+      return localStorage.getItem('siga_active_school') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function getSupabaseClient() {
+    if (window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function') {
+      try { return window.SigaSupabase.getClient(); } catch (e) { /* ignore */ }
+    }
+    return null;
+  }
+
+  /** Grava no Supabase para o QR funcionar em qualquer aparelho */
+  function syncDocumentoSecretariaCloud(doc) {
+    const sb = getSupabaseClient();
+    const schoolId = getActiveSchoolId();
+    if (!sb || !schoolId || !doc || !doc.protocolo) {
+      return Promise.resolve({ ok: false, reason: 'no_cloud' });
+    }
+    const issuedOn = isoDateOnly(doc.dataEmissao) || new Date().toISOString().slice(0, 10);
+    const validUntil = isoDateOnly(getDocumentoSecretariaDataValidade(doc));
+    const status = /cancel/.test(String(doc.status || ''))
+      ? 'cancelado'
+      : (isRequerimento(doc.tipo) && doc.status === 'pendente' ? 'pendente' : 'concluido');
+
+    const row = {
+      school_id: schoolId,
+      protocolo: doc.protocolo,
+      doc_type: doc.tipo,
+      status: status,
+      student_name: doc.alunoNome || null,
+      student_cpf: doc.alunoCpf || null,
+      student_class_code: doc.alunoTurma || null,
+      student_serie: doc.alunoSerie || null,
+      student_turno: doc.alunoTurno || null,
+      issued_on: issuedOn,
+      valid_until: validUntil,
+      validity_days: DOCUMENTO_SECRETARIA_VALIDADE_DIAS,
+      requester_name: doc.solicitante || null,
+      reason: doc.motivo || null,
+      notes: doc.obs || null,
+      responsible_name: doc.responsavel || null,
+      birth_city: doc.cidadeNascimento || null,
+      birth_uf: doc.ufNascimento || null,
+      birth_date: isoDateOnly(doc.dataNascimento),
+      attendance_pct: doc.frequencia || null,
+      vacancy_stage: doc.vagaEtapa || null,
+      vacancy_shift: doc.vagaTurno || null,
+      year_label: doc.anoLetivo || SEC_ANO_LETIVO,
+      mother_name: doc.nomeMae || null,
+      father_name: doc.nomePai || null,
+      meta: { localId: doc.id || null }
+    };
+
+    return sb.from('secretary_documents')
+      .upsert(row, { onConflict: 'school_id,protocolo' })
+      .then(function (res) {
+        if (res.error) {
+          console.warn('[SIGA] sync secretary_documents:', res.error.message);
+          return { ok: false, message: res.error.message };
+        }
+        return { ok: true };
+      })
+      .catch(function (err) {
+        console.warn('[SIGA] sync secretary_documents:', err);
+        return { ok: false, message: (err && err.message) || 'erro' };
+      });
   }
 
   function statusLabel(status) {
@@ -533,6 +641,7 @@
       alunoTurno: aluno ? (aluno.turno || '') : '',
       tipo: tipo,
       dataEmissao: hoje,
+      dataValidade: computeDataValidadeIso(hoje),
       status: isRequerimento(tipo) ? 'pendente' : 'concluido',
       solicitante: solicitante || '',
       motivo: motivo || '',
@@ -552,6 +661,7 @@
     const list = getSecDocumentos();
     list.unshift(doc);
     saveSecDocumentos(list);
+    syncDocumentoSecretariaCloud(doc);
 
     if (tipo === 'Declaração de Transferência') {
       const reqProtocolo = gerarProtocoloSec('Requerimento de Transferência');
@@ -566,6 +676,7 @@
         alunoTurno: aluno ? (aluno.turno || '') : '',
         tipo: 'Requerimento de Transferência',
         dataEmissao: hoje,
+        dataValidade: computeDataValidadeIso(hoje),
         status: 'pendente',
         solicitante: solicitante || 'Secretaria (Auto)',
         motivo: motivo || 'Declaração de transferência emitida',
@@ -583,6 +694,7 @@
       };
       list.unshift(reqDoc);
       saveSecDocumentos(list);
+      syncDocumentoSecretariaCloud(reqDoc);
       showSecToast('Documento registrado com sucesso!', 'success');
       fecharModalNovoDocSecretaria();
       renderSecPage();
@@ -604,6 +716,7 @@
         alunoTurno: '',
         tipo: DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA,
         dataEmissao: hoje,
+        dataValidade: computeDataValidadeIso(hoje),
         status: 'pendente',
         solicitante: solicitante || 'Secretaria (Auto)',
         motivo: motivo || 'Atestado de conclusão emitido — Histórico e Diploma',
@@ -621,6 +734,7 @@
       };
       list.unshift(reqDoc);
       saveSecDocumentos(list);
+      syncDocumentoSecretariaCloud(reqDoc);
       showSecToast('Atestado e requerimento registrados com sucesso!', 'success');
       fecharModalNovoDocSecretaria();
       renderSecPage();
@@ -948,7 +1062,7 @@
           escapeHtml(doc.protocolo) + '</b> no portal de conferência. ' +
           'Validade de <b>' + DOCUMENTO_SECRETARIA_VALIDADE_DIAS +
           ' dias</b>. Situação: <b>' +
-          (documentoValido ? 'dentro do prazo' : 'fora do prazo') + '</b>' +
+          (documentoValido ? 'Válido' : 'Fora da Validade') + '</b>' +
           (dataValidade ? '. Válido até <b>' + escapeHtml(dataValidadeBr) + '</b>' : '') + '.' +
           '</div><div class="verification-link">' + escapeHtml(urlValidacao) + '</div></div>'
         : '') +
@@ -959,12 +1073,12 @@
       ' | Protocolo: ' + escapeHtml(doc.protocolo) +
       (dataValidade
         ? ' | Validade: ' + escapeHtml(dataValidadeBr) + ' (' +
-          (documentoValido ? 'válido' : 'expirado') + ')'
+          (documentoValido ? 'Válido' : 'Fora da Validade') + ')'
         : '') +
       '</div>' +
       (!isReq
         ? '<div class="meta-footer-qr"><img src="' + escapeHtml(qrCodeUrl) +
-          '" alt="QR Code"><span>Validar</span></div>'
+          '" alt="QR Code de validação"><span>Validar</span></div>'
         : '') +
       '</div>' +
       '</div></div>'
@@ -1182,7 +1296,7 @@
             '<td class="px-4 py-3">' + escapeHtml(formatarDataBr(doc.dataEmissao)) + '</td>' +
             '<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ' +
             (valido ? 'bg-primary/10 text-primary' : 'bg-error-container/20 text-error') + '">' +
-            (valido ? 'Válido' : 'Expirado') +
+            (valido ? 'Válido' : 'Fora da Validade') +
             (validade ? ' até ' + formatarDataBr(validade) : '') +
             '</span></td>' +
             '<td class="px-4 py-3 text-right whitespace-nowrap">' +
@@ -1252,11 +1366,57 @@
       encontrado: true,
       documento: doc,
       valido: valido,
-      dataValidade: validade ? validade.toISOString().slice(0, 10) : null,
+      statusLabel: valido ? 'Válido' : 'Fora da Validade',
+      dataValidade: validade ? isoDateOnly(validade) : null,
       dataValidadeBr: validade ? formatarDataBr(validade) : null,
       escola: getSecSchoolInfo(),
       obsLimpa: limparMetaDocumentoSecretaria(doc.obs)
     };
+  }
+
+  /** Consulta pública: Supabase (QR no celular) com fallback local */
+  function consultarDocumentoPorProtocoloAsync(protocolo) {
+    const proto = String(protocolo || '').trim();
+    if (!proto) return Promise.resolve(null);
+
+    const local = consultarDocumentoPorProtocolo(proto);
+    const sb = getSupabaseClient();
+    if (!sb || typeof sb.rpc !== 'function') {
+      return Promise.resolve(local);
+    }
+
+    return sb.rpc('validate_secretary_document', { p_protocolo: proto })
+      .then(function (res) {
+        if (res.error || !res.data) return local;
+        const data = res.data;
+        if (!data.encontrado) return local || { encontrado: false };
+        const dataEmissao = data.dataEmissao;
+        const dataValidade = data.dataValidade;
+        return {
+          encontrado: true,
+          valido: !!data.valido,
+          statusLabel: data.status_label || (data.valido ? 'Válido' : 'Fora da Validade'),
+          dataValidade: dataValidade || null,
+          dataValidadeBr: dataValidade ? formatarDataBr(dataValidade) : null,
+          escola: { nome: data.escola || '' },
+          documento: {
+            protocolo: data.protocolo,
+            tipo: data.tipo,
+            alunoNome: data.alunoNome,
+            alunoTurma: data.alunoTurma,
+            dataEmissao: dataEmissao,
+            dataValidade: dataValidade,
+            responsavel: data.responsavel,
+            solicitante: data.solicitante,
+            motivo: data.motivo,
+            status: data.valido ? 'concluido' : 'expirado'
+          },
+          obsLimpa: ''
+        };
+      })
+      .catch(function () {
+        return local;
+      });
   }
 
   // ─── Init ──────────────────────────────────────────────────────────────────
@@ -1337,6 +1497,7 @@
       alunoTurno: turno || '',
       tipo: tipo,
       dataEmissao: hoje,
+      dataValidade: computeDataValidadeIso(hoje),
       status: 'concluido',
       solicitante: '',
       motivo: 'Emissão pela Ficha do Aluno',
@@ -1353,6 +1514,7 @@
     const list = getSecDocumentos();
     list.unshift(doc);
     saveSecDocumentos(list);
+    syncDocumentoSecretariaCloud(doc);
 
     showSecToast('Declaração de Matrícula gerada.', 'success');
     imprimirDocumentoSec(doc.id);
@@ -1393,6 +1555,10 @@
   window.filtrarSecDocumentos = filtrarSecDocumentos;
   window.initDocumentosSecretariaPage = initDocumentosSecretariaPage;
   window.consultarDocumentoPorProtocolo = consultarDocumentoPorProtocolo;
+  window.consultarDocumentoPorProtocoloAsync = consultarDocumentoPorProtocoloAsync;
+  window.statusValidadeLabel = statusValidadeLabel;
+  window.getValidationUrl = getValidationUrl;
+  window.syncDocumentoSecretariaCloud = syncDocumentoSecretariaCloud;
   window.formatarCPF = window.formatarCPF || formatarCPF;
   window.formatarDataBr = formatarDataBr;
   window.formatarDataPorExtenso = formatarDataPorExtenso;
