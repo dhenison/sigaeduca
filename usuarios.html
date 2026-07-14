@@ -316,7 +316,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260713j"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260713j"></script><script src="js/siga-security.js?v=20260713j"></script><script src="js/siga-staff-data.js?v=20260713j"></script><script src="js/siga-db.js?v=20260713j"></script><script src="js/usuarios.js?v=20260713j"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260713p"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script><script src="js/siga-supabase.js?v=20260713p"></script><script src="js/siga-security.js?v=20260713p"></script><script src="js/siga-staff-data.js?v=20260713p"></script><script src="js/siga-db.js?v=20260713p"></script><script src="js/usuarios.js?v=20260713p"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -497,11 +497,16 @@
 <h2 class="font-headline-lg text-headline-lg text-on-surface">Gestão de Usuários</h2>
 <p class="text-body-md text-text-secondary mt-1">Cadastre colaboradores com função, matrícula, contatos e foto de perfil.</p>
 </div>
-<div class="flex items-center gap-3">
+<div class="flex items-center gap-3 flex-wrap">
 <button type="button" id="btn-validar-permissoes" class="flex items-center gap-2 px-4 py-2.5 bg-secondary text-white font-semibold rounded-lg hover:brightness-95 transition-all active:scale-95 shadow-sm" onclick="window.location.href='permissões.html'">
 <span class="material-symbols-outlined">verified_user</span>
                         Validar Permissões
                     </button>
+<button type="button" id="btn-importar-professores" class="flex items-center gap-2 px-4 py-2.5 bg-surface border border-border-subtle text-on-surface font-semibold rounded-lg hover:bg-surface-container-low transition-all active:scale-95" title="Planilha: Professor | E-mail Institucional | Senha padrão">
+<span class="material-symbols-outlined">upload_file</span>
+                        Importar Professores
+                    </button>
+<input type="file" id="input-importar-professores" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" class="hidden"/>
 <button type="button" id="btn-filtrar-usuarios" class="flex items-center gap-2 px-4 py-2.5 bg-surface border border-border-subtle text-on-surface font-semibold rounded-lg hover:bg-surface-container-low transition-all active:scale-95">
 <span class="material-symbols-outlined">filter_list</span>
                         Filtros

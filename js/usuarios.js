@@ -768,6 +768,199 @@
         return escapeHtml(s).replace(/'/g, '&#39;');
     }
 
+    function sleep(ms) {
+        return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
+
+    function normalizeHeader(h) {
+        return String(h || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim();
+    }
+
+    function pickCol(headers, candidates) {
+        for (var i = 0; i < headers.length; i++) {
+            var h = normalizeHeader(headers[i]);
+            for (var c = 0; c < candidates.length; c++) {
+                if (h === candidates[c] || h.indexOf(candidates[c]) >= 0) return i;
+            }
+        }
+        return -1;
+    }
+
+    function parseProfessorSheetRows(matrix) {
+        if (!matrix || !matrix.length) return [];
+        var headers = (matrix[0] || []).map(function (h) { return h == null ? '' : String(h); });
+        var idxNome = pickCol(headers, ['professor', 'nome']);
+        var idxEmail = pickCol(headers, ['e mail institucional', 'email institucional', 'e mail', 'email']);
+        var idxSenha = pickCol(headers, ['senha padrao', 'senha']);
+        var idxMat = pickCol(headers, ['matricula', 'matricula']);
+        if (idxNome < 0 || idxEmail < 0) {
+            throw new Error('Planilha precisa das colunas Professor e E-mail Institucional.');
+        }
+        var out = [];
+        for (var r = 1; r < matrix.length; r++) {
+            var row = matrix[r] || [];
+            var nome = String(row[idxNome] == null ? '' : row[idxNome]).trim();
+            var email = normEmail(row[idxEmail]);
+            var senha = String(idxSenha >= 0 && row[idxSenha] != null ? row[idxSenha] : '').trim();
+            var matricula = String(idxMat >= 0 && row[idxMat] != null ? row[idxMat] : '').trim();
+            if (!matricula && senha) matricula = senha;
+            if (!nome && !email) continue;
+            if (!nome || !email || !senha || !matricula) continue;
+            if (senha.length < 6) continue;
+            out.push({ nome: nome, email: email, senha: senha, matricula: matricula });
+        }
+        return out;
+    }
+
+    function readSpreadsheetFile(file) {
+        return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            var name = String(file.name || '').toLowerCase();
+            reader.onerror = function () { reject(new Error('Falha ao ler o arquivo.')); };
+            reader.onload = function (ev) {
+                try {
+                    if (name.endsWith('.csv')) {
+                        var text = String(ev.target.result || '');
+                        var lines = text.split(/\r?\n/).filter(function (l) { return l.trim(); });
+                        var matrix = lines.map(function (line) {
+                            // CSV simples (vírgula ou ponto-e-vírgula)
+                            var sep = line.indexOf(';') >= 0 ? ';' : ',';
+                            return line.split(sep).map(function (c) {
+                                return c.replace(/^"|"$/g, '').trim();
+                            });
+                        });
+                        resolve(matrix);
+                        return;
+                    }
+                    if (!window.XLSX) {
+                        reject(new Error('Biblioteca XLSX não carregou. Recarregue a página.'));
+                        return;
+                    }
+                    var data = new Uint8Array(ev.target.result);
+                    var wb = window.XLSX.read(data, { type: 'array' });
+                    var sheet = wb.Sheets[wb.SheetNames[0]];
+                    var matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                    resolve(matrix);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            if (name.endsWith('.csv')) reader.readAsText(file, 'UTF-8');
+            else reader.readAsArrayBuffer(file);
+        });
+    }
+
+    function importProfessoresFromRows(rows) {
+        var staffApi = window.SigaStaffData;
+        var sec = window.SigaSecurity;
+        if (!staffApi || typeof staffApi.upsertStaff !== 'function') {
+            toast('Módulo cloud indisponível. Entre na escola pelo Painel Admin.', 'error');
+            return Promise.resolve();
+        }
+        if (!sec || typeof sec.hashPassword !== 'function') {
+            toast('Módulo de segurança indisponível.', 'error');
+            return Promise.resolve();
+        }
+
+        var ready = staffApi.cloudReady ? staffApi.cloudReady() : { ok: true };
+        if (ready && ready.ok === false) {
+            toast(ready.message || 'Escola ativa necessária para importar.', 'error');
+            return Promise.resolve();
+        }
+
+        var ok = 0;
+        var fail = 0;
+        var skip = 0;
+        var errors = [];
+        var existing = getUsers();
+
+        toast('Importando ' + rows.length + ' professor(es)… não feche a página.');
+
+        return rows.reduce(function (chain, row, idx) {
+            return chain.then(function () {
+                var already = existing.some(function (u) {
+                    return normEmail(u.email) === row.email;
+                });
+                if (already) {
+                    skip += 1;
+                    return sleep(50);
+                }
+
+                return sec.hashPassword(row.senha).then(function (hashed) {
+                    var payload = {
+                        id: uid(),
+                        nome: row.nome.toUpperCase(),
+                        cargo: 'Professor(a)',
+                        funcao: 'Professor(a)',
+                        matriculaSemVinculo: row.matricula,
+                        email: row.email,
+                        disciplinaPrincipal: '',
+                        telefone: '',
+                        redes: {},
+                        lattes: '',
+                        bio: '',
+                        avatar: '',
+                        status: 'Ativo',
+                        lastAccess: 'Nunca',
+                        senha: hashed,
+                        precisaDefinirSenha: false,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    return staffApi.upsertStaff(payload, { plainPassword: row.senha }).then(function (cloud) {
+                        if (cloud && cloud.ok) {
+                            ok += 1;
+                            existing.push(Object.assign({}, payload, cloud.data || {}));
+                            saveUsers(existing);
+                        } else {
+                            fail += 1;
+                            errors.push(row.email + ': ' + ((cloud && cloud.message) || 'falha'));
+                        }
+                    });
+                }).catch(function (err) {
+                    fail += 1;
+                    errors.push(row.email + ': ' + ((err && err.message) || 'erro'));
+                }).then(function () {
+                    if ((idx + 1) % 5 === 0 || idx === rows.length - 1) {
+                        toast('Progresso: ' + (idx + 1) + '/' + rows.length + ' (ok ' + ok + ', falha ' + fail + ', skip ' + skip + ')');
+                    }
+                    return sleep(350);
+                });
+            });
+        }, Promise.resolve()).then(function () {
+            render();
+            var msg = 'Importação concluída: ' + ok + ' criados, ' + skip + ' já existiam, ' + fail + ' falhas.';
+            if (errors.length) {
+                console.warn('[SIGA] import professores:', errors);
+                msg += ' Veja o console (F12) para detalhes.';
+            }
+            toast(msg, fail ? 'error' : 'success');
+        });
+    }
+
+    function handleImportProfessoresFile(file) {
+        if (!file) return;
+        readSpreadsheetFile(file).then(function (matrix) {
+            var rows = parseProfessorSheetRows(matrix);
+            if (!rows.length) {
+                toast('Nenhuma linha válida. Use: Professor | E-mail Institucional | Senha padrão.', 'error');
+                return;
+            }
+            if (!confirm('Importar ' + rows.length + ' professor(es) como Usuário → Professor(a)?\n\nSerão criados no banco + Auth com a senha da planilha.\nDemais dados ficam para o professor completar no Meu Perfil.')) {
+                return;
+            }
+            return importProfessoresFromRows(rows);
+        }).catch(function (err) {
+            toast((err && err.message) || 'Falha ao ler a planilha.', 'error');
+        });
+    }
+
     function render() {
         renderStats();
         renderTable();
@@ -780,6 +973,17 @@
 
         var btnNew = document.getElementById('btn-novo-usuario');
         if (btnNew) btnNew.addEventListener('click', function () { openModal(null); });
+
+        var btnImport = document.getElementById('btn-importar-professores');
+        var inputImport = document.getElementById('input-importar-professores');
+        if (btnImport && inputImport) {
+            btnImport.addEventListener('click', function () { inputImport.click(); });
+            inputImport.addEventListener('change', function () {
+                var file = inputImport.files && inputImport.files[0];
+                inputImport.value = '';
+                handleImportProfessoresFile(file);
+            });
+        }
 
         var search = document.getElementById('users-search');
         if (search) {
