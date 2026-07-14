@@ -177,13 +177,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 11b. Painel Admin + permissões de menu por escola
+    // 11b. Painel Admin + permissões de menu por escola + por usuário (coluna MENU)
     ensurePainelAdminScript(function () {
         if (typeof window.initPainelAdminPage === 'function') {
             window.initPainelAdminPage();
         } else if (typeof window.applySchoolMenuPermissions === 'function') {
             window.applySchoolMenuPermissions();
         }
+        ensurePermissionsScript(function () {
+            if (typeof window.applyUserMenuPermissions === 'function') {
+                window.applyUserMenuPermissions();
+            }
+        });
     });
 
     // 12. Bind Relatórios (relatorios.html)
@@ -296,6 +301,25 @@ function ensureBuscaGlobalScript(done) {
     const s = document.createElement('script');
     s.src = 'js/busca-global.js';
     s.dataset.sigaBuscaGlobal = '1';
+    s.onload = done;
+    s.onerror = done;
+    document.head.appendChild(s);
+}
+
+function ensurePermissionsScript(done) {
+    if (typeof window.applyUserMenuPermissions === 'function') {
+        done();
+        return;
+    }
+    const existing = document.querySelector('script[data-siga-permissoes]');
+    if (existing) {
+        existing.addEventListener('load', done);
+        existing.addEventListener('error', done);
+        return;
+    }
+    const s = document.createElement('script');
+    s.src = 'js/permissoes.js';
+    s.dataset.sigaPermissoes = '1';
     s.onload = done;
     s.onerror = done;
     document.head.appendChild(s);
