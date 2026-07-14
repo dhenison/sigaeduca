@@ -875,70 +875,105 @@
 
         var ok = 0;
         var fail = 0;
-        var skip = 0;
+        var linked = 0;
         var errors = [];
         var existing = getUsers();
+        var stopOnRateLimit = false;
 
-        toast('Importando ' + rows.length + ' professor(es)… não feche a página.');
+        toast('Importando ' + rows.length + ' professor(es)… não feche a página. Pode levar alguns minutos.');
 
         return rows.reduce(function (chain, row, idx) {
             return chain.then(function () {
-                var already = existing.some(function (u) {
-                    return normEmail(u.email) === row.email;
-                });
-                if (already) {
-                    skip += 1;
-                    return sleep(50);
+                if (stopOnRateLimit) {
+                    fail += 1;
+                    errors.push(row.email + ': parado por rate limit Auth');
+                    return Promise.resolve();
                 }
 
                 return sec.hashPassword(row.senha).then(function (hashed) {
+                    var prev = existing.find(function (u) {
+                        return normEmail(u.email) === row.email;
+                    });
                     var payload = {
-                        id: uid(),
+                        id: prev && prev.id ? prev.id : uid(),
                         nome: row.nome.toUpperCase(),
                         cargo: 'Professor(a)',
                         funcao: 'Professor(a)',
                         matriculaSemVinculo: row.matricula,
                         email: row.email,
-                        disciplinaPrincipal: '',
-                        telefone: '',
-                        redes: {},
-                        lattes: '',
-                        bio: '',
-                        avatar: '',
+                        disciplinaPrincipal: (prev && prev.disciplinaPrincipal) || '',
+                        telefone: (prev && prev.telefone) || '',
+                        redes: (prev && prev.redes) || {},
+                        lattes: (prev && prev.lattes) || '',
+                        bio: (prev && prev.bio) || '',
+                        avatar: (prev && prev.avatar) || '',
                         status: 'Ativo',
-                        lastAccess: 'Nunca',
+                        lastAccess: (prev && prev.lastAccess) || 'Nunca',
                         senha: hashed,
                         precisaDefinirSenha: false,
-                        createdAt: new Date().toISOString(),
+                        createdAt: (prev && prev.createdAt) || new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     };
 
+                    // Sempre tenta Auth (mesmo se já estiver no banco sem user_id)
                     return staffApi.upsertStaff(payload, { plainPassword: row.senha }).then(function (cloud) {
                         if (cloud && cloud.ok) {
                             ok += 1;
-                            existing.push(Object.assign({}, payload, cloud.data || {}));
+                            if (cloud.auth && cloud.auth.ok && !cloud.auth.skipped) linked += 1;
+                            var merged = Object.assign({}, payload, cloud.data || {});
+                            var replaced = false;
+                            existing = existing.map(function (u) {
+                                if (normEmail(u.email) === row.email) {
+                                    replaced = true;
+                                    return Object.assign({}, u, merged);
+                                }
+                                return u;
+                            });
+                            if (!replaced) existing.push(merged);
                             saveUsers(existing);
                         } else {
                             fail += 1;
-                            errors.push(row.email + ': ' + ((cloud && cloud.message) || 'falha'));
+                            var msg = (cloud && cloud.message) || 'falha';
+                            errors.push(row.email + ': ' + msg);
+                            if (cloud && cloud.auth && cloud.auth.reason === 'rate_limit') {
+                                stopOnRateLimit = true;
+                            }
+                            // Ainda atualiza espelho local se veio staff
+                            if (cloud && cloud.data) {
+                                var merged2 = Object.assign({}, payload, cloud.data);
+                                var replaced2 = false;
+                                existing = existing.map(function (u) {
+                                    if (normEmail(u.email) === row.email) {
+                                        replaced2 = true;
+                                        return Object.assign({}, u, merged2);
+                                    }
+                                    return u;
+                                });
+                                if (!replaced2) existing.push(merged2);
+                                saveUsers(existing);
+                            }
                         }
                     });
                 }).catch(function (err) {
                     fail += 1;
                     errors.push(row.email + ': ' + ((err && err.message) || 'erro'));
                 }).then(function () {
-                    if ((idx + 1) % 5 === 0 || idx === rows.length - 1) {
-                        toast('Progresso: ' + (idx + 1) + '/' + rows.length + ' (ok ' + ok + ', falha ' + fail + ', skip ' + skip + ')');
+                    if ((idx + 1) % 3 === 0 || idx === rows.length - 1) {
+                        toast('Progresso: ' + (idx + 1) + '/' + rows.length + ' (ok ' + ok + ', auth ' + linked + ', falha ' + fail + ')');
                     }
-                    return sleep(350);
+                    // Intervalo maior para não estourar rate limit do Auth
+                    return sleep(1500);
                 });
             });
         }, Promise.resolve()).then(function () {
             render();
-            var msg = 'Importação concluída: ' + ok + ' criados, ' + skip + ' já existiam, ' + fail + ' falhas.';
+            var msg = 'Importação: ' + ok + ' ok no banco, ' + linked + ' com login Auth, ' + fail + ' falhas.';
+            if (stopOnRateLimit) {
+                msg += ' Auth limitou cadastros — aguarde 2 min e importe de novo (completa os que faltam).';
+            }
             if (errors.length) {
                 console.warn('[SIGA] import professores:', errors);
-                msg += ' Veja o console (F12) para detalhes.';
+                msg += ' Detalhes no console (F12).';
             }
             toast(msg, fail ? 'error' : 'success');
         });

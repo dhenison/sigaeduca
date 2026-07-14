@@ -157,6 +157,16 @@
         }).then(function (res) {
             if (res.error) {
                 var msg = res.error.message || 'Falha ao criar login Auth.';
+                var lower = String(msg).toLowerCase();
+                // Rate limit / confirmação — mensagem clara para reimportar
+                if (lower.indexOf('rate') >= 0 || lower.indexOf('seconds') >= 0) {
+                    return {
+                        ok: false,
+                        reason: 'rate_limit',
+                        message: 'Limite de criação Auth. Aguarde 1–2 min e importe de novo (completa os que faltam).',
+                        error: res.error
+                    };
+                }
                 // Usuário já existe — tenta obter via signIn temporário
                 if (/already|registered|exists/i.test(msg)) {
                     return temp.auth.signInWithPassword({ email: email, password: password })
@@ -165,7 +175,7 @@
                                 return {
                                     ok: false,
                                     reason: 'auth_exists',
-                                    message: 'E-mail já existe no Auth. Confira a senha ou redefina no Supabase Authentication.',
+                                    message: 'E-mail já existe no Auth com outra senha. Redefina no Authentication ou apague o usuário Auth e reimporte.',
                                     error: loginRes.error
                                 };
                             }
@@ -178,11 +188,12 @@
                 return { ok: false, reason: 'auth_error', message: msg, error: res.error };
             }
             var user = res.data && res.data.user;
+            // Confirmação de e-mail pode vir sem session, mas o user.id já basta para vincular
             if (!user || !user.id) {
                 return {
                     ok: false,
                     reason: 'no_user',
-                    message: 'Auth não retornou o usuário. Verifique se o cadastro por e-mail está habilitado no Supabase.'
+                    message: 'Auth não retornou o usuário. Desative “Confirm email” temporariamente ou confira Providers → Email.'
                 };
             }
             return { ok: true, userId: user.id, existed: false };
@@ -288,7 +299,9 @@
                 saveLocalUsers(list);
 
                 var authStep = Promise.resolve({ ok: true, skipped: true });
-                if (options.plainPassword && options.plainPassword.length >= 6) {
+                if (saved.user_id) {
+                    authStep = Promise.resolve({ ok: true, skipped: true, alreadyLinked: true });
+                } else if (options.plainPassword && options.plainPassword.length >= 6) {
                     authStep = createAuthUserEphemeral(row.email, options.plainPassword, row.full_name)
                         .then(function (authRes) {
                             if (!authRes.ok || !authRes.userId) return authRes;
@@ -307,14 +320,18 @@
                 }
 
                 return authStep.then(function (authInfo) {
+                    var authFailed = authInfo && authInfo.ok === false && !authInfo.skipped;
                     return {
-                        ok: true,
+                        ok: !authFailed,
+                        partial: authFailed,
                         data: mapped,
                         staffId: saved.id,
                         auth: authInfo,
-                        message: authInfo && authInfo.ok === false
-                            ? ('Salvo no banco. Login Auth: ' + (authInfo.message || 'pendente'))
-                            : 'Usuário salvo no banco de dados.'
+                        message: authFailed
+                            ? ('Salvo no banco, mas login Auth falhou: ' + (authInfo.message || 'pendente'))
+                            : (authInfo && authInfo.skipped
+                                ? 'Usuário salvo no banco (sem criar Auth).'
+                                : 'Usuário salvo no banco com acesso de login.')
                     };
                 });
             })
