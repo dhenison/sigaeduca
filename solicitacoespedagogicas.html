@@ -82,10 +82,12 @@ body.sidebar-collapsed aside#sidebar .nav-dropdown-menu { display: none !importa
 <style id="fouc-styles">html { visibility: hidden; opacity: 0; } html.ready { visibility: visible; opacity: 1; transition: opacity 0.15s ease-in-out; }</style>
 <script id="fouc-prevention">(function(){document.addEventListener("DOMContentLoaded",()=>{document.documentElement.classList.add('ready');});window.addEventListener("load",()=>{document.documentElement.classList.add('ready');});})();</script>
 <script src="js/siga-config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/siga-supabase.js"></script>
 <script src="js/siga-security.js"></script>
 <script src="js/siga-db.js"></script>
+<script src="js/siga-google-drive.js"></script>
 <script src="js/solicitacoes-pedagogicas.js"></script>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -191,7 +193,11 @@ body.sidebar-collapsed aside#sidebar .nav-dropdown-menu { display: none !importa
 <h2 class="font-headline-md text-on-surface leading-tight">Solicitações Pedagógicas</h2>
 <span class="text-label-sm text-text-secondary">Impressões, agendamentos e demandas pedagógicas</span>
 </div>
-<div class="flex items-center gap-4">
+<div class="flex items-center gap-3">
+<button class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-border-subtle bg-white text-sm font-semibold text-text-secondary hover:border-primary hover:text-primary transition-colors" id="sp-drive-btn" onclick="conectarGoogleDriveSolicitacaoPed()" type="button" title="Conectar Google Drive">
+<span class="material-symbols-outlined text-[20px]">cloud_off</span>
+<span id="sp-drive-btn-label">Conectar Drive</span>
+</button>
 <button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant/50 transition-colors relative" type="button">
 <span class="material-symbols-outlined">notifications</span>
 <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
@@ -204,10 +210,16 @@ body.sidebar-collapsed aside#sidebar .nav-dropdown-menu { display: none !importa
 <div>
 <h2 class="font-headline-lg text-headline-lg text-on-surface">Solicitações Pedagógicas</h2>
 <p class="text-body-md text-text-secondary mt-1">Registre impressões, agende recursos e acompanhe o tratamento das demandas.</p>
+<p class="text-label-md text-text-secondary mt-1" id="sp-drive-hint">Arquivos vão para o Drive em SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Tipo].</p>
 </div>
+<div class="flex flex-wrap items-center gap-3">
+<button class="sm:hidden inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-subtle bg-white font-semibold text-text-secondary" id="sp-drive-btn-mobile" onclick="conectarGoogleDriveSolicitacaoPed()" type="button">
+<span class="material-symbols-outlined text-[20px]">cloud</span>Drive
+</button>
 <button class="bg-primary hover:bg-[#005228] text-on-primary px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-semibold shadow-md active:scale-95" onclick="abrirModalSolicitacaoPed()" type="button">
 <span class="material-symbols-outlined">add_circle</span>Nova Solicitação
 </button>
+</div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

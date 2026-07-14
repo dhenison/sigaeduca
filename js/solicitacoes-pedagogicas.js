@@ -21,6 +21,115 @@
   var pendingFile = null;
   var uploadBusy = false;
 
+  function getDriveApi() {
+    return window.SigaGoogleDrive || null;
+  }
+
+  function updateDriveStatusUi() {
+    var drive = getDriveApi();
+    var connected = !!(drive && drive.isConnected && drive.isConnected());
+    var configured = !!(drive && drive.isConfigured && drive.isConfigured());
+    var btn = document.getElementById('sp-drive-btn');
+    var label = document.getElementById('sp-drive-btn-label');
+    var btnMob = document.getElementById('sp-drive-btn-mobile');
+    var hint = document.getElementById('sp-drive-hint');
+    var icon = btn ? btn.querySelector('.material-symbols-outlined') : null;
+
+    if (!configured) {
+      if (label) label.textContent = 'Configurar Drive';
+      if (icon) icon.textContent = 'settings';
+      if (hint) {
+        hint.textContent = 'Defina googleClientId em js/siga-config.js para ativar o Google Drive.';
+      }
+      return;
+    }
+
+    if (connected) {
+      if (label) label.textContent = 'Drive conectado';
+      if (icon) icon.textContent = 'cloud_done';
+      if (btn) {
+        btn.classList.remove('text-text-secondary');
+        btn.classList.add('text-primary', 'border-primary/40');
+      }
+      if (btnMob) btnMob.classList.add('text-primary', 'border-primary/40');
+      if (hint) {
+        hint.textContent = 'Arquivos vão para SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Tipo]. Clique na pasta do card para abrir no Drive.';
+      }
+    } else {
+      if (label) label.textContent = 'Conectar Drive';
+      if (icon) icon.textContent = 'cloud_off';
+      if (btn) {
+        btn.classList.add('text-text-secondary');
+        btn.classList.remove('text-primary', 'border-primary/40');
+      }
+      if (btnMob) btnMob.classList.remove('text-primary', 'border-primary/40');
+      if (hint) {
+        hint.textContent = 'Conecte o Google Drive antes de enviar. Pasta: SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Tipo].';
+      }
+    }
+  }
+
+  function conectarGoogleDrive() {
+    var drive = getDriveApi();
+    if (!drive) {
+      showToast('Módulo Google Drive não carregou.', 'error');
+      return;
+    }
+    if (!drive.isConfigured()) {
+      showToast('Configure googleClientId em js/siga-config.js (OAuth Web Client).', 'error');
+      return;
+    }
+    if (drive.isConnected()) {
+      if (window.confirm('Desconectar o Google Drive nesta sessão?')) {
+        drive.disconnect().then(function () {
+          updateDriveStatusUi();
+          showToast('Google Drive desconectado.', 'success');
+        });
+      }
+      return;
+    }
+    drive.connect().then(function () {
+      updateDriveStatusUi();
+      showToast('Google Drive conectado.', 'success');
+    }).catch(function (err) {
+      showToast((err && err.message) || 'Falha ao conectar o Google Drive.', 'error');
+    });
+  }
+
+  function requireDriveConnected() {
+    var drive = getDriveApi();
+    if (!drive || !drive.isConfigured()) {
+      return Promise.reject(new Error(
+        'Configure googleClientId em js/siga-config.js para salvar no Google Drive.'
+      ));
+    }
+    if (drive.isConnected()) return Promise.resolve(drive);
+    return drive.connect().then(function () {
+      updateDriveStatusUi();
+      return drive;
+    });
+  }
+
+  function uploadToDriveFromLocal(tipo, arquivoMeta, onProgress) {
+    if (!arquivoMeta || !arquivoMeta.id) {
+      return Promise.reject(new Error('Anexo local não encontrado para enviar ao Drive.'));
+    }
+    return requireDriveConnected().then(function (drive) {
+      return idbGet(arquivoMeta.id).then(function (rec) {
+        if (!rec || !rec.blob) {
+          throw new Error('Arquivo local indisponível para o Drive.');
+        }
+        return drive.uploadSolicitacaoFile(
+          tipo,
+          rec.blob,
+          arquivoMeta.name || rec.name || 'arquivo',
+          arquivoMeta.mime || rec.mime || 'application/octet-stream',
+          onProgress
+        );
+      });
+    });
+  }
+
   function escapeHtml(str) {
     return String(str == null ? '' : str)
       .replace(/&/g, '&amp;')
@@ -443,6 +552,11 @@
         '<div class="px-4 py-3 border-t border-border-subtle bg-surface-container-low/60 flex flex-wrap gap-2">' +
         '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-border-subtle hover:border-primary hover:text-primary transition-colors flex items-center gap-1" onclick="abrirArquivoSolicitacaoPed(\'' + item.id + '\')">' +
         '<span class="material-symbols-outlined text-[18px]">attach_file</span>Abrir Arquivo</button>' +
+        (item.drive && (item.drive.webViewLink || item.drive.fileId)
+          ? '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-border-subtle hover:border-primary hover:text-primary transition-colors flex items-center gap-1" onclick="abrirPastaDriveSolicitacaoPed(\'' + item.id + '\')" title="' + escapeHtml((item.drive && item.drive.folderPath) || 'Abrir no Google Drive') + '">' +
+            '<span class="material-symbols-outlined text-[18px]">folder_open</span>Pasta Drive</button>'
+          : '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-amber-200 text-amber-800 hover:border-amber-400 transition-colors flex items-center gap-1" onclick="enviarAoDriveSolicitacaoPed(\'' + item.id + '\')">' +
+            '<span class="material-symbols-outlined text-[18px]">cloud_upload</span>Enviar ao Drive</button>') +
         (status === 'pendente'
           ? '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-[#005228] transition-colors flex items-center gap-1" onclick="tratarDemandaSolicitacaoPed(\'' + item.id + '\')">' +
             '<span class="material-symbols-outlined text-[18px]">task_alt</span>Tratar Demanda</button>'
@@ -572,11 +686,30 @@
       btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>Enviando…';
     }
 
-    var filePromise = pendingFile
-      ? uploadAnexo(pendingFile, existing && existing.arquivo && existing.arquivo.id)
-      : Promise.resolve(existing ? existing.arquivo : null);
+    requireDriveConnected().then(function () {
+      var filePromise = pendingFile
+        ? uploadAnexo(pendingFile, existing && existing.arquivo && existing.arquivo.id)
+        : Promise.resolve(existing ? existing.arquivo : null);
 
-    filePromise.then(function (arquivoMeta) {
+      return filePromise.then(function (arquivoMeta) {
+        if (!arquivoMeta) throw new Error('Anexo obrigatório.');
+
+        var shouldUploadDrive = !!pendingFile || !(existing && existing.drive && existing.drive.fileId);
+        if (!shouldUploadDrive) {
+          return { arquivoMeta: arquivoMeta, driveMeta: existing.drive };
+        }
+
+        setUploadProgress(40, 'Enviando ao Google Drive…');
+        return uploadToDriveFromLocal(tipo, arquivoMeta, function (pct, label) {
+          setUploadProgress(40 + Math.round((pct || 0) * 0.55), label || 'Google Drive…');
+        }).then(function (driveMeta) {
+          setUploadProgress(100, 'Concluído');
+          return { arquivoMeta: arquivoMeta, driveMeta: driveMeta };
+        });
+      });
+    }).then(function (result) {
+      var arquivoMeta = result.arquivoMeta;
+      var driveMeta = result.driveMeta;
       var now = todayIso();
       var solicitante = localStorage.getItem('siga_profile_name') || 'Usuário';
       if (existing) {
@@ -585,6 +718,7 @@
         existing.turmas = turmas;
         existing.observacoes = observacoes;
         existing.arquivo = arquivoMeta || existing.arquivo || null;
+        if (driveMeta) existing.drive = driveMeta;
         existing.updatedAt = new Date().toISOString();
       } else {
         list.unshift({
@@ -597,13 +731,14 @@
           status: 'pendente',
           solicitante: solicitante,
           arquivo: arquivoMeta,
+          drive: driveMeta || null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
       }
       saveList(list);
       uploadBusy = false;
-      showToast(existing ? 'Solicitação atualizada.' : 'Solicitação enviada com sucesso!', 'success');
+      showToast(existing ? 'Solicitação atualizada e salva no Drive.' : 'Solicitação enviada e salva no Drive!', 'success');
       fecharModal(true);
       renderList();
     }).catch(function (err) {
@@ -619,6 +754,55 @@
 
   function findById(id) {
     return getList().find(function (x) { return x.id === id; }) || null;
+  }
+
+  function abrirPastaDrive(id) {
+    var item = findById(id);
+    var drive = getDriveApi();
+    if (!item || !item.drive) {
+      showToast('Esta solicitação ainda não tem pasta no Drive.', 'error');
+      return;
+    }
+    if (item.drive.webViewLink || item.drive.fileId) {
+      if (drive && drive.openInDrive) {
+        drive.openInDrive(item.drive.webViewLink || item.drive.fileId);
+      } else {
+        window.open(
+          item.drive.webViewLink ||
+          ('https://drive.google.com/file/d/' + item.drive.fileId + '/view'),
+          '_blank'
+        );
+      }
+      return;
+    }
+    if (item.drive.folderId && drive && drive.openFolder) {
+      drive.openFolder(item.drive.folderId);
+      return;
+    }
+    showToast('Link do Drive indisponível.', 'error');
+  }
+
+  function enviarAoDrive(id) {
+    var list = getList();
+    var item = list.find(function (x) { return x.id === id; });
+    if (!item) {
+      showToast('Solicitação não encontrada.', 'error');
+      return;
+    }
+    if (!item.arquivo || !item.arquivo.id) {
+      showToast('Nenhum arquivo anexado para enviar.', 'error');
+      return;
+    }
+    showToast('Enviando ao Google Drive…', 'success');
+    uploadToDriveFromLocal(item.tipo, item.arquivo, null).then(function (driveMeta) {
+      item.drive = driveMeta;
+      item.updatedAt = new Date().toISOString();
+      saveList(list);
+      showToast('Arquivo salvo no Drive.', 'success');
+      renderList();
+    }).catch(function (err) {
+      showToast((err && err.message) || 'Falha ao enviar ao Drive.', 'error');
+    });
   }
 
   function abrirArquivo(id) {
@@ -674,6 +858,12 @@
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Turmas</dt><dd>' + escapeHtml((item.turmas || []).join(', ') || '—') + '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Status</dt><dd>' + escapeHtml((item.status || 'pendente') === 'aceita' ? 'Aceita' : 'Pendente') + '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Arquivo</dt><dd>' + escapeHtml((item.arquivo && item.arquivo.name) || '—') + '</dd></div>' +
+      '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Google Drive</dt><dd>' +
+      escapeHtml((item.drive && item.drive.folderPath) || 'Ainda não enviado') +
+      (item.drive && item.drive.webViewLink
+        ? ' · <a class="text-primary font-semibold underline" href="' + escapeHtml(item.drive.webViewLink) + '" target="_blank" rel="noopener">Abrir</a>'
+        : '') +
+      '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Observações</dt><dd class="whitespace-pre-wrap">' + escapeHtml(item.observacoes || '—') + '</dd></div>' +
       '</dl>';
     modal.classList.remove('hidden');
@@ -739,6 +929,9 @@
       if (!wrap.contains(e.target)) toggleTurmaDropdown(false);
     });
 
+    var drive = getDriveApi();
+    if (drive && drive.onStatusChange) drive.onStatusChange(updateDriveStatusUi);
+    updateDriveStatusUi();
     renderList();
   }
 
@@ -752,6 +945,9 @@
   window.setStatusFiltroSolicitacaoPed = setStatusFilter;
   window.filtrarSolicitacoesPed = renderList;
   window.abrirArquivoSolicitacaoPed = abrirArquivo;
+  window.abrirPastaDriveSolicitacaoPed = abrirPastaDrive;
+  window.enviarAoDriveSolicitacaoPed = enviarAoDrive;
+  window.conectarGoogleDriveSolicitacaoPed = conectarGoogleDrive;
   window.tratarDemandaSolicitacaoPed = tratarDemanda;
   window.verSolicitacaoPed = verSolicitacao;
   window.fecharViewSolicitacaoPed = fecharViewModal;
