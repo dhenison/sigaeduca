@@ -138,6 +138,16 @@
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }
 
+  /** YYYY-MM-DD (local) — usado na emissão e no sync com Supabase */
+  function isoDateOnly(value) {
+    const d = parseDateOnly(value);
+    if (!d) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
   function getDocumentoSecretariaDataValidade(doc) {
     if (!doc || !doc.dataEmissao) return null;
     if (doc.dataValidade) {
