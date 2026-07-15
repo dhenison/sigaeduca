@@ -217,57 +217,76 @@
         syncCountersCloud(c);
     }
 
-    function syncCountersCloud(c) {
+    function ensureSupabaseAuth() {
         var sb = getSupabaseClient();
-        var schoolId = getActiveSchoolId();
-        if (!sb || !schoolId || !c) return Promise.resolve({ ok: false });
-        var rows = [
-            { school_id: schoolId, kind: 'oficio', next_number: c.oficio, updated_at: new Date().toISOString() },
-            { school_id: schoolId, kind: 'memorando', next_number: c.memorando, updated_at: new Date().toISOString() }
-        ];
-        return sb.from('admin_doc_counters')
-            .upsert(rows, { onConflict: 'school_id,kind' })
-            .then(function (res) {
-                if (res.error) {
-                    console.warn('[SIGA] sync admin_doc_counters:', res.error.message);
-                    return { ok: false };
-                }
-                return { ok: true };
-            })
-            .catch(function (err) {
-                console.warn('[SIGA] sync admin_doc_counters:', err);
-                return { ok: false };
+        if (!sb || !sb.auth || typeof sb.auth.getSession !== 'function') {
+            return Promise.resolve({ ok: false, reason: 'no_cloud', sb: null });
+        }
+        return sb.auth.getSession().then(function (res) {
+            var session = res && res.data ? res.data.session : null;
+            if (!session) {
+                return { ok: false, reason: 'no_auth', sb: sb };
+            }
+            return { ok: true, sb: sb, session: session };
+        }).catch(function () {
+            return { ok: false, reason: 'no_auth', sb: sb };
+        });
+    }
+
+    function syncCountersCloud(c) {
+        return ensureSupabaseAuth().then(function (auth) {
+            if (!auth.ok || !auth.sb) return { ok: false, reason: auth.reason };
+            return resolveSchoolIdAsync().then(function (schoolId) {
+                if (!schoolId || !c) return { ok: false, reason: 'no_school' };
+                var rows = [
+                    { school_id: schoolId, kind: 'oficio', next_number: c.oficio, updated_at: new Date().toISOString() },
+                    { school_id: schoolId, kind: 'memorando', next_number: c.memorando, updated_at: new Date().toISOString() }
+                ];
+                return auth.sb.from('admin_doc_counters')
+                    .upsert(rows, { onConflict: 'school_id,kind' })
+                    .then(function (res) {
+                        if (res.error) {
+                            console.warn('[SIGA] sync admin_doc_counters:', res.error.message);
+                            return { ok: false, message: res.error.message };
+                        }
+                        return { ok: true };
+                    });
             });
+        }).catch(function (err) {
+            console.warn('[SIGA] sync admin_doc_counters:', err);
+            return { ok: false, message: (err && err.message) || 'erro' };
+        });
     }
 
     function syncAdminDocCloud(doc) {
-        var sb = getSupabaseClient();
-        if (!sb || !doc || !doc.id) {
-            return Promise.resolve({ ok: false, reason: 'no_cloud' });
+        if (!doc || !doc.id) {
+            return Promise.resolve({ ok: false, reason: 'no_doc' });
         }
-        return resolveSchoolIdAsync().then(function (schoolId) {
-            if (!schoolId) return { ok: false, reason: 'no_school' };
-            var row = {
-                school_id: schoolId,
-                local_id: doc.id,
-                doc_type: doc.tipo || '',
-                destinatario: doc.requerente || null,
-                emitido_por: doc.emitidoPor || null,
-                numero: doc.dados && doc.dados.numero != null ? doc.dados.numero : null,
-                ano: doc.dados && doc.dados.ano ? String(doc.dados.ano) : null,
-                dados: doc.dados || {},
-                created_at: doc.createdAt || new Date().toISOString(),
-                updated_at: doc.updatedAt || new Date().toISOString()
-            };
-            return sb.from('admin_school_documents')
-                .upsert(row, { onConflict: 'school_id,local_id' })
-                .then(function (res) {
+        return ensureSupabaseAuth().then(function (auth) {
+            if (!auth.ok || !auth.sb) {
+                return { ok: false, reason: auth.reason || 'no_auth', message: 'Sessão Supabase ausente. Faça login novamente.' };
+            }
+            return resolveSchoolIdAsync().then(function (schoolId) {
+                if (!schoolId) return { ok: false, reason: 'no_school', message: 'Escola não vinculada.' };
+                var payload = {
+                    p_school_id: schoolId,
+                    p_local_id: doc.id,
+                    p_doc_type: doc.tipo || '',
+                    p_destinatario: doc.requerente || null,
+                    p_emitido_por: doc.emitidoPor || null,
+                    p_numero: doc.dados && doc.dados.numero != null ? Number(doc.dados.numero) : null,
+                    p_ano: doc.dados && doc.dados.ano != null ? String(doc.dados.ano) : null,
+                    p_dados: doc.dados || {},
+                    p_created_at: doc.createdAt || new Date().toISOString()
+                };
+                return auth.sb.rpc('upsert_admin_school_document', payload).then(function (res) {
                     if (res.error) {
-                        console.warn('[SIGA] sync admin_school_documents:', res.error.message);
+                        console.warn('[SIGA] upsert_admin_school_document:', res.error.message);
                         return { ok: false, message: res.error.message };
                     }
-                    return { ok: true };
+                    return { ok: true, id: res.data, schoolId: schoolId };
                 });
+            });
         }).catch(function (err) {
             console.warn('[SIGA] sync admin_school_documents:', err);
             return { ok: false, message: (err && err.message) || 'erro' };
@@ -275,24 +294,26 @@
     }
 
     function deleteAdminDocCloud(localId) {
-        var sb = getSupabaseClient();
-        var schoolId = getActiveSchoolId();
-        if (!sb || !schoolId || !localId) return Promise.resolve({ ok: true, reason: 'no_cloud' });
-        return sb.from('admin_school_documents')
-            .delete()
-            .eq('school_id', schoolId)
-            .eq('local_id', localId)
-            .then(function (res) {
-                if (res.error) {
-                    console.warn('[SIGA] delete admin_school_documents:', res.error.message);
-                    return { ok: false, message: res.error.message };
-                }
-                return { ok: true };
-            })
-            .catch(function (err) {
-                console.warn('[SIGA] delete admin_school_documents:', err);
-                return { ok: false, message: (err && err.message) || 'erro' };
+        return ensureSupabaseAuth().then(function (auth) {
+            if (!auth.ok || !auth.sb) return { ok: true, reason: auth.reason };
+            return resolveSchoolIdAsync().then(function (schoolId) {
+                if (!schoolId || !localId) return { ok: true, reason: 'no_school' };
+                return auth.sb.from('admin_school_documents')
+                    .delete()
+                    .eq('school_id', schoolId)
+                    .eq('local_id', localId)
+                    .then(function (res) {
+                        if (res.error) {
+                            console.warn('[SIGA] delete admin_school_documents:', res.error.message);
+                            return { ok: false, message: res.error.message };
+                        }
+                        return { ok: true };
+                    });
             });
+        }).catch(function (err) {
+            console.warn('[SIGA] delete admin_school_documents:', err);
+            return { ok: false, message: (err && err.message) || 'erro' };
+        });
     }
 
     function mapAdminCloudRow(row) {
@@ -308,50 +329,88 @@
         };
     }
 
+    function mergeAdminDocs(localList, cloudList) {
+        var map = {};
+        (localList || []).forEach(function (d) {
+            if (d && d.id) map[d.id] = d;
+        });
+        (cloudList || []).forEach(function (d) {
+            if (d && d.id) map[d.id] = d;
+        });
+        return Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) {
+            return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+        });
+    }
+
     function loadAdminDocsFromCloud() {
-        var sb = getSupabaseClient();
-        if (!sb) return Promise.resolve({ ok: false, reason: 'no_cloud' });
+        return ensureSupabaseAuth().then(function (auth) {
+            if (!auth.ok || !auth.sb) {
+                return { ok: false, reason: auth.reason || 'no_cloud' };
+            }
+            return resolveSchoolIdAsync().then(function (schoolId) {
+                if (!schoolId) return { ok: false, reason: 'no_school' };
 
-        return resolveSchoolIdAsync().then(function (schoolId) {
-            if (!schoolId) return { ok: false, reason: 'no_school' };
+                var localList = getDocs();
+                var migrate = (localList || []).map(function (doc) { return syncAdminDocCloud(doc); });
 
-            var localList = getDocs();
-            var migrate = (localList || []).map(function (doc) { return syncAdminDocCloud(doc); });
+                return Promise.all(migrate).then(function (migrateResults) {
+                    var migrateOk = (migrateResults || []).filter(function (r) { return r && r.ok; }).length;
+                    var migrateFail = (migrateResults || []).filter(function (r) { return r && r.ok === false; });
+                    if (migrateFail.length) {
+                        console.warn('[SIGA] Falha ao migrar docs locais:', migrateFail[0].message || migrateFail[0].reason);
+                    }
 
-            return Promise.all(migrate).then(function () {
-                return Promise.all([
-                    sb.from('admin_school_documents')
-                        .select('*')
-                        .eq('school_id', schoolId)
-                        .order('created_at', { ascending: false }),
-                    sb.from('admin_doc_counters')
-                        .select('*')
-                        .eq('school_id', schoolId)
-                ]);
-            }).then(function (results) {
-                var docsRes = results[0];
-                var countersRes = results[1];
-                if (docsRes.error) {
-                    console.warn('[SIGA] load admin_school_documents:', docsRes.error.message);
-                    return { ok: false, message: docsRes.error.message };
-                }
-                var list = (docsRes.data || []).map(mapAdminCloudRow).filter(Boolean);
-                saveDocs(list);
+                    return auth.sb.rpc('list_admin_school_documents', { p_school_id: schoolId })
+                        .then(function (docsRes) {
+                            return Promise.all([
+                                Promise.resolve(docsRes),
+                                auth.sb.from('admin_doc_counters').select('*').eq('school_id', schoolId),
+                                Promise.resolve({ migrateOk: migrateOk, migrateFail: migrateFail.length })
+                            ]);
+                        });
+                }).then(function (results) {
+                    var docsRes = results[0];
+                    var countersRes = results[1];
+                    var migrateInfo = results[2] || {};
+                    if (docsRes.error) {
+                        console.warn('[SIGA] list_admin_school_documents:', docsRes.error.message);
+                        // Não apaga o histórico local se a nuvem falhar
+                        return { ok: false, message: docsRes.error.message, keptLocal: true };
+                    }
+                    var cloudList = (docsRes.data || []).map(mapAdminCloudRow).filter(Boolean);
+                    var merged = mergeAdminDocs(localList, cloudList);
+                    saveDocs(merged);
 
-                var c = getCounters();
-                if (countersRes && !countersRes.error && countersRes.data) {
-                    countersRes.data.forEach(function (row) {
-                        if (row.kind === 'oficio' && row.next_number >= OFICIO_START) c.oficio = row.next_number;
-                        if (row.kind === 'memorando' && row.next_number >= MEMORANDO_START) c.memorando = row.next_number;
+                    var c = getCounters();
+                    if (countersRes && !countersRes.error && countersRes.data) {
+                        countersRes.data.forEach(function (row) {
+                            if (row.kind === 'oficio' && row.next_number >= OFICIO_START) c.oficio = row.next_number;
+                            if (row.kind === 'memorando' && row.next_number >= MEMORANDO_START) c.memorando = row.next_number;
+                        });
+                    }
+                    // Avança contador se docs locais/nuvem já usam números maiores
+                    merged.forEach(function (d) {
+                        if (!d.dados || d.dados.numero == null) return;
+                        var n = Number(d.dados.numero);
+                        if (d.tipo === TIPO_OFICIO && n >= c.oficio) c.oficio = n + 1;
+                        if (d.tipo === TIPO_MEMORANDO && n >= c.memorando) c.memorando = n + 1;
                     });
-                }
-                localStorage.setItem(COUNTERS_KEY, JSON.stringify({ oficio: c.oficio, memorando: c.memorando }));
-                syncCountersCloud(c);
-                return { ok: true, count: list.length, schoolId: schoolId };
+                    localStorage.setItem(COUNTERS_KEY, JSON.stringify({ oficio: c.oficio, memorando: c.memorando }));
+                    syncCountersCloud(c);
+
+                    return {
+                        ok: true,
+                        count: merged.length,
+                        cloudCount: cloudList.length,
+                        migrateOk: migrateInfo.migrateOk || 0,
+                        migrateFail: migrateInfo.migrateFail || 0,
+                        schoolId: schoolId
+                    };
+                });
             });
         }).catch(function (err) {
             console.warn('[SIGA] load admin docs:', err);
-            return { ok: false, message: (err && err.message) || 'erro' };
+            return { ok: false, message: (err && err.message) || 'erro', keptLocal: true };
         });
     }
 
@@ -635,14 +694,24 @@
         var saved = editingId
             ? list.find(function (d) { return d.id === editingId; })
             : list[0];
-        if (saved) syncAdminDocCloud(saved);
-        toast(editingId ? 'Requerimento atualizado e salvo no banco.' : 'Requerimento emitido e salvo no banco de dados.');
-        filterState.tipo = TIPO_REQ;
-        renderHistory();
-        if (andPrint) {
-            printRequerimento(data);
+        var finish = function (cloudOk, cloudMsg) {
+            if (cloudOk) {
+                toast(editingId ? 'Requerimento atualizado e salvo no banco.' : 'Requerimento emitido e salvo no banco de dados.');
+            } else {
+                toast('Salvo neste aparelho, mas NÃO foi para o banco' + (cloudMsg ? ': ' + cloudMsg : '. Faça login novamente e reabra esta tela.'), 'error');
+            }
+            filterState.tipo = TIPO_REQ;
+            renderHistory();
+            if (andPrint) printRequerimento(data);
+            closeForm();
+        };
+        if (!saved) {
+            finish(false, 'documento inválido');
+            return;
         }
-        closeForm();
+        syncAdminDocCloud(saved).then(function (res) {
+            finish(!!(res && res.ok), res && (res.message || res.reason));
+        });
     }
 
     function syncOmTituloPreview() {
@@ -871,14 +940,26 @@
         var savedOm = editingId
             ? list.find(function (d) { return d.id === editingId; })
             : list[0];
-        if (savedOm) syncAdminDocCloud(savedOm);
-        toast(editingId
-            ? (tipoLabel + ' atualizado e salvo no banco.')
-            : (tipoLabel + ' Nº ' + data.numero + '/' + data.ano + ' emitido e salvo no banco de dados.'));
-        filterState.tipo = tipoLabel;
-        renderHistory();
-        if (andPrint) printOficioMemorando(data);
-        closeOmForm();
+        var finishOm = function (cloudOk, cloudMsg) {
+            if (cloudOk) {
+                toast(editingId
+                    ? (tipoLabel + ' atualizado e salvo no banco.')
+                    : (tipoLabel + ' Nº ' + data.numero + '/' + data.ano + ' emitido e salvo no banco de dados.'));
+            } else {
+                toast('Salvo neste aparelho, mas NÃO foi para o banco' + (cloudMsg ? ': ' + cloudMsg : '. Faça login novamente e reabra esta tela.'), 'error');
+            }
+            filterState.tipo = tipoLabel;
+            renderHistory();
+            if (andPrint) printOficioMemorando(data);
+            closeOmForm();
+        };
+        if (!savedOm) {
+            finishOm(false, 'documento inválido');
+            return;
+        }
+        syncAdminDocCloud(savedOm).then(function (res) {
+            finishOm(!!(res && res.ok), res && (res.message || res.reason));
+        });
     }
 
     function fmtDate(iso) {
@@ -1313,9 +1394,16 @@
         renderHistory();
         loadAdminDocsFromCloud().then(function (result) {
             if (result && result.ok) {
-                console.info('[SIGA] Documentos administrativos carregados do Supabase:', result.count);
+                console.info('[SIGA] Admin docs cloud:', result.cloudCount, 'merged:', result.count, 'migrated:', result.migrateOk);
+                if (result.migrateFail > 0) {
+                    toast('Alguns documentos locais não subiram ao banco. Verifique o login Supabase e recarregue.', 'error');
+                } else if (result.migrateOk > 0) {
+                    toast(result.migrateOk + ' documento(s) sincronizado(s) com o banco.', 'success');
+                }
             } else if (result && result.reason === 'no_school') {
                 toast('Escola não vinculada à sessão. Faça login novamente para carregar os documentos do banco.', 'error');
+            } else if (result && result.reason === 'no_auth') {
+                toast('Sessão Supabase ausente. Saia e entre novamente para sincronizar documentos entre computadores.', 'error');
             }
             renderHistory();
         });
