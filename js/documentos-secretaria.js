@@ -73,32 +73,65 @@
     return Number.isNaN(seqNum) ? null : seqNum;
   }
 
+  /** Sufixo aleatório (letras + números) — dificulta adivinhação via QR/protocolo. */
+  function randomProtocolSuffix(len) {
+    len = len || 12;
+    // Sem 0/O/1/I para reduzir confusão na digitação
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let out = '';
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const buf = new Uint32Array(len);
+      crypto.getRandomValues(buf);
+      for (let i = 0; i < len; i++) out += alphabet[buf[i] % alphabet.length];
+      return out;
+    }
+    for (let j = 0; j < len; j++) {
+      out += alphabet[Math.floor(Math.random() * alphabet.length)];
+    }
+    return out;
+  }
+
+  /**
+   * Protocolo: SEC-DEC-2026-K7M2P9QX4R8H (sufixo aleatório, não sequencial).
+   * Ex.: SEC-REQ-2026-A3F8H2K9M4Q7
+   */
   function gerarProtocoloSec(tipoDoc) {
     const prefix = isRequerimento(tipoDoc) ? 'REQ' : 'DEC';
     const ano = String(new Date().getFullYear());
-    // Single-school: token vazio → SEC-DEC-2026-0001
-    // Multi-escola (futuro): usar slugSchoolToken(getSecSchoolInfo().nome)
-    const schoolToken = '';
-    const seqPrefix = schoolToken || '';
     const docs = getSecDocumentos();
-    const like = `SEC-${prefix}-${ano}-${seqPrefix}`;
-
-    let maxSeq = 0;
+    const used = {};
     docs.forEach(function (d) {
-      if (!d.protocolo || String(d.protocolo).indexOf(like) !== 0) return;
-      const seqNum = extractProtocolSeq(d.protocolo, schoolToken);
-      if (seqNum && seqNum > maxSeq) maxSeq = seqNum;
+      if (d && d.protocolo) used[String(d.protocolo).toUpperCase()] = true;
     });
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const nextSeq = maxSeq + 1 + attempt;
-      const candidate = `SEC-${prefix}-${ano}-${seqPrefix}${String(nextSeq).padStart(4, '0')}`;
-      const collision = docs.some(function (d) { return d.protocolo === candidate; });
-      if (!collision) return candidate;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const candidate = 'SEC-' + prefix + '-' + ano + '-' + randomProtocolSuffix(12);
+      if (!used[candidate]) return candidate;
     }
+    return 'SEC-' + prefix + '-' + ano + '-' + randomProtocolSuffix(12) + randomProtocolSuffix(4);
+  }
 
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    return `SEC-${prefix}-${ano}-${seqPrefix}${rand}`;
+  /** Prefere RPC no Supabase (unicidade global); fallback local aleatório. */
+  function gerarProtocoloSecAsync(tipoDoc) {
+    const sb = getSupabaseClient();
+    return resolveSchoolIdAsync().then(function (schoolId) {
+      if (!sb || !schoolId || typeof sb.rpc !== 'function') {
+        return gerarProtocoloSec(tipoDoc);
+      }
+      return sb.rpc('next_secretary_protocol', {
+        p_school_id: schoolId,
+        p_doc_type: tipoDoc || 'Declaração',
+        p_year: new Date().getFullYear()
+      }).then(function (res) {
+        if (res.error || !res.data) {
+          console.warn('[SIGA] next_secretary_protocol:', res.error && res.error.message);
+          return gerarProtocoloSec(tipoDoc);
+        }
+        return String(res.data).toUpperCase();
+      }).catch(function () {
+        return gerarProtocoloSec(tipoDoc);
+      });
+    });
   }
 
   // ─── Obs metadata ──────────────────────────────────────────────────────────
@@ -784,7 +817,6 @@
     }
 
     const serie = resolveSerie(aluno);
-    const protocolo = gerarProtocoloSec(tipo);
     const hoje = new Date().toISOString().split('T')[0];
     const turmaDoc = isAtestadoConclusao(tipo)
       ? turmaAtestado
@@ -793,126 +825,142 @@
       ? nomeAlunoLivre
       : (aluno ? aluno.nome : '');
 
-    const doc = {
-      id: uid(),
-      protocolo: protocolo,
-      alunoId: (tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA || isAtestadoConclusao(tipo)) ? null : alunoId,
-      alunoNome: nomeDoc,
-      alunoCpf: aluno ? (aluno.cpf || '') : '',
-      alunoTurma: turmaDoc,
-      alunoSerie: serie || '',
-      alunoTurno: aluno ? (aluno.turno || '') : '',
-      tipo: tipo,
-      dataEmissao: hoje,
-      dataValidade: computeDataValidadeIso(hoje),
-      status: isRequerimento(tipo) ? 'pendente' : 'concluido',
-      solicitante: solicitante || '',
-      motivo: motivo || '',
-      obs: obsCompleta || '',
-      responsavel: responsavel,
-      cidadeNascimento: (isRequerimento(tipo) || tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA) ? '' : (cidadeNasc || ''),
-      ufNascimento: (isRequerimento(tipo) || tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA) ? '' : (ufNasc || ''),
-      dataNascimento: dataNascInput || (aluno && (aluno.dataNascimento || aluno.nasc)) || '',
-      frequencia: tipo === 'Declaração de Frequência (Bolsa Família)' ? frequencia : '',
-      vagaEtapa: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? vagaEtapa : '',
-      vagaTurno: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? vagaTurno : '',
-      anoLetivo: isAtestadoConclusao(tipo) ? anoLetivoInput : '',
-      nomeMae: isAtestadoConclusao(tipo) ? nomeMae : '',
-      nomePai: isAtestadoConclusao(tipo) ? nomePai : ''
-    };
+    const needsExtraReq = (tipo === 'Declaração de Transferência')
+      || isAtestadoConclusao(tipo);
+    const extraTipo = tipo === 'Declaração de Transferência'
+      ? 'Requerimento de Transferência'
+      : DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA;
 
-    const list = getSecDocumentos();
-    list.unshift(doc);
-    saveSecDocumentos(list);
-    syncDocumentoSecretariaCloud(doc);
+    const protocolPromise = needsExtraReq
+      ? Promise.all([gerarProtocoloSecAsync(tipo), gerarProtocoloSecAsync(extraTipo)])
+      : gerarProtocoloSecAsync(tipo).then(function (p) { return [p]; });
 
-    function afterSaveAndPrint(printIds, toastMsg) {
-      const syncs = (printIds || []).map(function (id) {
-        const d = getSecDocumentos().find(function (x) { return x.id === id; });
-        return d ? syncDocumentoSecretariaCloud(d) : Promise.resolve({ ok: true });
-      });
-      return Promise.all(syncs).then(function () {
-        showSecToast(toastMsg || 'Documento salvo no banco de dados!', 'success');
-        fecharModalNovoDocSecretaria();
-        renderSecPage();
-        if (printIds.length === 1) imprimirDocumentoSec(printIds[0]);
-        else imprimirDocumentosSec(printIds);
-      });
-    }
+    protocolPromise.then(function (protocols) {
+      const protocolo = protocols[0];
+      const reqProtocolo = protocols[1] || '';
 
-    if (tipo === 'Declaração de Transferência') {
-      const reqProtocolo = gerarProtocoloSec('Requerimento de Transferência');
-      const reqDoc = {
+      const doc = {
         id: uid(),
-        protocolo: reqProtocolo,
-        alunoId: alunoId,
-        alunoNome: aluno ? aluno.nome : '',
+        protocolo: protocolo,
+        alunoId: (tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA || isAtestadoConclusao(tipo)) ? null : alunoId,
+        alunoNome: nomeDoc,
         alunoCpf: aluno ? (aluno.cpf || '') : '',
-        alunoTurma: aluno ? (aluno.turma || '') : '',
+        alunoTurma: turmaDoc,
         alunoSerie: serie || '',
         alunoTurno: aluno ? (aluno.turno || '') : '',
-        tipo: 'Requerimento de Transferência',
+        tipo: tipo,
         dataEmissao: hoje,
         dataValidade: computeDataValidadeIso(hoje),
-        status: 'pendente',
-        solicitante: solicitante || 'Secretaria (Auto)',
-        motivo: motivo || 'Declaração de transferência emitida',
-        obs: 'Gerado automaticamente por emissão de declaração.',
+        status: isRequerimento(tipo) ? 'pendente' : 'concluido',
+        solicitante: solicitante || '',
+        motivo: motivo || '',
+        obs: obsCompleta || '',
         responsavel: responsavel,
-        cidadeNascimento: '',
-        ufNascimento: '',
-        dataNascimento: '',
-        frequencia: '',
-        vagaEtapa: '',
-        vagaTurno: '',
-        anoLetivo: '',
-        nomeMae: '',
-        nomePai: ''
+        cidadeNascimento: (isRequerimento(tipo) || tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA) ? '' : (cidadeNasc || ''),
+        ufNascimento: (isRequerimento(tipo) || tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA) ? '' : (ufNasc || ''),
+        dataNascimento: dataNascInput || (aluno && (aluno.dataNascimento || aluno.nasc)) || '',
+        frequencia: tipo === 'Declaração de Frequência (Bolsa Família)' ? frequencia : '',
+        vagaEtapa: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? vagaEtapa : '',
+        vagaTurno: tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA ? vagaTurno : '',
+        anoLetivo: isAtestadoConclusao(tipo) ? anoLetivoInput : '',
+        nomeMae: isAtestadoConclusao(tipo) ? nomeMae : '',
+        nomePai: isAtestadoConclusao(tipo) ? nomePai : ''
       };
-      list.unshift(reqDoc);
-      saveSecDocumentos(list);
-      syncDocumentoSecretariaCloud(reqDoc);
-      afterSaveAndPrint([doc.id, reqDoc.id], 'Documento registrado e salvo no banco de dados!');
-      return;
-    }
 
-    if (isAtestadoConclusao(tipo)) {
-      const reqProtocolo = gerarProtocoloSec(DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA);
-      const reqDoc = {
-        id: uid(),
-        protocolo: reqProtocolo,
-        alunoId: null,
-        alunoNome: nomeDoc,
-        alunoCpf: '',
-        alunoTurma: turmaDoc,
-        alunoSerie: '',
-        alunoTurno: '',
-        tipo: DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA,
-        dataEmissao: hoje,
-        dataValidade: computeDataValidadeIso(hoje),
-        status: 'pendente',
-        solicitante: solicitante || 'Secretaria (Auto)',
-        motivo: motivo || 'Atestado de conclusão emitido — Histórico e Diploma',
-        obs: 'Gerado automaticamente por emissão de Atestado de Conclusão.',
-        responsavel: responsavel,
-        cidadeNascimento: '',
-        ufNascimento: '',
-        dataNascimento: '',
-        frequencia: '',
-        vagaEtapa: '',
-        vagaTurno: '',
-        anoLetivo: anoLetivoInput || '',
-        nomeMae: '',
-        nomePai: ''
-      };
-      list.unshift(reqDoc);
+      const list = getSecDocumentos();
+      list.unshift(doc);
       saveSecDocumentos(list);
-      syncDocumentoSecretariaCloud(reqDoc);
-      afterSaveAndPrint([doc.id, reqDoc.id], 'Atestado registrado e salvo no banco de dados!');
-      return;
-    }
+      syncDocumentoSecretariaCloud(doc);
 
-    afterSaveAndPrint([doc.id], 'Documento registrado e salvo no banco de dados!');
+      function afterSaveAndPrint(printIds, toastMsg) {
+        const syncs = (printIds || []).map(function (id) {
+          const d = getSecDocumentos().find(function (x) { return x.id === id; });
+          return d ? syncDocumentoSecretariaCloud(d) : Promise.resolve({ ok: true });
+        });
+        return Promise.all(syncs).then(function () {
+          showSecToast(toastMsg || 'Documento salvo no banco de dados!', 'success');
+          fecharModalNovoDocSecretaria();
+          renderSecPage();
+          if (printIds.length === 1) imprimirDocumentoSec(printIds[0]);
+          else imprimirDocumentosSec(printIds);
+        });
+      }
+
+      if (tipo === 'Declaração de Transferência') {
+        const reqDoc = {
+          id: uid(),
+          protocolo: reqProtocolo,
+          alunoId: alunoId,
+          alunoNome: aluno ? aluno.nome : '',
+          alunoCpf: aluno ? (aluno.cpf || '') : '',
+          alunoTurma: aluno ? (aluno.turma || '') : '',
+          alunoSerie: serie || '',
+          alunoTurno: aluno ? (aluno.turno || '') : '',
+          tipo: 'Requerimento de Transferência',
+          dataEmissao: hoje,
+          dataValidade: computeDataValidadeIso(hoje),
+          status: 'pendente',
+          solicitante: solicitante || 'Secretaria (Auto)',
+          motivo: motivo || 'Declaração de transferência emitida',
+          obs: 'Gerado automaticamente por emissão de declaração.',
+          responsavel: responsavel,
+          cidadeNascimento: '',
+          ufNascimento: '',
+          dataNascimento: '',
+          frequencia: '',
+          vagaEtapa: '',
+          vagaTurno: '',
+          anoLetivo: '',
+          nomeMae: '',
+          nomePai: ''
+        };
+        list.unshift(reqDoc);
+        saveSecDocumentos(list);
+        syncDocumentoSecretariaCloud(reqDoc);
+        afterSaveAndPrint([doc.id, reqDoc.id], 'Documento registrado e salvo no banco de dados!');
+        return;
+      }
+
+      if (isAtestadoConclusao(tipo)) {
+        const reqDoc = {
+          id: uid(),
+          protocolo: reqProtocolo,
+          alunoId: null,
+          alunoNome: nomeDoc,
+          alunoCpf: '',
+          alunoTurma: turmaDoc,
+          alunoSerie: '',
+          alunoTurno: '',
+          tipo: DOCUMENTO_SECRETARIA_TIPO_REQ_HIST_DIPLOMA,
+          dataEmissao: hoje,
+          dataValidade: computeDataValidadeIso(hoje),
+          status: 'pendente',
+          solicitante: solicitante || 'Secretaria (Auto)',
+          motivo: motivo || 'Atestado de conclusão emitido — Histórico e Diploma',
+          obs: 'Gerado automaticamente por emissão de Atestado de Conclusão.',
+          responsavel: responsavel,
+          cidadeNascimento: '',
+          ufNascimento: '',
+          dataNascimento: '',
+          frequencia: '',
+          vagaEtapa: '',
+          vagaTurno: '',
+          anoLetivo: anoLetivoInput || '',
+          nomeMae: '',
+          nomePai: ''
+        };
+        list.unshift(reqDoc);
+        saveSecDocumentos(list);
+        syncDocumentoSecretariaCloud(reqDoc);
+        afterSaveAndPrint([doc.id, reqDoc.id], 'Atestado registrado e salvo no banco de dados!');
+        return;
+      }
+
+      afterSaveAndPrint([doc.id], 'Documento registrado e salvo no banco de dados!');
+    }).catch(function (err) {
+      console.warn('[SIGA] emitir documento:', err);
+      showSecToast('Não foi possível gerar o protocolo. Tente novamente.', 'error');
+    });
   }
 
   // ─── Print ─────────────────────────────────────────────────────────────────
@@ -1699,43 +1747,49 @@
     const turno = (cls && cls.turno) || aluno.turno || '';
     const responsavel = localStorage.getItem('siga_profile_name') || 'Secretaria';
     const tipo = 'Declaração de Matrícula';
-    const protocolo = gerarProtocoloSec(tipo);
     const hoje = new Date().toISOString().split('T')[0];
     const dataNasc = aluno.dataNascimento || aluno.nasc || '';
 
-    const doc = {
-      id: uid(),
-      protocolo: protocolo,
-      alunoId: String(aluno.id),
-      alunoNome: aluno.nome || '',
-      alunoCpf: aluno.cpf || '',
-      alunoTurma: aluno.turma || '',
-      alunoSerie: serie || '',
-      alunoTurno: turno || '',
-      tipo: tipo,
-      dataEmissao: hoje,
-      dataValidade: computeDataValidadeIso(hoje),
-      status: 'concluido',
-      solicitante: '',
-      motivo: 'Emissão pela Ficha do Aluno',
-      obs: '',
-      responsavel: responsavel,
-      cidadeNascimento: aluno.cidadeNascimento || '',
-      ufNascimento: aluno.ufNascimento || '',
-      dataNascimento: dataNasc,
-      frequencia: '',
-      vagaEtapa: '',
-      vagaTurno: ''
-    };
+    gerarProtocoloSecAsync(tipo).then(function (protocolo) {
+      const doc = {
+        id: uid(),
+        protocolo: protocolo,
+        alunoId: String(aluno.id),
+        alunoNome: aluno.nome || '',
+        alunoCpf: aluno.cpf || '',
+        alunoTurma: aluno.turma || '',
+        alunoSerie: serie || '',
+        alunoTurno: turno || '',
+        tipo: tipo,
+        dataEmissao: hoje,
+        dataValidade: computeDataValidadeIso(hoje),
+        status: 'concluido',
+        solicitante: '',
+        motivo: 'Emissão pela Ficha do Aluno',
+        obs: '',
+        responsavel: responsavel,
+        cidadeNascimento: aluno.cidadeNascimento || '',
+        ufNascimento: aluno.ufNascimento || '',
+        dataNascimento: dataNasc,
+        frequencia: '',
+        vagaEtapa: '',
+        vagaTurno: ''
+      };
 
-    const list = getSecDocumentos();
-    list.unshift(doc);
-    saveSecDocumentos(list);
-    syncDocumentoSecretariaCloud(doc).then(function () {
-      showSecToast('Declaração de Matrícula gerada e salva no banco de dados.', 'success');
-      imprimirDocumentoSec(doc.id);
+      const list = getSecDocumentos();
+      list.unshift(doc);
+      saveSecDocumentos(list);
+      return syncDocumentoSecretariaCloud(doc).then(function () {
+        showSecToast('Declaração de Matrícula gerada e salva no banco de dados.', 'success');
+        imprimirDocumentoSec(doc.id);
+        return doc;
+      });
+    }).catch(function (err) {
+      console.warn('[SIGA] emitirDeclaracaoMatriculaAluno:', err);
+      showSecToast('Não foi possível emitir a declaração. Tente novamente.', 'error');
+      return null;
     });
-    return doc;
+    return null;
   }
 
   window.DOCUMENTO_SECRETARIA_VALIDADE_DIAS = DOCUMENTO_SECRETARIA_VALIDADE_DIAS;

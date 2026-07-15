@@ -203,7 +203,7 @@ SQL: [`sql/09_documentos_secretaria.sql`](./sql/09_documentos_secretaria.sql)
 | `attendance_pct` | frequência (Bolsa Família) |
 | `vacancy_stage` / `vacancy_shift` | Declaração de Vaga |
 
-Também cria `secretary_protocol_counters` + função `next_secretary_protocol(school_id, doc_type, year)`.
+Também cria `secretary_protocol_counters` (legado) + função `next_secretary_protocol(school_id, doc_type, year)` que gera `SEC-{DEC|REQ}-{ano}-{12 chars aleatórios}`.
 
 ## Menu 10 — Usuários
 

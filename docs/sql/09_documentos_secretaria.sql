@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS public.secretary_documents (
 );
 
 COMMENT ON TABLE public.secretary_documents IS 'Declarações e requerimentos emitidos pela secretaria';
-COMMENT ON COLUMN public.secretary_documents.protocolo IS 'Ex.: SEC-DEC-2026-0001 / SEC-REQ-2026-0001';
+COMMENT ON COLUMN public.secretary_documents.protocolo IS 'Ex.: SEC-DEC-2026-K7M2P9QX4R8H (sufixo aleatório; antigos SEC-…-0001 válidos)';
 COMMENT ON COLUMN public.secretary_documents.valid_until IS 'Validade (declarações); NULL para requerimentos';
 COMMENT ON COLUMN public.secretary_documents.vacancy_stage IS 'Etapa da Declaração de Vaga (vagaEtapa)';
 COMMENT ON COLUMN public.secretary_documents.vacancy_shift IS 'Turno da Declaração de Vaga (vagaTurno)';
@@ -215,6 +215,7 @@ CREATE POLICY secretary_protocol_counters_all ON public.secretary_protocol_count
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.secretary_protocol_counters TO authenticated;
 
+-- Preferir docs/sql/09e_protocolo_aleatorio.sql em bases já criadas.
 CREATE OR REPLACE FUNCTION public.next_secretary_protocol(
   p_school_id uuid,
   p_doc_type text,
@@ -227,10 +228,24 @@ SET search_path TO 'public'
 AS $$
 DECLARE
   v_prefix text;
-  v_seq integer;
+  v_suffix text;
+  v_protocolo text;
+  v_alphabet constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  v_alpha_len integer := 32;
+  v_i integer;
+  v_attempt integer;
+  v_byte integer;
 BEGIN
+  IF p_school_id IS NULL THEN
+    RAISE EXCEPTION 'school_id obrigatório';
+  END IF;
+
   IF NOT public.user_can_access_school(p_school_id) THEN
     RAISE EXCEPTION 'Sem acesso à escola';
+  END IF;
+
+  IF p_year IS NULL OR p_year < 2000 OR p_year > 2100 THEN
+    p_year := EXTRACT(YEAR FROM CURRENT_DATE)::integer;
   END IF;
 
   v_prefix := CASE
@@ -238,15 +253,37 @@ BEGIN
     ELSE 'DEC'
   END;
 
-  INSERT INTO public.secretary_protocol_counters (school_id, year_number, prefix, last_seq)
-  VALUES (p_school_id, p_year, v_prefix, 1)
-  ON CONFLICT (school_id, year_number, prefix)
-  DO UPDATE SET last_seq = public.secretary_protocol_counters.last_seq + 1
-  RETURNING last_seq INTO v_seq;
+  FOR v_attempt IN 1..40 LOOP
+    v_suffix := '';
+    FOR v_i IN 1..12 LOOP
+      v_byte := get_byte(gen_random_bytes(1), 0);
+      v_suffix := v_suffix || substr(v_alphabet, (v_byte % v_alpha_len) + 1, 1);
+    END LOOP;
 
-  RETURN 'SEC-' || v_prefix || '-' || p_year::text || '-' || lpad(v_seq::text, 4, '0');
+    v_protocolo := 'SEC-' || v_prefix || '-' || p_year::text || '-' || v_suffix;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.secretary_documents d
+      WHERE d.school_id = p_school_id
+        AND upper(d.protocolo) = upper(v_protocolo)
+    ) THEN
+      RETURN v_protocolo;
+    END IF;
+  END LOOP;
+
+  v_suffix := '';
+  FOR v_i IN 1..16 LOOP
+    v_byte := get_byte(gen_random_bytes(1), 0);
+    v_suffix := v_suffix || substr(v_alphabet, (v_byte % v_alpha_len) + 1, 1);
+  END LOOP;
+
+  RETURN 'SEC-' || v_prefix || '-' || p_year::text || '-' || v_suffix;
 END;
 $$;
+
+COMMENT ON FUNCTION public.next_secretary_protocol(uuid, text, integer) IS
+  'Gera protocolo SEC-{DEC|REQ}-{ano}-{12 chars aleatórios} (anti-enumeração QR)';
 
 REVOKE ALL ON FUNCTION public.next_secretary_protocol(uuid, text, integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.next_secretary_protocol(uuid, text, integer) TO authenticated;
