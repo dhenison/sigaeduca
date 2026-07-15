@@ -371,7 +371,14 @@
       year_label: doc.anoLetivo || SEC_ANO_LETIVO,
       mother_name: doc.nomeMae || null,
       father_name: doc.nomePai || null,
-      meta: { localId: doc.id || null }
+      drive_file_id: (doc.drive && doc.drive.fileId) || null,
+      drive_web_view_link: (doc.drive && doc.drive.webViewLink) || null,
+      drive_folder_id: (doc.drive && doc.drive.folderId) || null,
+      drive_folder_path: (doc.drive && doc.drive.folderPath) || null,
+      meta: {
+        localId: doc.id || null,
+        drive: doc.drive || null
+      }
     };
 
     return sb.from('secretary_documents')
@@ -673,6 +680,25 @@
     saveSecDocumentos(list);
     syncDocumentoSecretariaCloud(doc);
 
+    function afterDriveAndPrint(printIds, toastMsg) {
+      const uploads = (printIds || []).map(function (id) {
+        const d = getSecDocumentos().find(function (x) { return x.id === id; });
+        return d
+          ? uploadDocumentoSecToDrive(d).catch(function (err) {
+            console.warn('[SIGA] Drive secretaria:', err);
+            return null;
+          })
+          : Promise.resolve(null);
+      });
+      return Promise.all(uploads).then(function () {
+        showSecToast(toastMsg || 'Documento registrado!', 'success');
+        fecharModalNovoDocSecretaria();
+        renderSecPage();
+        if (printIds.length === 1) imprimirDocumentoSec(printIds[0]);
+        else imprimirDocumentosSec(printIds);
+      });
+    }
+
     if (tipo === 'Declaração de Transferência') {
       const reqProtocolo = gerarProtocoloSec('Requerimento de Transferência');
       const reqDoc = {
@@ -705,11 +731,7 @@
       list.unshift(reqDoc);
       saveSecDocumentos(list);
       syncDocumentoSecretariaCloud(reqDoc);
-      showSecToast('Documento registrado com sucesso!', 'success');
-      fecharModalNovoDocSecretaria();
-      renderSecPage();
-      // Imprime Declaração + Comprovante de Requerimento na mesma janela
-      imprimirDocumentosSec([doc.id, reqDoc.id]);
+      afterDriveAndPrint([doc.id, reqDoc.id], 'Documento registrado e enviado ao Drive!');
       return;
     }
 
@@ -745,17 +767,11 @@
       list.unshift(reqDoc);
       saveSecDocumentos(list);
       syncDocumentoSecretariaCloud(reqDoc);
-      showSecToast('Atestado e requerimento registrados com sucesso!', 'success');
-      fecharModalNovoDocSecretaria();
-      renderSecPage();
-      imprimirDocumentosSec([doc.id, reqDoc.id]);
+      afterDriveAndPrint([doc.id, reqDoc.id], 'Atestado registrado e enviado ao Drive!');
       return;
     }
 
-    showSecToast('Documento registrado com sucesso!', 'success');
-    fecharModalNovoDocSecretaria();
-    renderSecPage();
-    imprimirDocumentoSec(doc.id);
+    afterDriveAndPrint([doc.id], 'Documento registrado e enviado ao Drive!');
   }
 
   // ─── Print ─────────────────────────────────────────────────────────────────
@@ -1106,6 +1122,71 @@
     });
   }
 
+  function buildDocumentoPrintHtml(doc) {
+    if (!doc) return null;
+    const body = buildDocumentoPrintBody(doc);
+    if (!body) return null;
+    return (
+      '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+      '<title>' + escapeHtml(doc.tipo) + ' - ' + escapeHtml(doc.protocolo) + '</title>' +
+      '<style>' + getPrintDocumentStyles() + '</style></head><body>' + body + '</body></html>'
+    );
+  }
+
+  function patchDocumentoDriveLocal(docId, driveMeta) {
+    if (!docId || !driveMeta) return;
+    const list = getSecDocumentos();
+    const idx = list.findIndex(function (d) { return d.id === docId; });
+    if (idx < 0) return;
+    list[idx].drive = driveMeta;
+    saveSecDocumentos(list);
+  }
+
+  /** Gera HTML do documento e envia ao Drive institucional */
+  function uploadDocumentoSecToDrive(doc) {
+    const driveApi = window.SigaGoogleDrive;
+    if (!driveApi || typeof driveApi.uploadSecretariaFile !== 'function') {
+      return Promise.resolve(null);
+    }
+    if (!driveApi.isConfigured || !driveApi.isConfigured()) {
+      return Promise.resolve(null);
+    }
+    const html = buildDocumentoPrintHtml(doc);
+    if (!html) {
+      return Promise.reject(new Error('Não foi possível gerar o arquivo do documento.'));
+    }
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const fileName = String(doc.protocolo || doc.id || 'documento') + '.html';
+    return driveApi.uploadSecretariaFile(
+      doc.tipo || 'Documento',
+      blob,
+      fileName,
+      'text/html',
+      null
+    ).then(function (meta) {
+      if (!meta) return null;
+      doc.drive = meta;
+      patchDocumentoDriveLocal(doc.id, meta);
+      syncDocumentoSecretariaCloud(doc);
+      return meta;
+    });
+  }
+
+  function abrirDocumentoNoDrive(doc) {
+    if (!doc || !doc.drive) return false;
+    const link = doc.drive.webViewLink || doc.drive.fileId;
+    if (!link) return false;
+    if (window.SigaGoogleDrive && typeof window.SigaGoogleDrive.openInDrive === 'function') {
+      window.SigaGoogleDrive.openInDrive(link);
+      return true;
+    }
+    const url = String(link).indexOf('http') === 0
+      ? link
+      : ('https://drive.google.com/file/d/' + link + '/view');
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return true;
+  }
+
   function openPrintIframe(htmlPrint) {
     preloadTimbradoImage().then(function () {
       const iframe = document.createElement('iframe');
@@ -1133,16 +1214,17 @@
       showSecToast('Documento não encontrado.', 'error');
       return;
     }
-    const body = buildDocumentoPrintBody(doc);
-    if (!body) {
-      showSecToast('Dados do aluno não encontrados.', 'error');
+    // Impressão direta no SIGA (sem login Google). Drive continua como arquivo institucional.
+    const htmlPrint = buildDocumentoPrintHtml(doc);
+    if (htmlPrint) {
+      openPrintIframe(htmlPrint);
       return;
     }
-    const htmlPrint =
-      '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-      '<title>' + escapeHtml(doc.tipo) + ' - ' + escapeHtml(doc.protocolo) + '</title>' +
-      '<style>' + getPrintDocumentStyles() + '</style></head><body>' + body + '</body></html>';
-    openPrintIframe(htmlPrint);
+    if (abrirDocumentoNoDrive(doc)) {
+      showSecToast('Abrindo arquivo no Google Drive…', 'success');
+      return;
+    }
+    showSecToast('Dados do aluno não encontrados.', 'error');
   }
 
   /** Imprime vários documentos na mesma janela (quebra de página entre eles). */
@@ -1150,25 +1232,40 @@
     const docs = getSecDocumentos();
     const bodies = [];
     const titles = [];
+    const driveOnly = [];
     (ids || []).forEach(function (id) {
       const doc = docs.find(function (d) { return d.id === id; });
       if (!doc) return;
       const body = buildDocumentoPrintBody(doc);
-      if (!body) return;
-      bodies.push(body);
-      titles.push(doc.tipo + ' ' + doc.protocolo);
+      if (body) {
+        bodies.push(body);
+        titles.push(doc.tipo + ' ' + doc.protocolo);
+        return;
+      }
+      if (doc.drive && (doc.drive.webViewLink || doc.drive.fileId)) driveOnly.push(doc);
     });
-    if (!bodies.length) {
-      showSecToast('Nenhum documento disponível para impressão.', 'error');
+
+    // Preferência: impressão local no SIGA (sem login Google).
+    if (bodies.length) {
+      const htmlPrint =
+        '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+        '<title>' + escapeHtml(titles.join(' + ')) + '</title>' +
+        '<style>' + getPrintDocumentStyles() + '</style></head><body>' +
+        bodies.join('') +
+        '</body></html>';
+      openPrintIframe(htmlPrint);
       return;
     }
-    const htmlPrint =
-      '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-      '<title>' + escapeHtml(titles.join(' + ')) + '</title>' +
-      '<style>' + getPrintDocumentStyles() + '</style></head><body>' +
-      bodies.join('') +
-      '</body></html>';
-    openPrintIframe(htmlPrint);
+
+    if (driveOnly.length) {
+      driveOnly.forEach(function (doc, index) {
+        setTimeout(function () { abrirDocumentoNoDrive(doc); }, index * 400);
+      });
+      showSecToast('Abrindo ' + driveOnly.length + ' arquivo(s) no Drive…', 'success');
+      return;
+    }
+
+    showSecToast('Nenhum documento disponível para impressão.', 'error');
   }
 
   // ─── Tabs / filter / render ────────────────────────────────────────────────
@@ -1310,8 +1407,13 @@
             (validade ? ' até ' + formatarDataBr(validade) : '') +
             '</span></td>' +
             '<td class="px-4 py-3 text-right whitespace-nowrap">' +
+            (doc.drive && (doc.drive.webViewLink || doc.drive.fileId)
+              ? '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
+                'onclick="abrirPastaDriveDocumentoSec(\'' + doc.id + '\')" title="Abrir no Drive">' +
+                '<span class="material-symbols-outlined text-xl">folder_open</span></button>'
+              : '') +
             '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
-            'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Imprimir">' +
+            'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Imprimir / Abrir Drive">' +
             '<span class="material-symbols-outlined text-xl">print</span></button>' +
             '</td></tr>'
           );
@@ -1350,6 +1452,11 @@
             '<option value="entregue"' + (doc.status === 'entregue' ? ' selected' : '') + '>Entregue</option>' +
             '<option value="cancelado"' + (doc.status === 'cancelado' ? ' selected' : '') + '>Cancelado</option>' +
             '</select>' +
+            (doc.drive && (doc.drive.webViewLink || doc.drive.fileId)
+              ? '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
+                'onclick="abrirPastaDriveDocumentoSec(\'' + doc.id + '\')" title="Abrir no Drive">' +
+                '<span class="material-symbols-outlined text-xl">folder_open</span></button>'
+              : '') +
             '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
             'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Imprimir comprovante">' +
             '<span class="material-symbols-outlined text-xl">print</span></button>' +
@@ -1526,9 +1633,31 @@
     saveSecDocumentos(list);
     syncDocumentoSecretariaCloud(doc);
 
-    showSecToast('Declaração de Matrícula gerada.', 'success');
-    imprimirDocumentoSec(doc.id);
+    uploadDocumentoSecToDrive(doc)
+      .catch(function (err) {
+        console.warn('[SIGA] Drive secretaria:', err);
+        return null;
+      })
+      .then(function () {
+        showSecToast('Declaração de Matrícula gerada e enviada ao Drive.', 'success');
+        imprimirDocumentoSec(doc.id);
+      });
     return doc;
+  }
+
+  function abrirPastaDriveDocumentoSec(id) {
+    const docs = getSecDocumentos();
+    const doc = docs.find(function (d) { return d.id === id; });
+    if (!doc) {
+      showSecToast('Documento não encontrado.', 'error');
+      return;
+    }
+    if (doc.drive && doc.drive.folderId && window.SigaGoogleDrive && window.SigaGoogleDrive.openFolder) {
+      window.SigaGoogleDrive.openFolder(doc.drive.folderId);
+      return;
+    }
+    if (abrirDocumentoNoDrive(doc)) return;
+    showSecToast('Este documento ainda não tem arquivo no Drive.', 'error');
   }
 
   window.DOCUMENTO_SECRETARIA_VALIDADE_DIAS = DOCUMENTO_SECRETARIA_VALIDADE_DIAS;
@@ -1558,6 +1687,7 @@
   window.salvarDocumentoSecretaria = salvarDocumentoSecretaria;
   window.imprimirDocumentoSec = imprimirDocumentoSec;
   window.imprimirDocumentosSec = imprimirDocumentosSec;
+  window.abrirPastaDriveDocumentoSec = abrirPastaDriveDocumentoSec;
   window.labelTipoListagem = labelTipoListagem;
   window.renderSecPage = renderSecPage;
   window.switchSecTab = switchSecTab;

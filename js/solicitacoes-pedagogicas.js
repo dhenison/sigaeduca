@@ -27,87 +27,50 @@
 
   function updateDriveStatusUi() {
     var drive = getDriveApi();
-    var connected = !!(drive && drive.isConnected && drive.isConnected());
-    var configured = !!(drive && drive.isConfigured && drive.isConfigured());
+    var ready = !!(drive && drive.isConfigured && drive.isConfigured());
     var btn = document.getElementById('sp-drive-btn');
     var label = document.getElementById('sp-drive-btn-label');
     var btnMob = document.getElementById('sp-drive-btn-mobile');
     var hint = document.getElementById('sp-drive-hint');
     var icon = btn ? btn.querySelector('.material-symbols-outlined') : null;
 
-    if (!configured) {
-      if (label) label.textContent = 'Configurar Drive';
-      if (icon) icon.textContent = 'settings';
+    if (btn) btn.classList.add('hidden');
+    if (btnMob) btnMob.classList.add('hidden');
+
+    if (!ready) {
       if (hint) {
-        hint.textContent = 'Defina googleClientId em js/siga-config.js para ativar o Google Drive.';
+        hint.textContent = 'Drive institucional: faça login no SIGA (Supabase). Usa a conta do sistema drive@siga-educa-drive… — não a Google pessoal.';
       }
       return;
     }
-
-    if (connected) {
-      if (label) label.textContent = 'Drive conectado';
-      if (icon) icon.textContent = 'cloud_done';
-      if (btn) {
-        btn.classList.remove('text-text-secondary');
-        btn.classList.add('text-primary', 'border-primary/40');
-      }
-      if (btnMob) btnMob.classList.add('text-primary', 'border-primary/40');
-      if (hint) {
-        hint.textContent = 'Arquivos vão para SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Tipo]. Clique na pasta do card para abrir no Drive.';
-      }
-    } else {
-      if (label) label.textContent = 'Conectar Drive';
-      if (icon) icon.textContent = 'cloud_off';
-      if (btn) {
-        btn.classList.add('text-text-secondary');
-        btn.classList.remove('text-primary', 'border-primary/40');
-      }
-      if (btnMob) btnMob.classList.remove('text-primary', 'border-primary/40');
-      if (hint) {
-        hint.textContent = 'Conecte o Google Drive antes de enviar. Pasta: SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Tipo].';
-      }
+    if (label) label.textContent = 'Drive da escola';
+    if (icon) icon.textContent = 'cloud_done';
+    if (hint) {
+      hint.textContent = 'Arquivos vão para SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Seu nome] → [Tipo], pela conta do sistema (sem login Google pessoal).';
     }
   }
 
   function conectarGoogleDrive() {
-    var drive = getDriveApi();
-    if (!drive) {
-      showToast('Módulo Google Drive não carregou.', 'error');
-      return;
-    }
-    if (!drive.isConfigured()) {
-      showToast('Configure googleClientId em js/siga-config.js (OAuth Web Client).', 'error');
-      return;
-    }
-    if (drive.isConnected()) {
-      if (window.confirm('Desconectar o Google Drive nesta sessão?')) {
-        drive.disconnect().then(function () {
-          updateDriveStatusUi();
-          showToast('Google Drive desconectado.', 'success');
-        });
-      }
-      return;
-    }
-    drive.connect().then(function () {
-      updateDriveStatusUi();
-      showToast('Google Drive conectado.', 'success');
-    }).catch(function (err) {
-      showToast((err && err.message) || 'Falha ao conectar o Google Drive.', 'error');
-    });
+    showToast('O Drive é institucional (pasta da escola). Não é necessário conectar uma conta pessoal.', 'success');
+    updateDriveStatusUi();
   }
 
   function requireDriveConnected() {
     var drive = getDriveApi();
     if (!drive || !drive.isConfigured()) {
       return Promise.reject(new Error(
-        'Configure googleClientId em js/siga-config.js para salvar no Google Drive.'
+        'Supabase/Drive não configurado. Faça login no SIGA e configure drive-upload-file.'
       ));
     }
-    if (drive.isConnected()) return Promise.resolve(drive);
-    return drive.connect().then(function () {
-      updateDriveStatusUi();
-      return drive;
-    });
+    return Promise.resolve(drive);
+  }
+
+  function getSolicitanteNome() {
+    try {
+      var session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+      if (session && session.nome) return String(session.nome).trim();
+    } catch (e) { /* ignore */ }
+    return localStorage.getItem('siga_profile_name') || 'Usuário';
   }
 
   function uploadToDriveFromLocal(tipo, arquivoMeta, onProgress) {
@@ -124,7 +87,8 @@
           rec.blob,
           arquivoMeta.name || rec.name || 'arquivo',
           arquivoMeta.mime || rec.mime || 'application/octet-stream',
-          onProgress
+          onProgress,
+          getSolicitanteNome()
         );
       });
     });
@@ -553,8 +517,8 @@
         '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-border-subtle hover:border-primary hover:text-primary transition-colors flex items-center gap-1" onclick="abrirArquivoSolicitacaoPed(\'' + item.id + '\')">' +
         '<span class="material-symbols-outlined text-[18px]">attach_file</span>Abrir Arquivo</button>' +
         (item.drive && (item.drive.webViewLink || item.drive.fileId)
-          ? '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-border-subtle hover:border-primary hover:text-primary transition-colors flex items-center gap-1" onclick="abrirPastaDriveSolicitacaoPed(\'' + item.id + '\')" title="' + escapeHtml((item.drive && item.drive.folderPath) || 'Abrir no Google Drive') + '">' +
-            '<span class="material-symbols-outlined text-[18px]">folder_open</span>Pasta Drive</button>'
+          ? '<span class="px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-100 flex items-center gap-1" title="' + escapeHtml((item.drive && item.drive.folderPath) || 'Salvo no Drive da escola') + '">' +
+            '<span class="material-symbols-outlined text-[18px]">cloud_done</span>No Drive</span>'
           : '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-amber-200 text-amber-800 hover:border-amber-400 transition-colors flex items-center gap-1" onclick="enviarAoDriveSolicitacaoPed(\'' + item.id + '\')">' +
             '<span class="material-symbols-outlined text-[18px]">cloud_upload</span>Enviar ao Drive</button>') +
         (status === 'pendente'
@@ -711,7 +675,7 @@
       var arquivoMeta = result.arquivoMeta;
       var driveMeta = result.driveMeta;
       var now = todayIso();
-      var solicitante = localStorage.getItem('siga_profile_name') || 'Usuário';
+      var solicitante = getSolicitanteNome();
       if (existing) {
         existing.tipo = tipo;
         existing.dataAplicacao = dataAplicacao;
@@ -729,7 +693,7 @@
           dataAplicacao: dataAplicacao,
           observacoes: observacoes,
           status: 'pendente',
-          solicitante: solicitante,
+          solicitante: getSolicitanteNome(),
           arquivo: arquivoMeta,
           drive: driveMeta || null,
           createdAt: new Date().toISOString(),
@@ -757,29 +721,19 @@
   }
 
   function abrirPastaDrive(id) {
+    // Não abre drive.google.com (pede login Google). Só mostra onde ficou salvo.
     var item = findById(id);
-    var drive = getDriveApi();
     if (!item || !item.drive) {
-      showToast('Esta solicitação ainda não tem pasta no Drive.', 'error');
+      showToast('Esta solicitação ainda não tem arquivo no Drive da escola.', 'error');
       return;
     }
-    if (item.drive.webViewLink || item.drive.fileId) {
-      if (drive && drive.openInDrive) {
-        drive.openInDrive(item.drive.webViewLink || item.drive.fileId);
-      } else {
-        window.open(
-          item.drive.webViewLink ||
-          ('https://drive.google.com/file/d/' + item.drive.fileId + '/view'),
-          '_blank'
-        );
-      }
-      return;
-    }
-    if (item.drive.folderId && drive && drive.openFolder) {
-      drive.openFolder(item.drive.folderId);
-      return;
-    }
-    showToast('Link do Drive indisponível.', 'error');
+    showToast(
+      (item.drive.folderPath
+        ? ('Salvo em: ' + item.drive.folderPath)
+        : 'Arquivo no Drive institucional da escola.') +
+        ' Use “Abrir Arquivo” no SIGA (sem login Google).',
+      'success'
+    );
   }
 
   function enviarAoDrive(id) {
@@ -793,34 +747,55 @@
       showToast('Nenhum arquivo anexado para enviar.', 'error');
       return;
     }
-    showToast('Enviando ao Google Drive…', 'success');
+    showToast('Enviando ao Drive da escola…', 'success');
     uploadToDriveFromLocal(item.tipo, item.arquivo, null).then(function (driveMeta) {
       item.drive = driveMeta;
       item.updatedAt = new Date().toISOString();
       saveList(list);
-      showToast('Arquivo salvo no Drive.', 'success');
+      showToast('Arquivo salvo no Drive da escola.', 'success');
       renderList();
     }).catch(function (err) {
       showToast((err && err.message) || 'Falha ao enviar ao Drive.', 'error');
     });
   }
 
-  function abrirArquivo(id) {
-    var item = findById(id);
-    if (!item || !item.arquivo || !item.arquivo.id) {
-      showToast('Nenhum arquivo anexado.', 'error');
-      return;
+  function openLocalAnexo(arquivoMeta) {
+    if (!arquivoMeta || !arquivoMeta.id) {
+      return Promise.resolve(false);
     }
-    idbGet(item.arquivo.id).then(function (rec) {
-      if (!rec || !rec.blob) {
-        showToast('Arquivo não encontrado no armazenamento local.', 'error');
-        return;
-      }
+    return idbGet(arquivoMeta.id).then(function (rec) {
+      if (!rec || !rec.blob) return false;
       var url = URL.createObjectURL(rec.blob);
       window.open(url, '_blank');
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      return true;
     }).catch(function () {
-      showToast('Não foi possível abrir o arquivo.', 'error');
+      return false;
+    });
+  }
+
+  function abrirArquivo(id) {
+    var item = findById(id);
+    if (!item) {
+      showToast('Solicitação não encontrada.', 'error');
+      return;
+    }
+    // 1) Abrir no SIGA (IndexedDB) — sem autenticação Google
+    openLocalAnexo(item.arquivo).then(function (ok) {
+      if (ok) return;
+      // 2) Link compartilhado do Drive institucional (anyone with link)
+      if (item.drive && (item.drive.webViewLink || item.drive.fileId)) {
+        var drive = getDriveApi();
+        if (drive && drive.openInDrive) {
+          drive.openInDrive(item.drive.webViewLink || item.drive.fileId);
+        } else {
+          var link = item.drive.webViewLink ||
+            ('https://drive.google.com/file/d/' + item.drive.fileId + '/view?usp=sharing');
+          window.open(link, '_blank', 'noopener,noreferrer');
+        }
+        return;
+      }
+      showToast('Arquivo não encontrado neste aparelho. Reenvie a solicitação.', 'error');
     });
   }
 
@@ -858,11 +833,8 @@
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Turmas</dt><dd>' + escapeHtml((item.turmas || []).join(', ') || '—') + '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Status</dt><dd>' + escapeHtml((item.status || 'pendente') === 'aceita' ? 'Aceita' : 'Pendente') + '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Arquivo</dt><dd>' + escapeHtml((item.arquivo && item.arquivo.name) || '—') + '</dd></div>' +
-      '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Google Drive</dt><dd>' +
+      '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Drive da escola</dt><dd>' +
       escapeHtml((item.drive && item.drive.folderPath) || 'Ainda não enviado') +
-      (item.drive && item.drive.webViewLink
-        ? ' · <a class="text-primary font-semibold underline" href="' + escapeHtml(item.drive.webViewLink) + '" target="_blank" rel="noopener">Abrir</a>'
-        : '') +
       '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Observações</dt><dd class="whitespace-pre-wrap">' + escapeHtml(item.observacoes || '—') + '</dd></div>' +
       '</dl>';
