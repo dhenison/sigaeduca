@@ -319,10 +319,51 @@
 
   function getActiveSchoolId() {
     try {
-      return localStorage.getItem('siga_active_school') || '';
-    } catch (e) {
-      return '';
+      var fromLs = localStorage.getItem('siga_active_school') || '';
+      if (fromLs) return fromLs;
+      var session = JSON.parse(localStorage.getItem('siga_session') || 'null') || {};
+      if (session.schoolId) {
+        localStorage.setItem('siga_active_school', session.schoolId);
+        return session.schoolId;
+      }
+    } catch (e) { /* ignore */ }
+    return '';
+  }
+
+  /** Garante school_id mesmo em navegador novo (após login Supabase). */
+  function resolveSchoolIdAsync() {
+    var current = getActiveSchoolId();
+    if (current) return Promise.resolve(current);
+
+    var session = null;
+    try { session = JSON.parse(localStorage.getItem('siga_session') || 'null'); } catch (e) { session = null; }
+
+    if (!window.SigaSupabase || typeof window.SigaSupabase.getUser !== 'function') {
+      return Promise.resolve('');
     }
+
+    return window.SigaSupabase.getUser().then(function (user) {
+      if (!user) return '';
+      var profile = typeof window.SigaSupabase.getCachedProfile === 'function'
+        ? window.SigaSupabase.getCachedProfile()
+        : null;
+      if (typeof window.SigaSupabase.bindActiveSchoolContext === 'function') {
+        return window.SigaSupabase.bindActiveSchoolContext(user, profile, session || {}).then(function (bound) {
+          return (bound && bound.schoolId) || getActiveSchoolId() || '';
+        });
+      }
+      if (typeof window.SigaSupabase.resolveStaffSchoolId === 'function') {
+        return window.SigaSupabase.resolveStaffSchoolId(user, profile).then(function (id) {
+          if (id) {
+            try { localStorage.setItem('siga_active_school', id); } catch (e2) { /* ignore */ }
+          }
+          return id || '';
+        });
+      }
+      return '';
+    }).catch(function () {
+      return getActiveSchoolId() || '';
+    });
   }
 
   function getSupabaseClient() {
@@ -332,68 +373,154 @@
     return null;
   }
 
-  /** Grava no Supabase para o QR funcionar em qualquer aparelho */
+  /** Grava no Supabase (fonte de verdade). Sem Google Drive. */
   function syncDocumentoSecretariaCloud(doc) {
     const sb = getSupabaseClient();
-    const schoolId = getActiveSchoolId();
-    if (!sb || !schoolId || !doc || !doc.protocolo) {
+    if (!sb || !doc || !doc.protocolo) {
       return Promise.resolve({ ok: false, reason: 'no_cloud' });
     }
-    const issuedOn = isoDateOnly(doc.dataEmissao) || new Date().toISOString().slice(0, 10);
-    const validUntil = isoDateOnly(getDocumentoSecretariaDataValidade(doc));
-    const status = /cancel/.test(String(doc.status || ''))
-      ? 'cancelado'
-      : (isRequerimento(doc.tipo) && doc.status === 'pendente' ? 'pendente' : 'concluido');
 
-    const row = {
-      school_id: schoolId,
-      protocolo: doc.protocolo,
-      doc_type: doc.tipo,
-      status: status,
-      student_name: doc.alunoNome || null,
-      student_cpf: doc.alunoCpf || null,
-      student_class_code: doc.alunoTurma || null,
-      student_serie: doc.alunoSerie || null,
-      student_turno: doc.alunoTurno || null,
-      issued_on: issuedOn,
-      valid_until: validUntil,
-      validity_days: DOCUMENTO_SECRETARIA_VALIDADE_DIAS,
-      requester_name: doc.solicitante || null,
-      reason: doc.motivo || null,
-      notes: doc.obs || null,
-      responsible_name: doc.responsavel || null,
-      birth_city: doc.cidadeNascimento || null,
-      birth_uf: doc.ufNascimento || null,
-      birth_date: isoDateOnly(doc.dataNascimento),
-      attendance_pct: doc.frequencia || null,
-      vacancy_stage: doc.vagaEtapa || null,
-      vacancy_shift: doc.vagaTurno || null,
-      year_label: doc.anoLetivo || SEC_ANO_LETIVO,
-      mother_name: doc.nomeMae || null,
-      father_name: doc.nomePai || null,
-      drive_file_id: (doc.drive && doc.drive.fileId) || null,
-      drive_web_view_link: (doc.drive && doc.drive.webViewLink) || null,
-      drive_folder_id: (doc.drive && doc.drive.folderId) || null,
-      drive_folder_path: (doc.drive && doc.drive.folderPath) || null,
-      meta: {
-        localId: doc.id || null,
-        drive: doc.drive || null
-      }
+    return resolveSchoolIdAsync().then(function (schoolId) {
+      if (!schoolId) return { ok: false, reason: 'no_school' };
+
+      const issuedOn = isoDateOnly(doc.dataEmissao) || new Date().toISOString().slice(0, 10);
+      const validUntil = isoDateOnly(getDocumentoSecretariaDataValidade(doc));
+      const status = /cancel/.test(String(doc.status || ''))
+        ? 'cancelado'
+        : (isRequerimento(doc.tipo) && doc.status === 'pendente' ? 'pendente' : 'concluido');
+
+      const payload = Object.assign({}, doc);
+      delete payload.drive;
+
+      const row = {
+        school_id: schoolId,
+        protocolo: doc.protocolo,
+        doc_type: doc.tipo,
+        status: status,
+        student_name: doc.alunoNome || null,
+        student_cpf: doc.alunoCpf || null,
+        student_class_code: doc.alunoTurma || null,
+        student_serie: doc.alunoSerie || null,
+        student_turno: doc.alunoTurno || null,
+        issued_on: issuedOn,
+        valid_until: validUntil,
+        validity_days: DOCUMENTO_SECRETARIA_VALIDADE_DIAS,
+        requester_name: doc.solicitante || null,
+        reason: doc.motivo || null,
+        notes: doc.obs || null,
+        responsible_name: doc.responsavel || null,
+        birth_city: doc.cidadeNascimento || null,
+        birth_uf: doc.ufNascimento || null,
+        birth_date: isoDateOnly(doc.dataNascimento),
+        attendance_pct: doc.frequencia || null,
+        vacancy_stage: doc.vagaEtapa || null,
+        vacancy_shift: doc.vagaTurno || null,
+        year_label: doc.anoLetivo || SEC_ANO_LETIVO,
+        mother_name: doc.nomeMae || null,
+        father_name: doc.nomePai || null,
+        drive_file_id: null,
+        drive_web_view_link: null,
+        drive_folder_id: null,
+        drive_folder_path: null,
+        meta: {
+          localId: doc.id || null,
+          appStatus: doc.status || null,
+          payload: payload
+        }
+      };
+
+      return sb.from('secretary_documents')
+        .upsert(row, { onConflict: 'school_id,protocolo' })
+        .then(function (res) {
+          if (res.error) {
+            console.warn('[SIGA] sync secretary_documents:', res.error.message);
+            return { ok: false, message: res.error.message };
+          }
+          return { ok: true };
+        });
+    }).catch(function (err) {
+      console.warn('[SIGA] sync secretary_documents:', err);
+      return { ok: false, message: (err && err.message) || 'erro' };
+    });
+  }
+
+  function mapCloudRowToLocalDoc(row) {
+    if (!row) return null;
+    if (row.meta && row.meta.payload && typeof row.meta.payload === 'object') {
+      var fromPayload = Object.assign({}, row.meta.payload);
+      delete fromPayload.drive;
+      if (!fromPayload.id && row.meta.localId) fromPayload.id = row.meta.localId;
+      if (!fromPayload.id) fromPayload.id = 'cloud-' + String(row.protocolo || row.id || uid());
+      if (row.meta.appStatus) fromPayload.status = row.meta.appStatus;
+      fromPayload.protocolo = row.protocolo || fromPayload.protocolo;
+      fromPayload.tipo = row.doc_type || fromPayload.tipo;
+      return fromPayload;
+    }
+    return {
+      id: (row.meta && row.meta.localId) || ('cloud-' + String(row.protocolo || row.id)),
+      protocolo: row.protocolo,
+      alunoId: null,
+      alunoNome: row.student_name || '',
+      alunoCpf: row.student_cpf || '',
+      alunoTurma: row.student_class_code || '',
+      alunoSerie: row.student_serie || '',
+      alunoTurno: row.student_turno || '',
+      tipo: row.doc_type,
+      dataEmissao: row.issued_on || '',
+      dataValidade: row.valid_until || '',
+      status: (row.meta && row.meta.appStatus) || row.status || 'concluido',
+      solicitante: row.requester_name || '',
+      motivo: row.reason || '',
+      obs: row.notes || '',
+      responsavel: row.responsible_name || '',
+      cidadeNascimento: row.birth_city || '',
+      ufNascimento: row.birth_uf || '',
+      dataNascimento: row.birth_date || '',
+      frequencia: row.attendance_pct || '',
+      vagaEtapa: row.vacancy_stage || '',
+      vagaTurno: row.vacancy_shift || '',
+      anoLetivo: row.year_label || '',
+      nomeMae: row.mother_name || '',
+      nomePai: row.father_name || ''
     };
+  }
 
-    return sb.from('secretary_documents')
-      .upsert(row, { onConflict: 'school_id,protocolo' })
-      .then(function (res) {
+  /** Migra local → cloud e recarrega lista do Supabase (fonte de verdade). */
+  function loadDocumentosSecretariaFromCloud() {
+    const sb = getSupabaseClient();
+    if (!sb) {
+      return Promise.resolve({ ok: false, reason: 'no_cloud' });
+    }
+
+    return resolveSchoolIdAsync().then(function (schoolId) {
+      if (!schoolId) {
+        return { ok: false, reason: 'no_school' };
+      }
+
+      const localList = getSecDocumentos();
+      const migrate = (localList || []).map(function (doc) {
+        return syncDocumentoSecretariaCloud(doc);
+      });
+
+      return Promise.all(migrate).then(function () {
+        return sb.from('secretary_documents')
+          .select('*')
+          .eq('school_id', schoolId)
+          .order('issued_on', { ascending: false })
+          .order('created_at', { ascending: false });
+      }).then(function (res) {
         if (res.error) {
-          console.warn('[SIGA] sync secretary_documents:', res.error.message);
+          console.warn('[SIGA] load secretary_documents:', res.error.message);
           return { ok: false, message: res.error.message };
         }
-        return { ok: true };
-      })
-      .catch(function (err) {
-        console.warn('[SIGA] sync secretary_documents:', err);
-        return { ok: false, message: (err && err.message) || 'erro' };
+        const list = (res.data || []).map(mapCloudRowToLocalDoc).filter(Boolean);
+        saveSecDocumentos(list);
+        return { ok: true, count: list.length, schoolId: schoolId };
       });
+    }).catch(function (err) {
+      console.warn('[SIGA] load secretary_documents:', err);
+      return { ok: false, message: (err && err.message) || 'erro' };
+    });
   }
 
   /** Remove o registro sincronizado no Supabase antes de apagá-lo localmente. */
@@ -705,18 +832,13 @@
     saveSecDocumentos(list);
     syncDocumentoSecretariaCloud(doc);
 
-    function afterDriveAndPrint(printIds, toastMsg) {
-      const uploads = (printIds || []).map(function (id) {
+    function afterSaveAndPrint(printIds, toastMsg) {
+      const syncs = (printIds || []).map(function (id) {
         const d = getSecDocumentos().find(function (x) { return x.id === id; });
-        return d
-          ? uploadDocumentoSecToDrive(d).catch(function (err) {
-            console.warn('[SIGA] Drive secretaria:', err);
-            return null;
-          })
-          : Promise.resolve(null);
+        return d ? syncDocumentoSecretariaCloud(d) : Promise.resolve({ ok: true });
       });
-      return Promise.all(uploads).then(function () {
-        showSecToast(toastMsg || 'Documento registrado!', 'success');
+      return Promise.all(syncs).then(function () {
+        showSecToast(toastMsg || 'Documento salvo no banco de dados!', 'success');
         fecharModalNovoDocSecretaria();
         renderSecPage();
         if (printIds.length === 1) imprimirDocumentoSec(printIds[0]);
@@ -756,7 +878,7 @@
       list.unshift(reqDoc);
       saveSecDocumentos(list);
       syncDocumentoSecretariaCloud(reqDoc);
-      afterDriveAndPrint([doc.id, reqDoc.id], 'Documento registrado e enviado ao Drive!');
+      afterSaveAndPrint([doc.id, reqDoc.id], 'Documento registrado e salvo no banco de dados!');
       return;
     }
 
@@ -792,11 +914,11 @@
       list.unshift(reqDoc);
       saveSecDocumentos(list);
       syncDocumentoSecretariaCloud(reqDoc);
-      afterDriveAndPrint([doc.id, reqDoc.id], 'Atestado registrado e enviado ao Drive!');
+      afterSaveAndPrint([doc.id, reqDoc.id], 'Atestado registrado e salvo no banco de dados!');
       return;
     }
 
-    afterDriveAndPrint([doc.id], 'Documento registrado e enviado ao Drive!');
+    afterSaveAndPrint([doc.id], 'Documento registrado e salvo no banco de dados!');
   }
 
   // ─── Print ─────────────────────────────────────────────────────────────────
@@ -1158,60 +1280,6 @@
     );
   }
 
-  function patchDocumentoDriveLocal(docId, driveMeta) {
-    if (!docId || !driveMeta) return;
-    const list = getSecDocumentos();
-    const idx = list.findIndex(function (d) { return d.id === docId; });
-    if (idx < 0) return;
-    list[idx].drive = driveMeta;
-    saveSecDocumentos(list);
-  }
-
-  /** Gera HTML do documento e envia ao Drive institucional */
-  function uploadDocumentoSecToDrive(doc) {
-    const driveApi = window.SigaGoogleDrive;
-    if (!driveApi || typeof driveApi.uploadSecretariaFile !== 'function') {
-      return Promise.resolve(null);
-    }
-    if (!driveApi.isConfigured || !driveApi.isConfigured()) {
-      return Promise.resolve(null);
-    }
-    const html = buildDocumentoPrintHtml(doc);
-    if (!html) {
-      return Promise.reject(new Error('Não foi possível gerar o arquivo do documento.'));
-    }
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const fileName = String(doc.protocolo || doc.id || 'documento') + '.html';
-    return driveApi.uploadSecretariaFile(
-      doc.tipo || 'Documento',
-      blob,
-      fileName,
-      'text/html',
-      null
-    ).then(function (meta) {
-      if (!meta) return null;
-      doc.drive = meta;
-      patchDocumentoDriveLocal(doc.id, meta);
-      syncDocumentoSecretariaCloud(doc);
-      return meta;
-    });
-  }
-
-  function abrirDocumentoNoDrive(doc) {
-    if (!doc || !doc.drive) return false;
-    const link = doc.drive.webViewLink || doc.drive.fileId;
-    if (!link) return false;
-    if (window.SigaGoogleDrive && typeof window.SigaGoogleDrive.openInDrive === 'function') {
-      window.SigaGoogleDrive.openInDrive(link);
-      return true;
-    }
-    const url = String(link).indexOf('http') === 0
-      ? link
-      : ('https://drive.google.com/file/d/' + link + '/view');
-    window.open(url, '_blank', 'noopener,noreferrer');
-    return true;
-  }
-
   function openPrintIframe(htmlPrint) {
     preloadTimbradoImage().then(function () {
       const iframe = document.createElement('iframe');
@@ -1239,17 +1307,12 @@
       showSecToast('Documento não encontrado.', 'error');
       return;
     }
-    // Impressão direta no SIGA (sem login Google). Drive continua como arquivo institucional.
     const htmlPrint = buildDocumentoPrintHtml(doc);
     if (htmlPrint) {
       openPrintIframe(htmlPrint);
       return;
     }
-    if (abrirDocumentoNoDrive(doc)) {
-      showSecToast('Abrindo arquivo no Google Drive…', 'success');
-      return;
-    }
-    showSecToast('Dados do aluno não encontrados.', 'error');
+    showSecToast('Não foi possível montar a impressão deste documento.', 'error');
   }
 
   /** Imprime vários documentos na mesma janela (quebra de página entre eles). */
@@ -1257,7 +1320,6 @@
     const docs = getSecDocumentos();
     const bodies = [];
     const titles = [];
-    const driveOnly = [];
     (ids || []).forEach(function (id) {
       const doc = docs.find(function (d) { return d.id === id; });
       if (!doc) return;
@@ -1265,12 +1327,9 @@
       if (body) {
         bodies.push(body);
         titles.push(doc.tipo + ' ' + doc.protocolo);
-        return;
       }
-      if (doc.drive && (doc.drive.webViewLink || doc.drive.fileId)) driveOnly.push(doc);
     });
 
-    // Preferência: impressão local no SIGA (sem login Google).
     if (bodies.length) {
       const htmlPrint =
         '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
@@ -1279,14 +1338,6 @@
         bodies.join('') +
         '</body></html>';
       openPrintIframe(htmlPrint);
-      return;
-    }
-
-    if (driveOnly.length) {
-      driveOnly.forEach(function (doc, index) {
-        setTimeout(function () { abrirDocumentoNoDrive(doc); }, index * 400);
-      });
-      showSecToast('Abrindo ' + driveOnly.length + ' arquivo(s) no Drive…', 'success');
       return;
     }
 
@@ -1365,6 +1416,7 @@
     }
     list[idx].status = status;
     saveSecDocumentos(list);
+    syncDocumentoSecretariaCloud(list[idx]);
     showSecToast('Status do requerimento atualizado!', 'success');
     renderSecPage();
   }
@@ -1432,13 +1484,8 @@
             (validade ? ' até ' + formatarDataBr(validade) : '') +
             '</span></td>' +
             '<td class="px-4 py-3 text-right whitespace-nowrap">' +
-            (doc.drive && (doc.drive.webViewLink || doc.drive.fileId)
-              ? '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
-                'onclick="abrirPastaDriveDocumentoSec(\'' + doc.id + '\')" title="Abrir no Drive">' +
-                '<span class="material-symbols-outlined text-xl">folder_open</span></button>'
-              : '') +
             '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
-            'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Imprimir / Abrir Drive">' +
+            'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Reimprimir">' +
             '<span class="material-symbols-outlined text-xl">print</span></button>' +
             '</td></tr>'
           );
@@ -1477,11 +1524,6 @@
             '<option value="entregue"' + (doc.status === 'entregue' ? ' selected' : '') + '>Entregue</option>' +
             '<option value="cancelado"' + (doc.status === 'cancelado' ? ' selected' : '') + '>Cancelado</option>' +
             '</select>' +
-            (doc.drive && (doc.drive.webViewLink || doc.drive.fileId)
-              ? '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
-                'onclick="abrirPastaDriveDocumentoSec(\'' + doc.id + '\')" title="Abrir no Drive">' +
-                '<span class="material-symbols-outlined text-xl">folder_open</span></button>'
-              : '') +
             '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
             'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Imprimir comprovante">' +
             '<span class="material-symbols-outlined text-xl">print</span></button>' +
@@ -1635,6 +1677,14 @@
     switchSecTab(SEC_ACTIVE_TAB);
     mostrarCamposDinamicosSec();
     renderSecPage();
+    loadDocumentosSecretariaFromCloud().then(function (result) {
+      if (result && result.ok) {
+        console.info('[SIGA] Documentos secretaria carregados do Supabase:', result.count);
+      } else if (result && result.reason === 'no_school') {
+        showSecToast('Escola não vinculada à sessão. Faça login novamente para carregar os documentos do banco.', 'error');
+      }
+      renderSecPage();
+    });
   }
 
   // ─── Expose on window ──────────────────────────────────────────────────────
@@ -1687,33 +1737,11 @@
     const list = getSecDocumentos();
     list.unshift(doc);
     saveSecDocumentos(list);
-    syncDocumentoSecretariaCloud(doc);
-
-    uploadDocumentoSecToDrive(doc)
-      .catch(function (err) {
-        console.warn('[SIGA] Drive secretaria:', err);
-        return null;
-      })
-      .then(function () {
-        showSecToast('Declaração de Matrícula gerada e enviada ao Drive.', 'success');
-        imprimirDocumentoSec(doc.id);
-      });
+    syncDocumentoSecretariaCloud(doc).then(function () {
+      showSecToast('Declaração de Matrícula gerada e salva no banco de dados.', 'success');
+      imprimirDocumentoSec(doc.id);
+    });
     return doc;
-  }
-
-  function abrirPastaDriveDocumentoSec(id) {
-    const docs = getSecDocumentos();
-    const doc = docs.find(function (d) { return d.id === id; });
-    if (!doc) {
-      showSecToast('Documento não encontrado.', 'error');
-      return;
-    }
-    if (doc.drive && doc.drive.folderId && window.SigaGoogleDrive && window.SigaGoogleDrive.openFolder) {
-      window.SigaGoogleDrive.openFolder(doc.drive.folderId);
-      return;
-    }
-    if (abrirDocumentoNoDrive(doc)) return;
-    showSecToast('Este documento ainda não tem arquivo no Drive.', 'error');
   }
 
   window.DOCUMENTO_SECRETARIA_VALIDADE_DIAS = DOCUMENTO_SECRETARIA_VALIDADE_DIAS;
@@ -1743,7 +1771,6 @@
   window.salvarDocumentoSecretaria = salvarDocumentoSecretaria;
   window.imprimirDocumentoSec = imprimirDocumentoSec;
   window.imprimirDocumentosSec = imprimirDocumentosSec;
-  window.abrirPastaDriveDocumentoSec = abrirPastaDriveDocumentoSec;
   window.labelTipoListagem = labelTipoListagem;
   window.renderSecPage = renderSecPage;
   window.switchSecTab = switchSecTab;

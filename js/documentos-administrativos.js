@@ -127,6 +127,61 @@
         return false;
     }
 
+    function getActiveSchoolId() {
+        try {
+            var fromLs = localStorage.getItem('siga_active_school') || '';
+            if (fromLs) return fromLs;
+            var session = JSON.parse(localStorage.getItem('siga_session') || 'null') || {};
+            if (session.schoolId) {
+                localStorage.setItem('siga_active_school', session.schoolId);
+                return session.schoolId;
+            }
+        } catch (e) { /* ignore */ }
+        return '';
+    }
+
+    function resolveSchoolIdAsync() {
+        var current = getActiveSchoolId();
+        if (current) return Promise.resolve(current);
+
+        var session = null;
+        try { session = JSON.parse(localStorage.getItem('siga_session') || 'null'); } catch (e) { session = null; }
+
+        if (!global.SigaSupabase || typeof global.SigaSupabase.getUser !== 'function') {
+            return Promise.resolve('');
+        }
+
+        return global.SigaSupabase.getUser().then(function (user) {
+            if (!user) return '';
+            var profile = typeof global.SigaSupabase.getCachedProfile === 'function'
+                ? global.SigaSupabase.getCachedProfile()
+                : null;
+            if (typeof global.SigaSupabase.bindActiveSchoolContext === 'function') {
+                return global.SigaSupabase.bindActiveSchoolContext(user, profile, session || {}).then(function (bound) {
+                    return (bound && bound.schoolId) || getActiveSchoolId() || '';
+                });
+            }
+            if (typeof global.SigaSupabase.resolveStaffSchoolId === 'function') {
+                return global.SigaSupabase.resolveStaffSchoolId(user, profile).then(function (id) {
+                    if (id) {
+                        try { localStorage.setItem('siga_active_school', id); } catch (e2) { /* ignore */ }
+                    }
+                    return id || '';
+                });
+            }
+            return '';
+        }).catch(function () {
+            return getActiveSchoolId() || '';
+        });
+    }
+
+    function getSupabaseClient() {
+        if (global.SigaSupabase && typeof global.SigaSupabase.getClient === 'function') {
+            try { return global.SigaSupabase.getClient(); } catch (e) { return null; }
+        }
+        return null;
+    }
+
     function getDocs() {
         try {
             var list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -159,6 +214,145 @@
             oficio: c.oficio,
             memorando: c.memorando
         }));
+        syncCountersCloud(c);
+    }
+
+    function syncCountersCloud(c) {
+        var sb = getSupabaseClient();
+        var schoolId = getActiveSchoolId();
+        if (!sb || !schoolId || !c) return Promise.resolve({ ok: false });
+        var rows = [
+            { school_id: schoolId, kind: 'oficio', next_number: c.oficio, updated_at: new Date().toISOString() },
+            { school_id: schoolId, kind: 'memorando', next_number: c.memorando, updated_at: new Date().toISOString() }
+        ];
+        return sb.from('admin_doc_counters')
+            .upsert(rows, { onConflict: 'school_id,kind' })
+            .then(function (res) {
+                if (res.error) {
+                    console.warn('[SIGA] sync admin_doc_counters:', res.error.message);
+                    return { ok: false };
+                }
+                return { ok: true };
+            })
+            .catch(function (err) {
+                console.warn('[SIGA] sync admin_doc_counters:', err);
+                return { ok: false };
+            });
+    }
+
+    function syncAdminDocCloud(doc) {
+        var sb = getSupabaseClient();
+        if (!sb || !doc || !doc.id) {
+            return Promise.resolve({ ok: false, reason: 'no_cloud' });
+        }
+        return resolveSchoolIdAsync().then(function (schoolId) {
+            if (!schoolId) return { ok: false, reason: 'no_school' };
+            var row = {
+                school_id: schoolId,
+                local_id: doc.id,
+                doc_type: doc.tipo || '',
+                destinatario: doc.requerente || null,
+                emitido_por: doc.emitidoPor || null,
+                numero: doc.dados && doc.dados.numero != null ? doc.dados.numero : null,
+                ano: doc.dados && doc.dados.ano ? String(doc.dados.ano) : null,
+                dados: doc.dados || {},
+                created_at: doc.createdAt || new Date().toISOString(),
+                updated_at: doc.updatedAt || new Date().toISOString()
+            };
+            return sb.from('admin_school_documents')
+                .upsert(row, { onConflict: 'school_id,local_id' })
+                .then(function (res) {
+                    if (res.error) {
+                        console.warn('[SIGA] sync admin_school_documents:', res.error.message);
+                        return { ok: false, message: res.error.message };
+                    }
+                    return { ok: true };
+                });
+        }).catch(function (err) {
+            console.warn('[SIGA] sync admin_school_documents:', err);
+            return { ok: false, message: (err && err.message) || 'erro' };
+        });
+    }
+
+    function deleteAdminDocCloud(localId) {
+        var sb = getSupabaseClient();
+        var schoolId = getActiveSchoolId();
+        if (!sb || !schoolId || !localId) return Promise.resolve({ ok: true, reason: 'no_cloud' });
+        return sb.from('admin_school_documents')
+            .delete()
+            .eq('school_id', schoolId)
+            .eq('local_id', localId)
+            .then(function (res) {
+                if (res.error) {
+                    console.warn('[SIGA] delete admin_school_documents:', res.error.message);
+                    return { ok: false, message: res.error.message };
+                }
+                return { ok: true };
+            })
+            .catch(function (err) {
+                console.warn('[SIGA] delete admin_school_documents:', err);
+                return { ok: false, message: (err && err.message) || 'erro' };
+            });
+    }
+
+    function mapAdminCloudRow(row) {
+        if (!row) return null;
+        return {
+            id: row.local_id,
+            tipo: row.doc_type,
+            requerente: row.destinatario || '',
+            emitidoPor: row.emitido_por || '',
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            dados: row.dados || {}
+        };
+    }
+
+    function loadAdminDocsFromCloud() {
+        var sb = getSupabaseClient();
+        if (!sb) return Promise.resolve({ ok: false, reason: 'no_cloud' });
+
+        return resolveSchoolIdAsync().then(function (schoolId) {
+            if (!schoolId) return { ok: false, reason: 'no_school' };
+
+            var localList = getDocs();
+            var migrate = (localList || []).map(function (doc) { return syncAdminDocCloud(doc); });
+
+            return Promise.all(migrate).then(function () {
+                return Promise.all([
+                    sb.from('admin_school_documents')
+                        .select('*')
+                        .eq('school_id', schoolId)
+                        .order('created_at', { ascending: false }),
+                    sb.from('admin_doc_counters')
+                        .select('*')
+                        .eq('school_id', schoolId)
+                ]);
+            }).then(function (results) {
+                var docsRes = results[0];
+                var countersRes = results[1];
+                if (docsRes.error) {
+                    console.warn('[SIGA] load admin_school_documents:', docsRes.error.message);
+                    return { ok: false, message: docsRes.error.message };
+                }
+                var list = (docsRes.data || []).map(mapAdminCloudRow).filter(Boolean);
+                saveDocs(list);
+
+                var c = getCounters();
+                if (countersRes && !countersRes.error && countersRes.data) {
+                    countersRes.data.forEach(function (row) {
+                        if (row.kind === 'oficio' && row.next_number >= OFICIO_START) c.oficio = row.next_number;
+                        if (row.kind === 'memorando' && row.next_number >= MEMORANDO_START) c.memorando = row.next_number;
+                    });
+                }
+                localStorage.setItem(COUNTERS_KEY, JSON.stringify({ oficio: c.oficio, memorando: c.memorando }));
+                syncCountersCloud(c);
+                return { ok: true, count: list.length, schoolId: schoolId };
+            });
+        }).catch(function (err) {
+            console.warn('[SIGA] load admin docs:', err);
+            return { ok: false, message: (err && err.message) || 'erro' };
+        });
     }
 
     function peekNumero(kind) {
@@ -438,7 +632,11 @@
             });
         }
         saveDocs(list);
-        toast(editingId ? 'Requerimento atualizado.' : 'Requerimento emitido e salvo no histórico.');
+        var saved = editingId
+            ? list.find(function (d) { return d.id === editingId; })
+            : list[0];
+        if (saved) syncAdminDocCloud(saved);
+        toast(editingId ? 'Requerimento atualizado e salvo no banco.' : 'Requerimento emitido e salvo no banco de dados.');
         filterState.tipo = TIPO_REQ;
         renderHistory();
         if (andPrint) {
@@ -670,9 +868,13 @@
             });
         }
         saveDocs(list);
+        var savedOm = editingId
+            ? list.find(function (d) { return d.id === editingId; })
+            : list[0];
+        if (savedOm) syncAdminDocCloud(savedOm);
         toast(editingId
-            ? (tipoLabel + ' atualizado.')
-            : (tipoLabel + ' Nº ' + data.numero + '/' + data.ano + ' emitido e salvo no histórico.'));
+            ? (tipoLabel + ' atualizado e salvo no banco.')
+            : (tipoLabel + ' Nº ' + data.numero + '/' + data.ano + ' emitido e salvo no banco de dados.'));
         filterState.tipo = tipoLabel;
         renderHistory();
         if (andPrint) printOficioMemorando(data);
@@ -967,9 +1169,15 @@
                 if (act === 'edit') openDocumento(doc);
                 if (act === 'delete') {
                     if (!confirm('Excluir este documento do histórico?')) return;
-                    saveDocs(getDocs().filter(function (x) { return x.id !== id; }));
-                    toast('Documento excluído do histórico.', 'error');
-                    renderHistory();
+                    deleteAdminDocCloud(id).then(function (res) {
+                        if (res && res.ok === false) {
+                            toast('Não foi possível excluir no banco. Tente novamente.', 'error');
+                            return;
+                        }
+                        saveDocs(getDocs().filter(function (x) { return x.id !== id; }));
+                        toast('Documento excluído do histórico.', 'error');
+                        renderHistory();
+                    });
                 }
             });
         });
@@ -1094,14 +1302,23 @@
     function init() {
         if (!/documentosadministrativos/i.test(location.pathname + location.href)) return;
         if (!ensureAccess()) return;
-        // Garante contadores mínimos na primeira carga
-        saveCounters(getCounters());
+        // Contadores locais mínimos; valores do banco prevalecem após loadAdminDocsFromCloud
+        var localCounters = getCounters();
+        localStorage.setItem(COUNTERS_KEY, JSON.stringify(localCounters));
         renderTypes();
         var countEl = $('adm-doc-types-count');
         if (countEl) countEl.textContent = String(DOC_TYPES.length);
         bindFilters();
         bindModal();
         renderHistory();
+        loadAdminDocsFromCloud().then(function (result) {
+            if (result && result.ok) {
+                console.info('[SIGA] Documentos administrativos carregados do Supabase:', result.count);
+            } else if (result && result.reason === 'no_school') {
+                toast('Escola não vinculada à sessão. Faça login novamente para carregar os documentos do banco.', 'error');
+            }
+            renderHistory();
+        });
     }
 
     global.SigaDocumentosAdministrativos = {

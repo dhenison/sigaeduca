@@ -1,6 +1,8 @@
 # Google Drive institucional (SIGA EDUCA) — do zero
 
-Upload de **Documentos Secretaria** e **Solicitações Pedagógicas** pela Edge Function `drive-upload-file`.
+Upload **somente** de **Solicitações Pedagógicas** pela Edge Function `drive-upload-file`.
+
+**Documentos da Secretaria** e **Documentos Administrativos (Gestão Escolar)** ficam no **Supabase** (banco de dados). Não usam Drive.
 
 Professores **não** fazem login Google. Só login no SIGA.
 
@@ -8,14 +10,20 @@ Professores **não** fazem login Google. Só login no SIGA.
 
 ```
 SIGAEDUCA/                          ← GOOGLE_DRIVE_ROOT_FOLDER_ID
-├── Documentos Secretaria/
-│   └── {Tipo}/
 └── SOLICITAÇÕES PEDAGÓGICAS/
     └── {Nome do usuário}/
         └── {Tipo}/
 ```
 
-## Fluxo (Meu Drive / Gmail da escola)
+## Onde cada coisa salva
+
+| Módulo | Destino |
+|--------|---------|
+| Solicitações Pedagógicas | Google Drive (arquivo) + metadados locais |
+| Documentos da Secretaria | Supabase `secretary_documents` |
+| Documentos Administrativos | Supabase `admin_school_documents` |
+
+## Fluxo (Meu Drive / Gmail da escola) — só pedagógicas
 
 ```
 Usuário SIGA → Edge Function → OAuth da conta dona de SIGAEDUCA → pasta no Drive
@@ -62,4 +70,4 @@ Dashboard → Project → Edge Functions → Secrets:
 
 ## Acesso aos arquivos
 
-Cada upload tenta liberar **qualquer pessoa com o link** (leitura), para abrir sem login Google pessoal.
+Cada upload de solicitação pedagógica tenta liberar **qualquer pessoa com o link** (leitura), para abrir sem login Google pessoal.
