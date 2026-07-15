@@ -114,7 +114,11 @@ Deno.serve(async (req) => {
       return json({ error: 'module deve ser "secretaria" ou "solicitacoes".' }, 400);
     }
 
-    const accessToken = await getAccessToken(sa);
+    const impersonateEmail = (
+      Deno.env.get("GOOGLE_DRIVE_IMPERSONATE_EMAIL") || ""
+    ).trim().toLowerCase();
+
+    const accessToken = await getAccessToken(sa, impersonateEmail || null);
     await assertRootFolderAccessible(accessToken, rootFolderId, saEmail);
 
     const pathParts =
@@ -122,20 +126,35 @@ Deno.serve(async (req) => {
         ? [FOLDER_SECRETARIA, tipo]
         : [FOLDER_SOLICITACOES, sanitizeFolderName(solicitanteNome), tipo];
 
-    const folderId = await ensureFolderPath(accessToken, rootFolderId, pathParts);
+    let folderId: string;
+    try {
+      folderId = await ensureFolderPath(accessToken, rootFolderId, pathParts);
+    } catch (folderErr) {
+      throw new Error(mapDriveQuotaError(folderErr, saEmail));
+    }
     const folderPath = ["SIGAEDUCA", ...pathParts].join(" / ");
 
     const bytes = base64ToUint8Array(contentBase64);
-    const uploaded = await uploadFile(
-      accessToken,
-      folderId,
-      fileName,
-      mimeType,
-      bytes,
-    );
+    let uploaded;
+    try {
+      uploaded = await uploadFile(
+        accessToken,
+        folderId,
+        fileName,
+        mimeType,
+        bytes,
+      );
+    } catch (upErr) {
+      throw new Error(mapDriveQuotaError(upErr, saEmail));
+    }
 
     // Quem tem o link abre/imprime sem login Google pessoal (Drive institucional).
-    await shareAnyoneWithLink(accessToken, uploaded.id);
+    try {
+      await shareAnyoneWithLink(accessToken, uploaded.id);
+    } catch (shareErr) {
+      // Em Shared Drive a política da org pode bloquear "anyone"; o arquivo já está salvo.
+      console.warn("[drive-upload-file] shareAnyoneWithLink:", shareErr);
+    }
 
     const webViewLink =
       uploaded.webViewLink ||
@@ -238,7 +257,10 @@ function base64ToUint8Array(b64: string) {
   return out;
 }
 
-async function getAccessToken(sa: Record<string, string>) {
+async function getAccessToken(
+  sa: Record<string, string>,
+  impersonateEmail: string | null,
+) {
   const clientEmail = sa.client_email;
   let privateKey = sa.private_key;
   if (!clientEmail || !privateKey) {
@@ -247,10 +269,13 @@ async function getAccessToken(sa: Record<string, string>) {
   privateKey = privateKey.replace(/\\n/g, "\n");
   const key = await importPKCS8(privateKey, "RS256");
   const now = Math.floor(Date.now() / 1000);
+  // Sem impersonação: age como a própria SA (precisa Shared Drive).
+  // Com GOOGLE_DRIVE_IMPERSONATE_EMAIL: Domain-Wide Delegation (Workspace).
+  const subject = impersonateEmail || clientEmail;
   const jwt = await new SignJWT({ scope: DRIVE_SCOPE })
     .setProtectedHeader({ alg: "RS256", typ: "JWT" })
     .setIssuer(clientEmail)
-    .setSubject(clientEmail)
+    .setSubject(subject)
     .setAudience("https://oauth2.googleapis.com/token")
     .setIssuedAt(now)
     .setExpirationTime(now + 3600)
@@ -273,6 +298,24 @@ async function getAccessToken(sa: Record<string, string>) {
     );
   }
   return tokenJson.access_token as string;
+}
+
+function mapDriveQuotaError(err: unknown, saEmail: string) {
+  const message = err instanceof Error ? err.message : String(err);
+  const lower = message.toLowerCase();
+  if (
+    lower.includes("storage quota") ||
+    lower.includes("service accounts do not have storage")
+  ) {
+    return (
+      "A Conta de Serviço não tem cota no Meu Drive. " +
+      "Coloque SIGAEDUCA em um Drive compartilhado (Shared Drive) e adicione " +
+      saEmail +
+      " como Gerenciador de conteúdo — ou configure GOOGLE_DRIVE_IMPERSONATE_EMAIL (Workspace). " +
+      "Detalhe: " + message
+    );
+  }
+  return message;
 }
 
 async function findChildFolder(
