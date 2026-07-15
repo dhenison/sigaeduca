@@ -65,6 +65,12 @@
     var editingId = null;
     var editingKind = null; // 'requerimento' | 'oficio' | 'memorando'
     var filterState = { tipo: '', usuario: '', data: '', requerente: '' };
+    var HIST_TABS = [
+        { value: '', label: 'Todos' },
+        { value: TIPO_REQ, label: 'Requerimento' },
+        { value: TIPO_OFICIO, label: 'Ofício' },
+        { value: TIPO_MEMORANDO, label: 'Memorando' }
+    ];
 
     function toast(msg, type) {
         if (typeof showToast === 'function') showToast(msg, type || 'success');
@@ -433,6 +439,7 @@
         }
         saveDocs(list);
         toast(editingId ? 'Requerimento atualizado.' : 'Requerimento emitido e salvo no histórico.');
+        filterState.tipo = TIPO_REQ;
         renderHistory();
         if (andPrint) {
             printRequerimento(data);
@@ -453,13 +460,79 @@
         if (localEl) localEl.textContent = formatLocalExtenso(dataEl && dataEl.value);
     }
 
+    function stripHtmlText(html) {
+        var div = document.createElement('div');
+        div.innerHTML = String(html == null ? '' : html);
+        return String(div.textContent || div.innerText || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function sanitizeCorpoHtml(html) {
+        var root = document.createElement('div');
+        root.innerHTML = String(html == null ? '' : html);
+        var allowed = { b: 1, strong: 1, i: 1, em: 1, u: 1, br: 1, div: 1, p: 1 };
+
+        function isBoldSpan(el) {
+            if (!el || el.tagName.toLowerCase() !== 'span') return false;
+            var fw = String(el.style && el.style.fontWeight || '').toLowerCase();
+            return fw === 'bold' || parseInt(fw, 10) >= 600;
+        }
+
+        function clean(node) {
+            Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+                if (child.nodeType === 8) {
+                    node.removeChild(child);
+                    return;
+                }
+                if (child.nodeType !== 1) return;
+                var tag = child.tagName.toLowerCase();
+                if (isBoldSpan(child)) {
+                    var strong = document.createElement('strong');
+                    while (child.firstChild) strong.appendChild(child.firstChild);
+                    node.replaceChild(strong, child);
+                    clean(strong);
+                    return;
+                }
+                if (!allowed[tag]) {
+                    while (child.firstChild) node.insertBefore(child.firstChild, child);
+                    node.removeChild(child);
+                    return;
+                }
+                while (child.attributes && child.attributes.length) {
+                    child.removeAttribute(child.attributes[0].name);
+                }
+                clean(child);
+            });
+        }
+
+        clean(root);
+        return root.innerHTML
+            .replace(/^(<br\s*\/?>|\s|&nbsp;)+/i, '')
+            .replace(/(<br\s*\/?>|\s|&nbsp;)+$/i, '')
+            .trim();
+    }
+
+    function corpoToEditorHtml(raw) {
+        var s = String(raw == null ? '' : raw);
+        if (!s) return '';
+        if (/<[a-z][\s\S]*>/i.test(s)) return sanitizeCorpoHtml(s);
+        return escapeHtml(s).replace(/\r\n|\r|\n/g, '<br>');
+    }
+
+    function getCorpoHtmlForPrint(raw) {
+        var s = String(raw == null ? '' : raw);
+        if (!s) return '';
+        if (/<[a-z][\s\S]*>/i.test(s)) return sanitizeCorpoHtml(s);
+        return escapeHtml(s).replace(/\r\n|\r|\n/g, '<br/>');
+    }
+
     function fillOmForm(data) {
         var kind = data.kind === 'memorando' ? 'memorando' : 'oficio';
         if ($('adm-om-numero')) $('adm-om-numero').value = data.numero != null ? String(data.numero) : String(peekNumero(kind));
         if ($('adm-om-data')) $('adm-om-data').value = data.dataDocumento || new Date().toISOString().slice(0, 10);
         if ($('adm-om-de')) $('adm-om-de').value = data.de || DE_PADRAO;
         if ($('adm-om-para')) $('adm-om-para').value = data.para || '';
-        if ($('adm-om-corpo')) $('adm-om-corpo').value = data.corpo || '';
+        var corpoEl = $('adm-om-corpo');
+        if (corpoEl) corpoEl.innerHTML = corpoToEditorHtml(data.corpo || '');
         syncOmTituloPreview();
     }
 
@@ -470,7 +543,7 @@
         data.ano = yearFromIso(data.dataDocumento);
         data.de = DE_PADRAO;
         data.para = ($('adm-om-para') && $('adm-om-para').value || '').trim();
-        data.corpo = ($('adm-om-corpo') && $('adm-om-corpo').value || '').trim();
+        data.corpo = sanitizeCorpoHtml($('adm-om-corpo') ? $('adm-om-corpo').innerHTML : '');
         var n = parseInt($('adm-om-numero') && $('adm-om-numero').value, 10);
         data.numero = isNaN(n) ? null : n;
         return data;
@@ -508,7 +581,7 @@
     }
 
     function validateOmForm(data) {
-        if (!data.corpo) return 'Escreva o corpo do texto.';
+        if (!stripHtmlText(data.corpo)) return 'Escreva o corpo do texto.';
         if (data.numero == null || isNaN(data.numero)) return 'Número do documento inválido.';
         return '';
     }
@@ -557,6 +630,7 @@
         toast(editingId
             ? (tipoLabel + ' atualizado.')
             : (tipoLabel + ' Nº ' + data.numero + '/' + data.ano + ' emitido e salvo no histórico.'));
+        filterState.tipo = tipoLabel;
         renderHistory();
         if (andPrint) printOficioMemorando(data);
         closeOmForm();
@@ -693,7 +767,7 @@
         var titulo = tituloDocumento(kind, data.numero, ano);
         var local = formatLocalExtenso(data.dataDocumento);
         var bg = getTimbradoUrl().replace(/'/g, "\\'");
-        var corpo = escapeHtml(data.corpo || '').replace(/\n/g, '<br/>');
+        var corpo = getCorpoHtmlForPrint(data.corpo);
         var para = escapeHtml(data.para || '');
         var de = escapeHtml(data.de || DE_PADRAO);
 
@@ -712,6 +786,7 @@
             '.meta{font-size:12pt;line-height:1.55;margin:0 0 16px}',
             '.meta .lbl{font-weight:700}',
             '.corpo{flex:1;border:1px solid #222;border-radius:2px;padding:12px 14px;font-size:12pt;line-height:1.55;text-align:justify;white-space:normal;min-height:90mm;background:rgba(255,255,255,.55)}',
+            '.corpo b,.corpo strong{font-weight:700}',
             '.fecho{margin-top:28px;text-align:center}',
             '.fecho .atenciosamente{font-size:12pt;font-weight:700;letter-spacing:.06em;margin:0 0 36px}',
             '.fecho .linha{width:58%;margin:0 auto;border-top:1px solid #111;padding-top:8px}',
@@ -761,14 +836,45 @@
         openForm(doc);
     }
 
+    function countByTipo(tipo) {
+        return getDocs().filter(function (d) {
+            if (!tipo) return true;
+            return String(d.tipo || '') === tipo;
+        }).length;
+    }
+
+    function docTitle(d) {
+        if (!d) return '—';
+        if (d.dados && d.dados.numero != null && (d.tipo === TIPO_OFICIO || d.tipo === TIPO_MEMORANDO)) {
+            var ano = d.dados.ano || yearFromIso(d.dados.dataDocumento);
+            return (d.tipo === TIPO_MEMORANDO ? 'MEMORANDO' : 'OFÍCIO') + ' Nº ' + d.dados.numero + '/' + ano;
+        }
+        return d.tipo || '—';
+    }
+
+    function docResumo(d) {
+        if (!d || !d.dados) return '—';
+        if (d.tipo === TIPO_OFICIO || d.tipo === TIPO_MEMORANDO) {
+            var corpo = stripHtmlText(d.dados.corpo || '');
+            if (!corpo) return 'Sem texto';
+            return corpo.length > 90 ? corpo.slice(0, 90) + '…' : corpo;
+        }
+        if (d.tipo === TIPO_REQ) {
+            var pedidos = pedidosMarcados(d.dados);
+            if (!pedidos.length) return 'Requerimento';
+            return pedidos.length === 1 ? pedidos[0] : pedidos[0] + ' (+' + (pedidos.length - 1) + ')';
+        }
+        return '—';
+    }
+
     function filteredDocs() {
         var list = getDocs();
-        var tipo = (filterState.tipo || '').toLowerCase();
+        var tipo = filterState.tipo || '';
         var usuario = (filterState.usuario || '').toLowerCase();
         var data = filterState.data || '';
         var requerente = (filterState.requerente || '').toLowerCase();
         return list.filter(function (d) {
-            if (tipo && String(d.tipo || '').toLowerCase().indexOf(tipo) < 0) return false;
+            if (tipo && String(d.tipo || '') !== tipo) return false;
             if (usuario && String(d.emitidoPor || '').toLowerCase().indexOf(usuario) < 0) return false;
             if (requerente && String(d.requerente || '').toLowerCase().indexOf(requerente) < 0) return false;
             if (data) {
@@ -779,38 +885,37 @@
         });
     }
 
-    function renderHistory() {
-        var body = $('adm-hist-body');
-        var empty = $('adm-hist-empty');
-        if (!body) return;
-        var list = filteredDocs();
-        if (!list.length) {
-            body.innerHTML = '';
-            if (empty) empty.classList.remove('hidden');
-            return;
-        }
-        if (empty) empty.classList.add('hidden');
-        body.innerHTML = list.map(function (d) {
-            var labelExtra = '';
-            if (d.dados && d.dados.numero != null && (d.tipo === TIPO_OFICIO || d.tipo === TIPO_MEMORANDO)) {
-                labelExtra = ' Nº ' + d.dados.numero + '/' + (d.dados.ano || yearFromIso(d.dados.dataDocumento));
-            }
+    function renderHistTabs() {
+        var host = $('adm-hist-tabs');
+        if (!host) return;
+        host.innerHTML = HIST_TABS.map(function (tab) {
+            var active = (filterState.tipo || '') === (tab.value || '');
+            var count = countByTipo(tab.value);
+            var cls = active
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white text-on-surface border-border-subtle hover:border-primary/40';
             return [
-                '<tr class="border-b border-border-subtle hover:bg-surface-container-low/40">',
-                '<td class="px-4 py-3 text-sm font-medium">', escapeHtml((d.tipo || '—') + labelExtra), '</td>',
-                '<td class="px-4 py-3 text-sm">', escapeHtml(d.emitidoPor || '—'), '</td>',
-                '<td class="px-4 py-3 text-sm whitespace-nowrap">', escapeHtml(fmtDate(d.createdAt)), '</td>',
-                '<td class="px-4 py-3 text-sm">', escapeHtml(d.requerente || '—'), '</td>',
-                '<td class="px-4 py-3">',
-                '<div class="flex items-center gap-1 justify-end">',
-                '<button type="button" data-act="print" data-id="', escapeHtml(d.id), '" class="w-9 h-9 rounded-lg border border-border-subtle hover:bg-primary/5 text-primary" title="Imprimir"><span class="material-symbols-outlined text-[18px]">print</span></button>',
-                '<button type="button" data-act="edit" data-id="', escapeHtml(d.id), '" class="w-9 h-9 rounded-lg border border-border-subtle hover:bg-primary/5 text-on-surface" title="Editar"><span class="material-symbols-outlined text-[18px]">edit</span></button>',
-                '<button type="button" data-act="delete" data-id="', escapeHtml(d.id), '" class="w-9 h-9 rounded-lg border border-border-subtle hover:bg-error/5 text-error" title="Excluir"><span class="material-symbols-outlined text-[18px]">delete</span></button>',
-                '</div></td></tr>'
+                '<button type="button" role="tab" data-hist-tipo="', escapeHtml(tab.value), '" aria-selected="', active ? 'true' : 'false', '"',
+                ' class="inline-flex items-center gap-2 px-4 py-2.5 mb-[-1px] rounded-t-xl border text-sm font-semibold transition-colors ', cls, '">',
+                escapeHtml(tab.label),
+                '<span class="inline-flex min-w-[1.5rem] justify-center px-1.5 py-0.5 rounded-full text-[11px] ',
+                active ? 'bg-white/20 text-white' : 'bg-surface-container-high text-text-secondary',
+                '">', String(count), '</span>',
+                '</button>'
             ].join('');
         }).join('');
 
-        body.querySelectorAll('[data-act]').forEach(function (btn) {
+        host.querySelectorAll('[data-hist-tipo]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                filterState.tipo = btn.getAttribute('data-hist-tipo') || '';
+                renderHistory();
+            });
+        });
+    }
+
+    function bindHistoryActions(root) {
+        if (!root) return;
+        root.querySelectorAll('[data-act]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var id = btn.getAttribute('data-id');
                 var act = btn.getAttribute('data-act');
@@ -821,19 +926,56 @@
                 if (act === 'delete') {
                     if (!confirm('Excluir este documento do histórico?')) return;
                     saveDocs(getDocs().filter(function (x) { return x.id !== id; }));
-                    toast('Documento excluído.', 'error');
+                    toast('Documento excluído do histórico.', 'error');
                     renderHistory();
                 }
             });
         });
     }
 
+    function renderHistory() {
+        renderHistTabs();
+        var body = $('adm-hist-body');
+        var empty = $('adm-hist-empty');
+        if (!body) return;
+        var list = filteredDocs();
+        if (!list.length) {
+            body.innerHTML = '';
+            if (empty) {
+                empty.classList.remove('hidden');
+                var tabLabel = (HIST_TABS.find(function (t) { return (t.value || '') === (filterState.tipo || ''); }) || {}).label || 'este tipo';
+                empty.textContent = 'Nenhum documento em “' + tabLabel + '” ainda. Emita um documento para iniciar o histórico.';
+            }
+            return;
+        }
+        if (empty) empty.classList.add('hidden');
+        body.innerHTML = list.map(function (d) {
+            return [
+                '<tr class="border-b border-border-subtle hover:bg-surface-container-low/40 align-top">',
+                '<td class="px-4 py-3 text-sm font-semibold text-on-surface whitespace-nowrap">', escapeHtml(docTitle(d)), '</td>',
+                '<td class="px-4 py-3 text-sm">', escapeHtml(d.requerente || '—'), '</td>',
+                '<td class="px-4 py-3 text-sm text-text-secondary max-w-[280px]">', escapeHtml(docResumo(d)), '</td>',
+                '<td class="px-4 py-3 text-sm">', escapeHtml(d.emitidoPor || '—'), '</td>',
+                '<td class="px-4 py-3 text-sm whitespace-nowrap">', escapeHtml(fmtDate(d.createdAt)), '</td>',
+                '<td class="px-4 py-3">',
+                '<div class="flex flex-wrap items-center gap-2 justify-end">',
+                '<button type="button" data-act="print" data-id="', escapeHtml(d.id), '" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary/10" title="Reimprimir">',
+                '<span class="material-symbols-outlined text-[16px]">print</span>Reimprimir</button>',
+                '<button type="button" data-act="edit" data-id="', escapeHtml(d.id), '" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-subtle text-on-surface text-xs font-semibold hover:bg-surface-container-low" title="Editar texto">',
+                '<span class="material-symbols-outlined text-[16px]">edit</span>Editar texto</button>',
+                '<button type="button" data-act="delete" data-id="', escapeHtml(d.id), '" class="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg border border-border-subtle text-error text-xs font-semibold hover:bg-error/5" title="Excluir">',
+                '<span class="material-symbols-outlined text-[16px]">delete</span></button>',
+                '</div></td></tr>'
+            ].join('');
+        }).join('');
+        bindHistoryActions(body);
+    }
+
     function bindFilters() {
-        ['adm-filter-tipo', 'adm-filter-usuario', 'adm-filter-data', 'adm-filter-requerente'].forEach(function (id) {
+        ['adm-filter-usuario', 'adm-filter-data', 'adm-filter-requerente'].forEach(function (id) {
             var el = $(id);
             if (!el) return;
             el.addEventListener('input', function () {
-                filterState.tipo = ($('adm-filter-tipo') && $('adm-filter-tipo').value) || '';
                 filterState.usuario = ($('adm-filter-usuario') && $('adm-filter-usuario').value) || '';
                 filterState.data = ($('adm-filter-data') && $('adm-filter-data').value) || '';
                 filterState.requerente = ($('adm-filter-requerente') && $('adm-filter-requerente').value) || '';
@@ -843,8 +985,10 @@
         var clear = $('adm-filter-clear');
         if (clear) {
             clear.addEventListener('click', function () {
-                filterState = { tipo: '', usuario: '', data: '', requerente: '' };
-                ['adm-filter-tipo', 'adm-filter-usuario', 'adm-filter-data', 'adm-filter-requerente'].forEach(function (id) {
+                filterState.usuario = '';
+                filterState.data = '';
+                filterState.requerente = '';
+                ['adm-filter-usuario', 'adm-filter-data', 'adm-filter-requerente'].forEach(function (id) {
                     if ($(id)) $(id).value = '';
                 });
                 renderHistory();
@@ -887,6 +1031,22 @@
         if (omData) omData.addEventListener('change', syncOmTituloPreview);
         if (omData) omData.addEventListener('input', syncOmTituloPreview);
         if (omNum) omNum.addEventListener('input', syncOmTituloPreview);
+
+        var omBold = $('adm-om-bold');
+        var omCorpo = $('adm-om-corpo');
+        if (omBold && omCorpo) {
+            omBold.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                omCorpo.focus();
+                try { document.execCommand('bold', false, null); } catch (err) { /* ignore */ }
+            });
+            omCorpo.addEventListener('keydown', function (e) {
+                if ((e.ctrlKey || e.metaKey) && String(e.key || '').toLowerCase() === 'b') {
+                    e.preventDefault();
+                    try { document.execCommand('bold', false, null); } catch (err) { /* ignore */ }
+                }
+            });
+        }
     }
 
     function init() {

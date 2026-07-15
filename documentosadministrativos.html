@@ -50,6 +50,8 @@ aside#sidebar .text-label-md { font-size: 12px !important; font-weight: 500 !imp
 .sidebar-scroll::-webkit-scrollbar { width: 4px; }
 .sidebar-scroll::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
 .custom-shadow { box-shadow: 0px 4px 12px rgba(0,0,0,0.03); }
+.adm-om-editor b, .adm-om-editor strong { font-weight: 700; }
+.adm-om-editor:empty:before { content: attr(data-placeholder); color: #6B7280; pointer-events: none; }
 :root { --sidebar-width: 260px; }
 body.sidebar-collapsed { --sidebar-width: 72px; }
 aside#sidebar { width: var(--sidebar-width) !important; transition: width 0.3s cubic-bezier(0.4,0,0.2,1) !important; overflow: visible !important; }
@@ -195,7 +197,7 @@ body.sidebar-collapsed aside#sidebar .nav-dropdown-menu { display: none !importa
 <div>
 <p class="text-[11px] font-bold uppercase tracking-widest text-primary mb-1">Gestão Escolar</p>
 <h2 class="font-headline-lg text-headline-lg text-on-surface">Documentos Administrativos</h2>
-<p class="text-body-md text-text-secondary mt-1 max-w-2xl">Emita documentos oficiais da gestão escolar. O Requerimento Padrão já está disponível para preenchimento, edição e impressão.</p>
+<p class="text-body-md text-text-secondary mt-1 max-w-2xl">Emita documentos oficiais da gestão escolar. Cada emissão fica salva no histórico por tipo, com reimpressão e edição do texto.</p>
 </div>
 <div class="bg-white border border-border-subtle rounded-2xl px-5 py-4 custom-shadow min-w-[140px]">
 <p class="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Tipos</p>
@@ -210,27 +212,21 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 
 <div id="adm-doc-types" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
 
-<!-- Histórico de emissões -->
+<!-- Histórico de emissões por tipo -->
 <section class="bg-white border border-border-subtle rounded-2xl custom-shadow overflow-hidden">
 <div class="p-6 border-b border-border-subtle flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 <div>
-<h3 class="font-headline-sm text-on-surface">Histórico de documentos emitidos</h3>
-<p class="text-label-sm text-text-secondary mt-1">Filtre por tipo, usuário, data e nome do requerente.</p>
+<h3 class="font-headline-sm text-on-surface">Histórico por tipo de documento</h3>
+<p class="text-label-sm text-text-secondary mt-1">Documentos salvos automaticamente. Use <strong>Reimprimir</strong> ou <strong>Editar texto</strong> em cada registro.</p>
 </div>
-<button type="button" id="adm-filter-clear" class="px-4 py-2 rounded-xl border border-border-subtle text-label-md font-semibold hover:bg-surface-container-low">Limpar filtros</button>
+<button type="button" id="adm-filter-clear" class="px-4 py-2 rounded-xl border border-border-subtle text-label-md font-semibold hover:bg-surface-container-low">Limpar busca</button>
 </div>
-<div class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 border-b border-border-subtle bg-surface-container-low/40">
+
+<div id="adm-hist-tabs" class="px-4 pt-4 flex flex-wrap gap-2 border-b border-border-subtle bg-surface-container-low/30" role="tablist" aria-label="Tipo de documento no histórico"></div>
+
+<div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-border-subtle bg-surface-container-low/40">
 <div>
-<label class="block text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1" for="adm-filter-tipo">Tipo de documento</label>
-<select id="adm-filter-tipo" class="w-full px-3 py-2.5 bg-white border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
-<option value="">Todos</option>
-<option value="Requerimento Padrão">Requerimento Padrão</option>
-<option value="Ofício">Ofício</option>
-<option value="Memorando">Memorando</option>
-</select>
-</div>
-<div>
-<label class="block text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1" for="adm-filter-usuario">Usuário que realizou</label>
+<label class="block text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1" for="adm-filter-usuario">Usuário que emitiu</label>
 <input id="adm-filter-usuario" type="search" placeholder="Nome do usuário" class="w-full px-3 py-2.5 bg-white border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
 </div>
 <div>
@@ -242,20 +238,22 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 <input id="adm-filter-requerente" type="search" placeholder="Buscar nome" class="w-full px-3 py-2.5 bg-white border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
 </div>
 </div>
+
 <div class="overflow-x-auto">
 <table class="w-full text-left">
 <thead class="bg-surface-container-low text-[11px] uppercase tracking-wider text-text-secondary">
 <tr>
-<th class="px-4 py-3 font-semibold">Tipo</th>
+<th class="px-4 py-3 font-semibold">Documento</th>
+<th class="px-4 py-3 font-semibold">Destino / Requerente</th>
+<th class="px-4 py-3 font-semibold">Resumo</th>
 <th class="px-4 py-3 font-semibold">Usuário</th>
 <th class="px-4 py-3 font-semibold">Data</th>
-<th class="px-4 py-3 font-semibold">Requerente / Destinatário</th>
 <th class="px-4 py-3 font-semibold text-right">Ações</th>
 </tr>
 </thead>
 <tbody id="adm-hist-body" class="text-body-md"></tbody>
 </table>
-<p id="adm-hist-empty" class="hidden px-6 py-10 text-center text-text-secondary text-sm">Nenhum documento emitido ainda. Emita um Requerimento, Ofício ou Memorando para iniciar o histórico.</p>
+<p id="adm-hist-empty" class="hidden px-6 py-10 text-center text-text-secondary text-sm">Nenhum documento neste tipo ainda. Emita um documento para iniciar o histórico.</p>
 </div>
 </section>
 </div>
@@ -416,7 +414,15 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 </div>
 <div class="md:col-span-2">
 <label class="block text-[11px] font-bold uppercase text-text-secondary mb-1" for="adm-om-corpo">Corpo do texto *</label>
-<textarea id="adm-om-corpo" rows="12" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y" placeholder="Digite o conteúdo do documento"></textarea>
+<div class="border border-border-subtle rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary">
+<div class="flex items-center gap-2 px-3 py-2 border-b border-border-subtle bg-surface-container-low/60">
+<button type="button" id="adm-om-bold" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-subtle bg-white text-sm font-bold hover:bg-primary/5 hover:border-primary/40" title="Negrito (Ctrl+B)">
+<span class="material-symbols-outlined text-[16px]">format_bold</span>Negrito
+</button>
+<span class="text-[11px] text-text-secondary">Selecione o trecho e clique em Negrito</span>
+</div>
+<div id="adm-om-corpo" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Corpo do texto" data-placeholder="Digite o conteúdo do documento" class="adm-om-editor w-full min-h-[220px] max-h-[360px] overflow-y-auto px-3 py-2.5 text-sm outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-text-secondary empty:before:pointer-events-none"></div>
+</div>
 </div>
 </div>
 
