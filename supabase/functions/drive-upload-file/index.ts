@@ -52,12 +52,19 @@ Deno.serve(async (req) => {
     }
 
     const saJsonRaw = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "";
-    const rootFolderId = (Deno.env.get("GOOGLE_DRIVE_ROOT_FOLDER_ID") || "").trim();
+    const rootFolderIdRaw = (Deno.env.get("GOOGLE_DRIVE_ROOT_FOLDER_ID") || "").trim();
+    const rootFolderId = normalizeFolderId(rootFolderIdRaw);
     if (!saJsonRaw || !rootFolderId) {
       return json({
         error:
-          "Drive institucional não configurado. Defina GOOGLE_SERVICE_ACCOUNT_JSON e GOOGLE_DRIVE_ROOT_FOLDER_ID.",
+          "Drive institucional não configurado. Defina GOOGLE_SERVICE_ACCOUNT_JSON e GOOGLE_DRIVE_ROOT_FOLDER_ID (ID da pasta SIGAEDUCA na URL do Drive).",
       }, 503);
+    }
+    if (!isLikelyDriveId(rootFolderId)) {
+      return json({
+        error:
+          `GOOGLE_DRIVE_ROOT_FOLDER_ID inválido ("${rootFolderIdRaw.slice(0, 40)}"). Cole só o ID da pasta SIGAEDUCA (trecho depois de /folders/ na URL), não um ponto nem o nome da pasta.`,
+      }, 500);
     }
 
     let sa: Record<string, string>;
@@ -108,6 +115,8 @@ Deno.serve(async (req) => {
     }
 
     const accessToken = await getAccessToken(sa);
+    await assertRootFolderAccessible(accessToken, rootFolderId, saEmail);
+
     const pathParts =
       moduleName === "secretaria"
         ? [FOLDER_SECRETARIA, tipo]
@@ -155,6 +164,50 @@ function json(payload: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+/** Aceita ID puro ou URL completa .../folders/ID */
+function normalizeFolderId(raw: string) {
+  const s = String(raw || "").trim().replace(/^["']|["']$/g, "");
+  if (!s) return "";
+  const m = s.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  const m2 = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m2) return m2[1];
+  return s;
+}
+
+function isLikelyDriveId(id: string) {
+  // IDs do Drive costumam ter ~25+ chars; rejeita "." "root" "SIGAEDUCA" etc.
+  if (!id || id === "." || id === "root") return false;
+  if (/^[a-zA-Z0-9_-]{10,}$/.test(id)) return true;
+  return false;
+}
+
+async function assertRootFolderAccessible(
+  token: string,
+  folderId: string,
+  saEmail: string,
+) {
+  const url =
+    `${DRIVE_API}/files/${encodeURIComponent(folderId)}` +
+    `?fields=id,name,mimeType&supportsAllDrives=true`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      `Pasta SIGAEDUCA inacessível (ID ${folderId}). ` +
+        `Confira GOOGLE_DRIVE_ROOT_FOLDER_ID e compartilhe a pasta com ${saEmail} como Editor. ` +
+        `(Google: ${body?.error?.message || res.status})`,
+    );
+  }
+  if (body.mimeType && body.mimeType !== "application/vnd.google-apps.folder") {
+    throw new Error(
+      `GOOGLE_DRIVE_ROOT_FOLDER_ID não é uma pasta (é "${body.name || folderId}"). Use o ID da pasta SIGAEDUCA.`,
+    );
+  }
 }
 
 function sanitizeFolderName(name: string) {
