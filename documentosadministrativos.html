@@ -225,6 +225,8 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 <select id="adm-filter-tipo" class="w-full px-3 py-2.5 bg-white border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
 <option value="">Todos</option>
 <option value="Requerimento Padrão">Requerimento Padrão</option>
+<option value="Ofício">Ofício</option>
+<option value="Memorando">Memorando</option>
 </select>
 </div>
 <div>
@@ -236,8 +238,8 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 <input id="adm-filter-data" type="date" class="w-full px-3 py-2.5 bg-white border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
 </div>
 <div>
-<label class="block text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1" for="adm-filter-requerente">Nome do requerente</label>
-<input id="adm-filter-requerente" type="search" placeholder="Buscar requerente" class="w-full px-3 py-2.5 bg-white border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
+<label class="block text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1" for="adm-filter-requerente">Requerente / Destinatário</label>
+<input id="adm-filter-requerente" type="search" placeholder="Buscar nome" class="w-full px-3 py-2.5 bg-white border border-border-subtle rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"/>
 </div>
 </div>
 <div class="overflow-x-auto">
@@ -247,13 +249,13 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 <th class="px-4 py-3 font-semibold">Tipo</th>
 <th class="px-4 py-3 font-semibold">Usuário</th>
 <th class="px-4 py-3 font-semibold">Data</th>
-<th class="px-4 py-3 font-semibold">Requerente</th>
+<th class="px-4 py-3 font-semibold">Requerente / Destinatário</th>
 <th class="px-4 py-3 font-semibold text-right">Ações</th>
 </tr>
 </thead>
 <tbody id="adm-hist-body" class="text-body-md"></tbody>
 </table>
-<p id="adm-hist-empty" class="hidden px-6 py-10 text-center text-text-secondary text-sm">Nenhum documento emitido ainda. Preencha um Requerimento Padrão para iniciar o histórico.</p>
+<p id="adm-hist-empty" class="hidden px-6 py-10 text-center text-text-secondary text-sm">Nenhum documento emitido ainda. Emita um Requerimento, Ofício ou Memorando para iniciar o histórico.</p>
 </div>
 </section>
 </div>
@@ -368,6 +370,66 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 <button type="button" id="adm-req-cancel" class="px-5 py-2.5 rounded-xl border border-border-subtle text-sm font-semibold hover:bg-surface-container-low">Cancelar</button>
 <button type="button" id="adm-req-save" class="px-5 py-2.5 rounded-xl border border-primary text-primary text-sm font-semibold hover:bg-primary/5">Salvar</button>
 <button type="button" id="adm-req-save-print" class="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">print</span>Salvar e imprimir
+</button>
+</div>
+</div>
+</div>
+
+<!-- Modal: Ofício / Memorando -->
+<div id="adm-om-modal" class="hidden fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4 sm:p-8">
+<div class="w-full max-w-3xl bg-white rounded-2xl shadow-2xl my-4 border border-border-subtle overflow-hidden">
+<div class="sticky top-0 z-10 px-6 py-4 border-b border-border-subtle bg-white flex items-center justify-between gap-3">
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-primary">Papel timbrado oficial</p>
+<h3 id="adm-om-modal-title" class="font-headline-sm text-on-surface">Novo Ofício</h3>
+</div>
+<button type="button" id="adm-om-close" class="w-10 h-10 rounded-xl border border-border-subtle hover:bg-surface-container-low flex items-center justify-center" aria-label="Fechar">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+
+<div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+<div class="rounded-xl bg-surface-container-low/70 border border-border-subtle p-4 text-sm text-on-surface">
+<p id="adm-om-hint" class="text-text-secondary">Modelo no papel timbrado da escola.</p>
+<p id="adm-om-local-preview" class="mt-2 text-right font-medium text-on-surface">Ourilândia do Norte, —</p>
+<p id="adm-om-titulo-preview" class="mt-1 text-center font-bold tracking-wide uppercase text-on-surface">OFÍCIO Nº —/2026</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<div>
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1" for="adm-om-numero">Número</label>
+<input id="adm-om-numero" type="number" min="1" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" readonly/>
+<p class="text-[11px] text-text-secondary mt-1">Atribuído automaticamente na emissão.</p>
+</div>
+<div>
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1" for="adm-om-data">Data do documento</label>
+<input id="adm-om-data" type="date" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"/>
+</div>
+<div class="md:col-span-2">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1" for="adm-om-de">DE</label>
+<input id="adm-om-de" type="text" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-sm bg-surface-container-low outline-none" value="Escola Estadual Dr Romildo Veloso e Silva" readonly/>
+</div>
+<div class="md:col-span-2">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1" for="adm-om-para">PARA</label>
+<input id="adm-om-para" type="text" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="Nome do destinatário"/>
+</div>
+<div class="md:col-span-2">
+<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1" for="adm-om-corpo">Corpo do texto *</label>
+<textarea id="adm-om-corpo" rows="12" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y" placeholder="Digite o conteúdo do documento"></textarea>
+</div>
+</div>
+
+<div class="rounded-xl border border-dashed border-border-subtle p-4 text-center text-sm text-text-secondary">
+<p class="font-bold tracking-widest text-on-surface">ATENCIOSAMENTE</p>
+<p class="mt-6 border-t border-on-surface/40 w-48 mx-auto pt-2 text-on-surface">Gestão Escolar</p>
+</div>
+</div>
+
+<div class="sticky bottom-0 px-6 py-4 border-t border-border-subtle bg-white flex flex-wrap justify-end gap-2">
+<button type="button" id="adm-om-cancel" class="px-5 py-2.5 rounded-xl border border-border-subtle text-sm font-semibold hover:bg-surface-container-low">Cancelar</button>
+<button type="button" id="adm-om-save" class="px-5 py-2.5 rounded-xl border border-primary text-primary text-sm font-semibold hover:bg-primary/5">Salvar</button>
+<button type="button" id="adm-om-save-print" class="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 flex items-center gap-2">
 <span class="material-symbols-outlined text-[18px]">print</span>Salvar e imprimir
 </button>
 </div>

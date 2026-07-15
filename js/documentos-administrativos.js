@@ -1,17 +1,27 @@
 /**
  * SIGA EDUCA — Documentos Administrativos (Gestão Escolar)
- * Requerimento Padrão (editável + impressão) + histórico de emissões
+ * Requerimento Padrão, Ofício e Memorando (editável + impressão) + histórico
  */
 (function (global) {
     'use strict';
 
     var STORAGE_KEY = 'siga_documentos_administrativos';
+    var COUNTERS_KEY = 'siga_adm_doc_counters';
     var TIPO_REQ = 'Requerimento Padrão';
+    var TIPO_OFICIO = 'Ofício';
+    var TIPO_MEMORANDO = 'Memorando';
+    var DE_PADRAO = 'Escola Estadual Dr Romildo Veloso e Silva';
+    var OFICIO_START = 35;
+    var MEMORANDO_START = 47;
+    var MESES_PT = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
 
     var DOC_TYPES = [
         { id: 'requerimento_padrao', label: TIPO_REQ, icon: 'request_page', ready: true },
-        { id: 'oficio', label: 'Ofício', icon: 'mail', ready: false },
-        { id: 'memorando', label: 'Memorando', icon: 'sticky_note_2', ready: false },
+        { id: 'oficio', label: TIPO_OFICIO, icon: 'mail', ready: true },
+        { id: 'memorando', label: TIPO_MEMORANDO, icon: 'sticky_note_2', ready: true },
         { id: 'ata_conselho', label: 'ATA Conselho', icon: 'groups', ready: false },
         { id: 'ata_administrativa', label: 'ATA Administrativa', icon: 'assignment', ready: false },
         { id: 'ata_conselho_escolar', label: 'ATA de Conselho Escolar', icon: 'diversity_3', ready: false },
@@ -53,6 +63,7 @@
     ];
 
     var editingId = null;
+    var editingKind = null; // 'requerimento' | 'oficio' | 'memorando'
     var filterState = { tipo: '', usuario: '', data: '', requerente: '' };
 
     function toast(msg, type) {
@@ -123,6 +134,63 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(list) ? list : []));
     }
 
+    function getCounters() {
+        try {
+            var c = JSON.parse(localStorage.getItem(COUNTERS_KEY) || 'null') || {};
+            var oficio = parseInt(c.oficio, 10);
+            var memorando = parseInt(c.memorando, 10);
+            return {
+                oficio: isNaN(oficio) || oficio < OFICIO_START ? OFICIO_START : oficio,
+                memorando: isNaN(memorando) || memorando < MEMORANDO_START ? MEMORANDO_START : memorando
+            };
+        } catch (e) {
+            return { oficio: OFICIO_START, memorando: MEMORANDO_START };
+        }
+    }
+
+    function saveCounters(c) {
+        localStorage.setItem(COUNTERS_KEY, JSON.stringify({
+            oficio: c.oficio,
+            memorando: c.memorando
+        }));
+    }
+
+    function peekNumero(kind) {
+        var c = getCounters();
+        return kind === 'oficio' ? c.oficio : c.memorando;
+    }
+
+    function yearFromIso(iso) {
+        var y = String(iso || '').slice(0, 4);
+        if (/^\d{4}$/.test(y)) return y;
+        return String(new Date().getFullYear());
+    }
+
+    function formatLocalExtenso(iso) {
+        var raw = String(iso || '').slice(0, 10);
+        var parts = raw.split('-');
+        var d, m, y;
+        if (parts.length === 3) {
+            y = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+            d = parseInt(parts[2], 10);
+        } else {
+            var now = new Date();
+            y = now.getFullYear();
+            m = now.getMonth() + 1;
+            d = now.getDate();
+        }
+        var mes = MESES_PT[m - 1] || '';
+        return 'Ourilândia do Norte, ' + d + ' de ' + mes + ' de ' + y;
+    }
+
+    function tituloDocumento(kind, numero, ano) {
+        var n = numero != null ? String(numero) : '';
+        var a = ano || String(new Date().getFullYear());
+        if (kind === 'memorando') return 'MEMORANDO Nº ' + n + '/' + a;
+        return 'OFÍCIO Nº ' + n + '/' + a;
+    }
+
     function emptyForm() {
         var pedidos = {};
         PEDIDOS.forEach(function (p) {
@@ -158,6 +226,19 @@
         };
     }
 
+    function emptyOmForm(kind) {
+        return {
+            tipo: kind === 'memorando' ? TIPO_MEMORANDO : TIPO_OFICIO,
+            kind: kind === 'memorando' ? 'memorando' : 'oficio',
+            numero: null,
+            ano: yearFromIso(new Date().toISOString()),
+            dataDocumento: new Date().toISOString().slice(0, 10),
+            de: DE_PADRAO,
+            para: '',
+            corpo: ''
+        };
+    }
+
     function $(id) {
         return document.getElementById(id);
     }
@@ -182,7 +263,10 @@
 
         host.querySelectorAll('[data-open-type]').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                if (btn.getAttribute('data-open-type') === 'requerimento_padrao') openForm();
+                var type = btn.getAttribute('data-open-type');
+                if (type === 'requerimento_padrao') openForm();
+                else if (type === 'oficio') openOmForm('oficio');
+                else if (type === 'memorando') openOmForm('memorando');
             });
         });
     }
@@ -293,6 +377,7 @@
 
     function openForm(doc) {
         editingId = doc && doc.id ? doc.id : null;
+        editingKind = 'requerimento';
         var data = doc && doc.dados ? Object.assign(emptyForm(), doc.dados) : emptyForm();
         if (doc && doc.dados && doc.dados.pedidos) {
             data.pedidos = Object.assign(emptyForm().pedidos, doc.dados.pedidos);
@@ -306,6 +391,7 @@
 
     function closeForm() {
         editingId = null;
+        editingKind = null;
         var modal = $('adm-req-modal');
         if (modal) modal.classList.add('hidden');
     }
@@ -354,6 +440,128 @@
         closeForm();
     }
 
+    function syncOmTituloPreview() {
+        var kind = editingKind === 'memorando' ? 'memorando' : 'oficio';
+        var numEl = $('adm-om-numero');
+        var dataEl = $('adm-om-data');
+        var tituloEl = $('adm-om-titulo-preview');
+        var num = numEl ? parseInt(numEl.value, 10) : peekNumero(kind);
+        if (isNaN(num)) num = peekNumero(kind);
+        var ano = yearFromIso(dataEl && dataEl.value);
+        if (tituloEl) tituloEl.textContent = tituloDocumento(kind, num, ano);
+        var localEl = $('adm-om-local-preview');
+        if (localEl) localEl.textContent = formatLocalExtenso(dataEl && dataEl.value);
+    }
+
+    function fillOmForm(data) {
+        var kind = data.kind === 'memorando' ? 'memorando' : 'oficio';
+        if ($('adm-om-numero')) $('adm-om-numero').value = data.numero != null ? String(data.numero) : String(peekNumero(kind));
+        if ($('adm-om-data')) $('adm-om-data').value = data.dataDocumento || new Date().toISOString().slice(0, 10);
+        if ($('adm-om-de')) $('adm-om-de').value = data.de || DE_PADRAO;
+        if ($('adm-om-para')) $('adm-om-para').value = data.para || '';
+        if ($('adm-om-corpo')) $('adm-om-corpo').value = data.corpo || '';
+        syncOmTituloPreview();
+    }
+
+    function readOmForm() {
+        var kind = editingKind === 'memorando' ? 'memorando' : 'oficio';
+        var data = emptyOmForm(kind);
+        data.dataDocumento = ($('adm-om-data') && $('adm-om-data').value) || data.dataDocumento;
+        data.ano = yearFromIso(data.dataDocumento);
+        data.de = DE_PADRAO;
+        data.para = ($('adm-om-para') && $('adm-om-para').value || '').trim();
+        data.corpo = ($('adm-om-corpo') && $('adm-om-corpo').value || '').trim();
+        var n = parseInt($('adm-om-numero') && $('adm-om-numero').value, 10);
+        data.numero = isNaN(n) ? null : n;
+        return data;
+    }
+
+    function openOmForm(kind, doc) {
+        kind = kind === 'memorando' ? 'memorando' : 'oficio';
+        editingId = doc && doc.id ? doc.id : null;
+        editingKind = kind;
+        var data = doc && doc.dados
+            ? Object.assign(emptyOmForm(kind), doc.dados, { kind: kind, tipo: kind === 'memorando' ? TIPO_MEMORANDO : TIPO_OFICIO })
+            : emptyOmForm(kind);
+        if (!editingId) {
+            data.numero = peekNumero(kind);
+        }
+        fillOmForm(data);
+        var label = kind === 'memorando' ? TIPO_MEMORANDO : TIPO_OFICIO;
+        var title = $('adm-om-modal-title');
+        if (title) title.textContent = editingId ? ('Editar ' + label) : ('Novo ' + label);
+        var hint = $('adm-om-hint');
+        if (hint) {
+            hint.textContent = kind === 'memorando'
+                ? 'Modelo no papel timbrado da escola. Numeração inicia em 47 e avança a cada novo memorando.'
+                : 'Modelo no papel timbrado da escola. Numeração inicia em 35 e avança a cada novo ofício.';
+        }
+        var modal = $('adm-om-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeOmForm() {
+        editingId = null;
+        editingKind = null;
+        var modal = $('adm-om-modal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    function validateOmForm(data) {
+        if (!data.corpo) return 'Escreva o corpo do texto.';
+        if (data.numero == null || isNaN(data.numero)) return 'Número do documento inválido.';
+        return '';
+    }
+
+    function saveOmForm(andPrint) {
+        var kind = editingKind === 'memorando' ? 'memorando' : 'oficio';
+        var data = readOmForm();
+        var err = validateOmForm(data);
+        if (err) {
+            toast(err, 'error');
+            return;
+        }
+        var list = getDocs();
+        var now = new Date().toISOString();
+        var tipoLabel = kind === 'memorando' ? TIPO_MEMORANDO : TIPO_OFICIO;
+
+        if (editingId) {
+            var idx = list.findIndex(function (d) { return d.id === editingId; });
+            if (idx >= 0) {
+                list[idx].dados = data;
+                list[idx].requerente = data.para || tituloDocumento(kind, data.numero, data.ano);
+                list[idx].tipo = tipoLabel;
+                list[idx].updatedAt = now;
+            }
+        } else {
+            // Confirma e consome o número atual (pode ter sido alterado na tela)
+            var counters = getCounters();
+            var used = data.numero;
+            if (kind === 'oficio') {
+                if (used >= counters.oficio) counters.oficio = used + 1;
+            } else if (used >= counters.memorando) {
+                counters.memorando = used + 1;
+            }
+            saveCounters(counters);
+            list.unshift({
+                id: uid(),
+                tipo: tipoLabel,
+                requerente: data.para || tituloDocumento(kind, data.numero, data.ano),
+                emitidoPor: sessionUserName(),
+                createdAt: now,
+                updatedAt: now,
+                dados: data
+            });
+        }
+        saveDocs(list);
+        toast(editingId
+            ? (tipoLabel + ' atualizado.')
+            : (tipoLabel + ' Nº ' + data.numero + '/' + data.ano + ' emitido e salvo no histórico.'));
+        renderHistory();
+        if (andPrint) printOficioMemorando(data);
+        closeOmForm();
+    }
+
     function fmtDate(iso) {
         if (!iso) return '—';
         var d = String(iso).slice(0, 10).split('-');
@@ -378,6 +586,31 @@
             if (st.texto) extra.push(st.texto);
             return p.label + (extra.length ? ' (' + extra.join(', ') + ')' : '');
         });
+    }
+
+    function getTimbradoUrl() {
+        try {
+            return new URL('assets/timbrado-a4.jpg', window.location.href).href;
+        } catch (e) {
+            return 'assets/timbrado-a4.jpg';
+        }
+    }
+
+    function printViaIframe(html) {
+        var iframe = document.getElementById('adm-print-frame');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'adm-print-frame';
+            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+            document.body.appendChild(iframe);
+        }
+        var doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+        setTimeout(function () {
+            try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch (e) { /* ignore */ }
+        }, 350);
     }
 
     function printRequerimento(data) {
@@ -451,20 +684,81 @@
             '</div></body></html>'
         ].join('');
 
-        var iframe = document.getElementById('adm-print-frame');
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'adm-print-frame';
-            iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
-            document.body.appendChild(iframe);
+        printViaIframe(html);
+    }
+
+    function printOficioMemorando(data) {
+        var kind = data.kind === 'memorando' || data.tipo === TIPO_MEMORANDO ? 'memorando' : 'oficio';
+        var ano = data.ano || yearFromIso(data.dataDocumento);
+        var titulo = tituloDocumento(kind, data.numero, ano);
+        var local = formatLocalExtenso(data.dataDocumento);
+        var bg = getTimbradoUrl().replace(/'/g, "\\'");
+        var corpo = escapeHtml(data.corpo || '').replace(/\n/g, '<br/>');
+        var para = escapeHtml(data.para || '');
+        var de = escapeHtml(data.de || DE_PADRAO);
+
+        var html = [
+            '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><title>', escapeHtml(titulo), '</title>',
+            '<style>',
+            '@page{size:A4;margin:0}',
+            'html,body{margin:0;padding:0;background:#fff}',
+            'body{font-family:Arial,Helvetica,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+            '.page{width:210mm;height:297mm;box-sizing:border-box;position:relative;overflow:hidden;',
+            "background-image:url('" + bg + "');",
+            'background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
+            '.content{box-sizing:border-box;height:100%;padding:48mm 18mm 34mm 18mm;display:flex;flex-direction:column}',
+            '.local{text-align:right;font-size:12pt;margin:0 0 18px}',
+            '.titulo{text-align:center;font-size:14pt;font-weight:700;letter-spacing:.04em;margin:0 0 22px;text-transform:uppercase}',
+            '.meta{font-size:12pt;line-height:1.55;margin:0 0 16px}',
+            '.meta .lbl{font-weight:700}',
+            '.corpo{flex:1;border:1px solid #222;border-radius:2px;padding:12px 14px;font-size:12pt;line-height:1.55;text-align:justify;white-space:normal;min-height:90mm;background:rgba(255,255,255,.55)}',
+            '.fecho{margin-top:28px;text-align:center}',
+            '.fecho .atenciosamente{font-size:12pt;font-weight:700;letter-spacing:.06em;margin:0 0 36px}',
+            '.fecho .linha{width:58%;margin:0 auto;border-top:1px solid #111;padding-top:8px}',
+            '.fecho .cargo{font-size:11pt;margin:0}',
+            '@media print{html,body{margin:0!important;padding:0!important}.page{page-break-inside:avoid}}',
+            '</style></head><body><div class="page"><div class="content">',
+            '<p class="local">', escapeHtml(local), '</p>',
+            '<h1 class="titulo">', escapeHtml(titulo), '</h1>',
+            '<div class="meta">',
+            '<div><span class="lbl">DE:</span> ', de, '</div>',
+            '<div><span class="lbl">PARA:</span> ', para || '&nbsp;', '</div>',
+            '</div>',
+            '<div class="corpo">', corpo || '&nbsp;', '</div>',
+            '<div class="fecho">',
+            '<p class="atenciosamente">ATENCIOSAMENTE</p>',
+            '<div class="linha"><p class="cargo">Gestão Escolar</p></div>',
+            '</div>',
+            '</div></div></body></html>'
+        ].join('');
+
+        printViaIframe(html);
+    }
+
+    function printDocumento(doc) {
+        if (!doc) return;
+        var dados = doc.dados || {};
+        if (doc.tipo === TIPO_OFICIO || doc.tipo === TIPO_MEMORANDO || dados.kind === 'oficio' || dados.kind === 'memorando') {
+            printOficioMemorando(Object.assign({}, dados, {
+                tipo: doc.tipo,
+                kind: dados.kind || (doc.tipo === TIPO_MEMORANDO ? 'memorando' : 'oficio')
+            }));
+            return;
         }
-        var doc = iframe.contentDocument || iframe.contentWindow.document;
-        doc.open();
-        doc.write(html);
-        doc.close();
-        setTimeout(function () {
-            try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch (e) { /* ignore */ }
-        }, 250);
+        printRequerimento(Object.assign(emptyForm(), dados));
+    }
+
+    function openDocumento(doc) {
+        if (!doc) return;
+        if (doc.tipo === TIPO_OFICIO || (doc.dados && doc.dados.kind === 'oficio')) {
+            openOmForm('oficio', doc);
+            return;
+        }
+        if (doc.tipo === TIPO_MEMORANDO || (doc.dados && doc.dados.kind === 'memorando')) {
+            openOmForm('memorando', doc);
+            return;
+        }
+        openForm(doc);
     }
 
     function filteredDocs() {
@@ -497,9 +791,13 @@
         }
         if (empty) empty.classList.add('hidden');
         body.innerHTML = list.map(function (d) {
+            var labelExtra = '';
+            if (d.dados && d.dados.numero != null && (d.tipo === TIPO_OFICIO || d.tipo === TIPO_MEMORANDO)) {
+                labelExtra = ' Nº ' + d.dados.numero + '/' + (d.dados.ano || yearFromIso(d.dados.dataDocumento));
+            }
             return [
                 '<tr class="border-b border-border-subtle hover:bg-surface-container-low/40">',
-                '<td class="px-4 py-3 text-sm font-medium">', escapeHtml(d.tipo || '—'), '</td>',
+                '<td class="px-4 py-3 text-sm font-medium">', escapeHtml((d.tipo || '—') + labelExtra), '</td>',
                 '<td class="px-4 py-3 text-sm">', escapeHtml(d.emitidoPor || '—'), '</td>',
                 '<td class="px-4 py-3 text-sm whitespace-nowrap">', escapeHtml(fmtDate(d.createdAt)), '</td>',
                 '<td class="px-4 py-3 text-sm">', escapeHtml(d.requerente || '—'), '</td>',
@@ -518,8 +816,8 @@
                 var act = btn.getAttribute('data-act');
                 var doc = getDocs().find(function (x) { return x.id === id; });
                 if (!doc) return;
-                if (act === 'print') printRequerimento(doc.dados || emptyForm());
-                if (act === 'edit') openForm(doc);
+                if (act === 'print') printDocumento(doc);
+                if (act === 'edit') openDocumento(doc);
                 if (act === 'delete') {
                     if (!confirm('Excluir este documento do histórico?')) return;
                     saveDocs(getDocs().filter(function (x) { return x.id !== id; }));
@@ -569,11 +867,33 @@
                 if (e.target === backdrop) closeForm();
             });
         }
+
+        var omClose = $('adm-om-close');
+        var omCancel = $('adm-om-cancel');
+        var omSave = $('adm-om-save');
+        var omSavePrint = $('adm-om-save-print');
+        var omBackdrop = $('adm-om-modal');
+        if (omClose) omClose.onclick = closeOmForm;
+        if (omCancel) omCancel.onclick = closeOmForm;
+        if (omSave) omSave.onclick = function () { saveOmForm(false); };
+        if (omSavePrint) omSavePrint.onclick = function () { saveOmForm(true); };
+        if (omBackdrop) {
+            omBackdrop.addEventListener('click', function (e) {
+                if (e.target === omBackdrop) closeOmForm();
+            });
+        }
+        var omData = $('adm-om-data');
+        var omNum = $('adm-om-numero');
+        if (omData) omData.addEventListener('change', syncOmTituloPreview);
+        if (omData) omData.addEventListener('input', syncOmTituloPreview);
+        if (omNum) omNum.addEventListener('input', syncOmTituloPreview);
     }
 
     function init() {
         if (!/documentosadministrativos/i.test(location.pathname + location.href)) return;
         if (!ensureAccess()) return;
+        // Garante contadores mínimos na primeira carga
+        saveCounters(getCounters());
         renderTypes();
         var countEl = $('adm-doc-types-count');
         if (countEl) countEl.textContent = String(DOC_TYPES.length);
@@ -586,9 +906,12 @@
         DOC_TYPES: DOC_TYPES,
         isGestorEscolar: isGestorEscolar,
         openForm: openForm,
+        openOmForm: openOmForm,
         init: init
     };
     global.abrirRequerimentoPadrao = function () { openForm(); };
+    global.abrirOficio = function () { openOmForm('oficio'); };
+    global.abrirMemorando = function () { openOmForm('memorando'); };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
