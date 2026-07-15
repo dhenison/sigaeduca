@@ -485,7 +485,7 @@
     };
   }
 
-  /** Migra local → cloud e recarrega lista do Supabase (fonte de verdade). */
+  /** Recarrega lista do Supabase (fonte de verdade). Não remigra o local para não ressuscitar exclusões. */
   function loadDocumentosSecretariaFromCloud() {
     const sb = getSupabaseClient();
     if (!sb) {
@@ -497,26 +497,20 @@
         return { ok: false, reason: 'no_school' };
       }
 
-      const localList = getSecDocumentos();
-      const migrate = (localList || []).map(function (doc) {
-        return syncDocumentoSecretariaCloud(doc);
-      });
-
-      return Promise.all(migrate).then(function () {
-        return sb.from('secretary_documents')
-          .select('*')
-          .eq('school_id', schoolId)
-          .order('issued_on', { ascending: false })
-          .order('created_at', { ascending: false });
-      }).then(function (res) {
-        if (res.error) {
-          console.warn('[SIGA] load secretary_documents:', res.error.message);
-          return { ok: false, message: res.error.message };
-        }
-        const list = (res.data || []).map(mapCloudRowToLocalDoc).filter(Boolean);
-        saveSecDocumentos(list);
-        return { ok: true, count: list.length, schoolId: schoolId };
-      });
+      return sb.from('secretary_documents')
+        .select('*')
+        .eq('school_id', schoolId)
+        .order('issued_on', { ascending: false })
+        .order('created_at', { ascending: false })
+        .then(function (res) {
+          if (res.error) {
+            console.warn('[SIGA] load secretary_documents:', res.error.message);
+            return { ok: false, message: res.error.message };
+          }
+          const list = (res.data || []).map(mapCloudRowToLocalDoc).filter(Boolean);
+          saveSecDocumentos(list);
+          return { ok: true, count: list.length, schoolId: schoolId };
+        });
     }).catch(function (err) {
       console.warn('[SIGA] load secretary_documents:', err);
       return { ok: false, message: (err && err.message) || 'erro' };
