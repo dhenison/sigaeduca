@@ -65,6 +65,12 @@
                 </a>
             </li>
             <li class="sidebar-item">
+                <a href="#" class="sidebar-link" data-view="consultaProf">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span class="sidebar-link-text">Professores</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
                 <a href="#" class="sidebar-link" data-view="disciplinas">
                     <i class="fas fa-book"></i>
                     <span class="sidebar-link-text">Disciplinas</span>
@@ -497,6 +503,84 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- ==========================================
+                 CONSULTA / RESUMO POR PROFESSOR
+                 ========================================== -->
+            <div class="page-view" id="consultaProfView">
+                <div class="content-card">
+                    <div class="content-card-title">
+                        <span>Professores — Consulta de Lotação</span>
+                        <button class="btn btn-secondary btn-sm" id="btnPrintConsultaProf" onclick="imprimirConsultaProfessor()" style="display:none;">
+                            <i class="fas fa-print"></i> Imprimir
+                        </button>
+                    </div>
+
+                    <div class="filter-bar" style="grid-template-columns: 1fr auto; margin-bottom: 1.25rem;">
+                        <div class="filter-group">
+                            <label class="filter-label" for="consultaProfSearch">Pesquisar professor</label>
+                            <div class="search-input-wrapper">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="consultaProfSearch" class="form-control" list="consultaProfList"
+                                    placeholder="Digite o nome ou matrícula do professor..." autocomplete="off">
+                                <datalist id="consultaProfList"></datalist>
+                            </div>
+                        </div>
+                        <div class="filter-group" style="align-self:end;">
+                            <button type="button" class="btn btn-primary" id="btnBuscarConsultaProf" onclick="buscarConsultaProfessor()">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="consultaProfEmpty" style="padding: 1.5rem; text-align:center; color: var(--text-secondary);">
+                        Pesquise e selecione um professor para ver a lotação.
+                    </div>
+
+                    <div id="consultaProfResult" style="display:none;">
+                        <div id="consultaProfPrintArea">
+                            <div class="consulta-prof-header" style="margin-bottom: 1.25rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.85rem;">
+                                <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); margin-bottom:0.35rem;">
+                                    EE DR ROMILDO VELOSO E SILVA · URE 22A · OURILÂNDIA DO NORTE · ANO 2026
+                                </div>
+                                <h2 style="margin:0 0 0.35rem; font-size:1.15rem; font-weight:800;">
+                                    Resumo de Lotação até a presente data
+                                </h2>
+                                <div style="font-size:0.875rem; color:var(--text-secondary);" id="consultaProfDataRef">—</div>
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+                                <div>
+                                    <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Professor</div>
+                                    <div id="consultaProfNome" style="font-weight:800; font-size:1.05rem; text-transform:uppercase;">—</div>
+                                    <div style="font-size:0.875rem; color:var(--text-secondary);">Matrícula: <span id="consultaProfMatricula">—</span></div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div class="badge badge-success" style="font-size:1rem; padding:0.5rem 1rem;" id="consultaProfChTotal">0h</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">Carga horária total (disciplinas)</div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="custom-table" style="font-size: 0.85rem;">
+                                    <thead>
+                                        <tr>
+                                            <th>Turma</th>
+                                            <th>Oferta</th>
+                                            <th>Turno</th>
+                                            <th>Código</th>
+                                            <th>Disciplina</th>
+                                            <th>CH</th>
+                                            <th>Alunos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="consultaProfTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- ==========================================
                  5. RELATÓRIOS & EXPORTAÇÕES
@@ -649,6 +733,6 @@
     <script src="data.js?v=20260715m03"></script>
     
     <!-- Application Logic controller -->
-    <script src="app.js?v=20260715m03"></script>
+    <script src="app.js?v=20260715prof"></script>
 </body>
 </html>

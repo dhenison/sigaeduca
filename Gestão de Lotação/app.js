@@ -859,6 +859,9 @@ function switchView(viewId) {
         case 'fichaDesistencia':
             initFichaDesistenciaView();
             break;
+        case 'consultaProf':
+            renderConsultaProfView();
+            break;
         case 'relatorios':
             renderRelatoriosView();
             break;
@@ -1895,6 +1898,172 @@ function imprimirRelatorioDocente() {
         </body>
         </html>
     `);
+    win.document.close();
+}
+
+/* ==========================================================================
+   CONSULTA / RESUMO POR PROFESSOR (MENU PROFESSORES)
+   ========================================================================== */
+function listarProfessoresLotados() {
+    const map = new Map();
+    (appState.data || []).forEach(function (item) {
+        const nome = String(item.professor || '').trim();
+        if (!nome || nome === '-' || nome.toUpperCase() === 'SEM LOTACAO') return;
+        if (!map.has(nome)) {
+            map.set(nome, {
+                nome: nome,
+                matricula: item.matricula || '-'
+            });
+        }
+    });
+    return Array.from(map.values()).sort(function (a, b) {
+        return a.nome.localeCompare(b.nome, 'pt-BR');
+    });
+}
+
+function formatDatePresentePt(d) {
+    const dt = d || new Date();
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    return dd + '/' + mm + '/' + yyyy;
+}
+
+function renderConsultaProfView() {
+    const list = document.getElementById('consultaProfList');
+    const search = document.getElementById('consultaProfSearch');
+    if (!list || !search) return;
+
+    const professores = listarProfessoresLotados();
+    list.innerHTML = professores.map(function (p) {
+        return '<option value="' + p.nome.replace(/"/g, '&quot;') + '">' + (p.matricula || '') + '</option>';
+    }).join('');
+
+    search.value = '';
+    document.getElementById('consultaProfEmpty').style.display = 'block';
+    document.getElementById('consultaProfResult').style.display = 'none';
+    document.getElementById('btnPrintConsultaProf').style.display = 'none';
+
+    search.onkeydown = function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscarConsultaProfessor();
+        }
+    };
+}
+
+function resolverProfessorConsulta(termo) {
+    const q = String(termo || '').trim().toLowerCase();
+    if (!q) return null;
+    const professores = listarProfessoresLotados();
+    let hit = professores.find(function (p) { return p.nome.toLowerCase() === q; });
+    if (hit) return hit;
+    hit = professores.find(function (p) {
+        return String(p.matricula || '').toLowerCase() === q ||
+            String(p.matricula || '').toLowerCase().indexOf(q) === 0;
+    });
+    if (hit) return hit;
+    const matches = professores.filter(function (p) {
+        return p.nome.toLowerCase().indexOf(q) >= 0 ||
+            String(p.matricula || '').toLowerCase().indexOf(q) >= 0;
+    });
+    if (matches.length === 1) return matches[0];
+    if (matches.length > 1) {
+        showToast('Há vários professores. Selecione o nome completo na lista.');
+        return null;
+    }
+    return null;
+}
+
+function buscarConsultaProfessor() {
+    const search = document.getElementById('consultaProfSearch');
+    const prof = resolverProfessorConsulta(search ? search.value : '');
+    if (!prof) {
+        if (search && String(search.value || '').trim()) {
+            showToast('Professor não encontrado na lotação.');
+        }
+        document.getElementById('consultaProfEmpty').style.display = 'block';
+        document.getElementById('consultaProfResult').style.display = 'none';
+        document.getElementById('btnPrintConsultaProf').style.display = 'none';
+        return;
+    }
+    if (search) search.value = prof.nome;
+    preencherConsultaProfessor(prof.nome);
+}
+
+function preencherConsultaProfessor(profName) {
+    const rows = (appState.data || []).filter(function (item) {
+        return item.professor === profName;
+    });
+    const empty = document.getElementById('consultaProfEmpty');
+    const result = document.getElementById('consultaProfResult');
+    const printBtn = document.getElementById('btnPrintConsultaProf');
+    const tbody = document.getElementById('consultaProfTableBody');
+
+    if (!rows.length) {
+        empty.style.display = 'block';
+        empty.textContent = 'Nenhuma lotação encontrada para este professor.';
+        result.style.display = 'none';
+        printBtn.style.display = 'none';
+        return;
+    }
+
+    empty.style.display = 'none';
+    result.style.display = 'block';
+    printBtn.style.display = 'inline-flex';
+
+    document.getElementById('consultaProfNome').textContent = profName;
+    document.getElementById('consultaProfMatricula').textContent = rows[0].matricula || '-';
+    document.getElementById('consultaProfDataRef').textContent =
+        'Atualizado até ' + formatDatePresentePt(new Date());
+
+    let totalCh = 0;
+    tbody.innerHTML = rows.map(function (item) {
+        totalCh += Number(item.ch_disciplina) || 0;
+        return '<tr>' +
+            '<td><strong>' + (item.turma || '-') + '</strong></td>' +
+            '<td>' + (item.oferta || '-') + '</td>' +
+            '<td>' + (item.turno || '-') + '</td>' +
+            '<td><span class="badge badge-secondary">' + (item.codigo || '-') + '</span></td>' +
+            '<td>' + (item.disciplina || '-') + '</td>' +
+            '<td><span class="badge badge-info">' + (item.ch_disciplina || 0) + 'h</span></td>' +
+            '<td>' + (item.num_alunos != null ? item.num_alunos : '-') + '</td>' +
+            '</tr>';
+    }).join('');
+
+    document.getElementById('consultaProfChTotal').textContent = totalCh + 'h';
+}
+
+function imprimirConsultaProfessor() {
+    const area = document.getElementById('consultaProfPrintArea');
+    if (!area || document.getElementById('consultaProfResult').style.display === 'none') {
+        showToast('Selecione um professor antes de imprimir.');
+        return;
+    }
+    const nome = document.getElementById('consultaProfNome').textContent || 'Professor';
+    const win = window.open('', '_blank');
+    if (!win) {
+        alert('Permita pop-ups para imprimir o resumo.');
+        return;
+    }
+    win.document.write(
+        '<html><head><title>Resumo de Lotação - ' + nome + '</title>' +
+        '<style>' +
+        'body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;}' +
+        'h1{font-size:16pt;margin:0 0 4px;}' +
+        'h2{font-size:13pt;margin:0 0 12px;}' +
+        '.meta{font-size:10pt;color:#444;margin-bottom:16px;}' +
+        'table{width:100%;border-collapse:collapse;margin-top:12px;}' +
+        'th,td{border:1px solid #000;padding:6px 8px;font-size:10pt;text-align:left;}' +
+        'th{background:#f1f5f9;}' +
+        '.badge{border:1px solid #ccc;padding:2px 6px;border-radius:4px;}' +
+        '@media print{body{padding:0;}}' +
+        '</style></head><body>' +
+        '<div class="meta">Governo do Estado do Pará · Secretaria de Estado de Educação — SEDUC</div>' +
+        area.innerHTML +
+        '<script>setTimeout(function(){window.print();window.close();},400);<\/script>' +
+        '</body></html>'
+    );
     win.document.close();
 }
 
