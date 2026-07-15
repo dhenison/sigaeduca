@@ -1,8 +1,10 @@
-# Google Drive institucional (SIGA EDUCA)
+# Google Drive institucional (SIGA EDUCA) — do zero
 
-O upload de **Documentos Secretaria** e **Solicitações Pedagógicas** usa a Edge Function `drive-upload-file` com Conta de Serviço.
+Upload de **Documentos Secretaria** e **Solicitações Pedagógicas** pela Edge Function `drive-upload-file`.
 
-## Estrutura
+Professores **não** fazem login Google. Só login no SIGA.
+
+## Estrutura no Drive
 
 ```
 SIGAEDUCA/                          ← GOOGLE_DRIVE_ROOT_FOLDER_ID
@@ -13,50 +15,51 @@ SIGAEDUCA/                          ← GOOGLE_DRIVE_ROOT_FOLDER_ID
         └── {Tipo}/
 ```
 
-## Importante: cota da Conta de Serviço
+## Fluxo (Meu Drive / Gmail da escola)
 
-Contas de serviço **não têm espaço no Meu Drive**.  
-Se `SIGAEDUCA` estiver só no **Meu Drive** (Gmail pessoal), o Google responde:
+```
+Usuário SIGA → Edge Function → OAuth da conta dona de SIGAEDUCA → pasta no Drive
+```
 
-> Service Accounts do not have storage quota…
+A Conta de Serviço **não funciona** no Meu Drive (sem cota). Não use JSON de service account neste cenário.
 
-### Solução recomendada — Drive compartilhado (Shared Drive)
+## Secrets no Supabase (só estes 4)
 
-1. No Google Drive (conta da escola / Workspace), crie um **Drive compartilhado** (ex.: `SIGA EDUCA Arquivos`)
-2. Mova ou recrie a pasta `SIGAEDUCA` **dentro** desse Drive compartilhado
-3. Em Gerenciar membros do Drive compartilhado, adicione:
-   - `siga-drive@siga-educa-drive.iam.gserviceaccount.com`
-   - Função: **Gerenciador de conteúdo** (Content manager) ou superior
-4. Abra a pasta `SIGAEDUCA` e atualize o secret `GOOGLE_DRIVE_ROOT_FOLDER_ID` com o **novo** ID da URL (`.../folders/ID`)
-
-Com isso, os arquivos usam a cota do Drive compartilhado, não da Conta de Serviço.
-
-### Alternativa — Workspace (impersonação)
-
-Se a escola tiver Google Workspace com admin:
-
-1. Ative **Domain-Wide Delegation** na Conta de Serviço (escopo `https://www.googleapis.com/auth/drive`)
-2. Secret opcional: `GOOGLE_DRIVE_IMPERSONATE_EMAIL` = e-mail de um usuário da escola com cota (ex. `secretaria@escola...`)
-
-## Secrets no Supabase
+Dashboard → Project → Edge Functions → Secrets:
 
 | Secret | Valor |
 |--------|--------|
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | Arquivo JSON inteiro da conta `siga-drive@siga-educa-drive.iam.gserviceaccount.com` |
-| `GOOGLE_DRIVE_ROOT_FOLDER_ID` | ID da pasta `SIGAEDUCA` (de preferência **dentro de Shared Drive**) |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` (opcional) | `siga-drive@siga-educa-drive.iam.gserviceaccount.com` |
-| `GOOGLE_DRIVE_IMPERSONATE_EMAIL` (opcional) | Usuário Workspace para impersonar |
+| `GOOGLE_DRIVE_ROOT_FOLDER_ID` | ID da pasta (`.../folders/ID`) |
+| `GOOGLE_OAUTH_CLIENT_ID` | Client ID OAuth (Aplicativo da Web) |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Client Secret OAuth |
+| `GOOGLE_OAUTH_REFRESH_TOKEN` | Refresh token da conta **dona** de `SIGAEDUCA` |
 
-Esse JSON é **único do sistema**. Usuários do SIGA só fazem login no SIGA (sem Google pessoal).
+### Checklist (do zero)
 
-## Passos Google (resumo)
+1. [ ] Conta Google dona da pasta `SIGAEDUCA`
+2. [ ] Google Cloud → ativar **Google Drive API**
+3. [ ] Credenciais → OAuth Client **Aplicativo da Web** → copiar Client ID e Client Secret
+4. [ ] [OAuth Playground](https://developers.google.com/oauthplayground/)
+   - ⚙️ → marcar **Use your own OAuth credentials** → colar ID e Secret
+   - Access type: **Offline** / Force prompt: **Consent Screen**
+   - Escopo: `https://www.googleapis.com/auth/drive`
+   - Authorize com a conta dona da pasta → **Exchange** → copiar **Refresh token**
+5. [ ] Remover secrets antigos de Conta de Serviço (se existirem):
+   - `GOOGLE_SERVICE_ACCOUNT_JSON`
+   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+   - `GOOGLE_DRIVE_IMPERSONATE_EMAIL`
+6. [ ] Cadastrar os 4 secrets da tabela acima
+7. [ ] Testar envio em Solicitações Pedagógicas (sem login Google do professor)
 
-1. Google Cloud → Conta de serviço → chave JSON + Drive API ativa
-2. Colocar `SIGAEDUCA` em **Drive compartilhado** e adicionar a SA como Gerenciador de conteúdo
-3. Colar JSON + folder ID nos secrets
-4. Deploy: `supabase functions deploy drive-upload-file`
+## Erros comuns
 
-## Acesso sem login Google pessoal
+| Mensagem | O que fazer |
+|----------|-------------|
+| Falta `GOOGLE_OAUTH_*` | Cadastrar Client ID, Secret e Refresh token |
+| Refresh token inválido | Gerar de novo no Playground com a conta dona da pasta |
+| Pasta inacessível | Conferir `GOOGLE_DRIVE_ROOT_FOLDER_ID` e a conta usada no Authorize |
+| Storage quota / service account | Você ainda está no modo Conta de Serviço — use só OAuth |
 
-Cada arquivo tenta receber permissão **qualquer pessoa com o link** (leitura).  
-Se a política do Shared Drive bloquear isso, o arquivo ainda fica salvo; abra pelo SIGA quando houver cópia local.
+## Acesso aos arquivos
+
+Cada upload tenta liberar **qualquer pessoa com o link** (leitura), para abrir sem login Google pessoal.

@@ -1,21 +1,15 @@
 /**
- * SIGA EDUCA — Upload institucional para Google Drive
- * Secrets:
- *   GOOGLE_SERVICE_ACCOUNT_JSON  — JSON completo da conta de serviço
- *   GOOGLE_DRIVE_ROOT_FOLDER_ID  — ID da pasta SIGAEDUCA
+ * SIGA EDUCA — Upload institucional para Google Drive (Meu Drive / OAuth escola)
  *
- * Body JSON:
- * {
- *   module: "secretaria" | "solicitacoes",
- *   tipo: string,
- *   solicitanteNome?: string,  // obrigatório em solicitacoes
- *   fileName: string,
- *   mimeType?: string,
- *   contentBase64: string
- * }
+ * Secrets obrigatórios:
+ *   GOOGLE_OAUTH_CLIENT_ID
+ *   GOOGLE_OAUTH_CLIENT_SECRET
+ *   GOOGLE_OAUTH_REFRESH_TOKEN   ← conta dona da pasta SIGAEDUCA (autorizar 1x)
+ *   GOOGLE_DRIVE_ROOT_FOLDER_ID
+ *
+ * Não usar Conta de Serviço no Meu Drive (sem cota).
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { SignJWT, importPKCS8 } from "https://esm.sh/jose@5.9.6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,7 +17,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files";
 
@@ -51,52 +44,19 @@ Deno.serve(async (req) => {
       return json({ error: "Sessão inválida. Faça login novamente." }, 401);
     }
 
-    const saJsonRaw = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") || "";
     const rootFolderIdRaw = (Deno.env.get("GOOGLE_DRIVE_ROOT_FOLDER_ID") || "").trim();
     const rootFolderId = normalizeFolderId(rootFolderIdRaw);
-    if (!saJsonRaw || !rootFolderId) {
+    if (!rootFolderId) {
       return json({
         error:
-          "Drive institucional não configurado. Defina GOOGLE_SERVICE_ACCOUNT_JSON e GOOGLE_DRIVE_ROOT_FOLDER_ID (ID da pasta SIGAEDUCA na URL do Drive).",
+          "Defina GOOGLE_DRIVE_ROOT_FOLDER_ID (ID da pasta SIGAEDUCA na URL do Drive).",
       }, 503);
     }
     if (!isLikelyDriveId(rootFolderId)) {
       return json({
         error:
-          `GOOGLE_DRIVE_ROOT_FOLDER_ID inválido ("${rootFolderIdRaw.slice(0, 40)}"). Cole só o ID da pasta SIGAEDUCA (trecho depois de /folders/ na URL), não um ponto nem o nome da pasta.`,
+          `GOOGLE_DRIVE_ROOT_FOLDER_ID inválido ("${rootFolderIdRaw.slice(0, 40)}"). Cole só o ID depois de /folders/.`,
       }, 500);
-    }
-
-    let sa: Record<string, string>;
-    try {
-      // Aceita JSON colado “limpo” ou com aspas extras no secret
-      const trimmed = saJsonRaw.trim().replace(/^\uFEFF/, "");
-      sa = JSON.parse(trimmed);
-    } catch {
-      return json({
-        error:
-          "GOOGLE_SERVICE_ACCOUNT_JSON inválido. Cole o arquivo .json completo da conta siga-drive@siga-educa-drive.iam.gserviceaccount.com (não o e-mail sozinho).",
-      }, 500);
-    }
-
-    const saEmail = String(sa.client_email || "").trim();
-    if (!saEmail || !sa.private_key) {
-      return json({
-        error:
-          "GOOGLE_SERVICE_ACCOUNT_JSON incompleto (faltam client_email/private_key). Use o JSON da conta siga-drive@siga-educa-drive.iam.gserviceaccount.com.",
-      }, 500);
-    }
-
-    const expectedSa =
-      (Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL") ||
-        "siga-drive@siga-educa-drive.iam.gserviceaccount.com").trim().toLowerCase();
-    if (saEmail.toLowerCase() !== expectedSa) {
-      console.warn(
-        "[drive-upload-file] client_email diferente do esperado:",
-        saEmail,
-        "≠",
-        expectedSa,
-      );
     }
 
     const body = await req.json();
@@ -114,12 +74,8 @@ Deno.serve(async (req) => {
       return json({ error: 'module deve ser "secretaria" ou "solicitacoes".' }, 400);
     }
 
-    const impersonateEmail = (
-      Deno.env.get("GOOGLE_DRIVE_IMPERSONATE_EMAIL") || ""
-    ).trim().toLowerCase();
-
-    const accessToken = await getAccessToken(sa, impersonateEmail || null);
-    await assertRootFolderAccessible(accessToken, rootFolderId, saEmail);
+    const auth = await resolveDriveAuth();
+    await assertRootFolderAccessible(auth.accessToken, rootFolderId, auth.label);
 
     const pathParts =
       moduleName === "secretaria"
@@ -128,9 +84,9 @@ Deno.serve(async (req) => {
 
     let folderId: string;
     try {
-      folderId = await ensureFolderPath(accessToken, rootFolderId, pathParts);
+      folderId = await ensureFolderPath(auth.accessToken, rootFolderId, pathParts);
     } catch (folderErr) {
-      throw new Error(mapDriveQuotaError(folderErr, saEmail));
+      throw new Error(mapDriveQuotaError(folderErr, auth.label));
     }
     const folderPath = ["SIGAEDUCA", ...pathParts].join(" / ");
 
@@ -138,21 +94,19 @@ Deno.serve(async (req) => {
     let uploaded;
     try {
       uploaded = await uploadFile(
-        accessToken,
+        auth.accessToken,
         folderId,
         fileName,
         mimeType,
         bytes,
       );
     } catch (upErr) {
-      throw new Error(mapDriveQuotaError(upErr, saEmail));
+      throw new Error(mapDriveQuotaError(upErr, auth.label));
     }
 
-    // Quem tem o link abre/imprime sem login Google pessoal (Drive institucional).
     try {
-      await shareAnyoneWithLink(accessToken, uploaded.id);
+      await shareAnyoneWithLink(auth.accessToken, uploaded.id);
     } catch (shareErr) {
-      // Em Shared Drive a política da org pode bloquear "anyone"; o arquivo já está salvo.
       console.warn("[drive-upload-file] shareAnyoneWithLink:", shareErr);
     }
 
@@ -168,8 +122,8 @@ Deno.serve(async (req) => {
       folderPath,
       uploadedAt: new Date().toISOString(),
       uploadedBy: userData.user.email || userData.user.id,
-      // Conta institucional do sistema (igual para todos os usuários do SIGA)
-      serviceAccountEmail: saEmail,
+      driveAuthMode: auth.mode,
+      driveAccount: auth.label,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -185,7 +139,67 @@ function json(payload: unknown, status = 200) {
   });
 }
 
-/** Aceita ID puro ou URL completa .../folders/ID */
+/** OAuth da conta dona do Drive (Meu Drive). Conta de Serviço não é suportada neste fluxo. */
+async function resolveDriveAuth(): Promise<{
+  accessToken: string;
+  mode: "oauth";
+  label: string;
+}> {
+  const clientId = (Deno.env.get("GOOGLE_OAUTH_CLIENT_ID") || "").trim();
+  const clientSecret = (Deno.env.get("GOOGLE_OAUTH_CLIENT_SECRET") || "").trim();
+  const refreshToken = (Deno.env.get("GOOGLE_OAUTH_REFRESH_TOKEN") || "").trim();
+
+  const missing: string[] = [];
+  if (!clientId) missing.push("GOOGLE_OAUTH_CLIENT_ID");
+  if (!clientSecret) missing.push("GOOGLE_OAUTH_CLIENT_SECRET");
+  if (!refreshToken) missing.push("GOOGLE_OAUTH_REFRESH_TOKEN");
+
+  if (missing.length) {
+    throw new Error(
+      "Drive do zero (Meu Drive): faltam secrets " +
+        missing.join(", ") +
+        ". Gere o refresh token no OAuth Playground com a conta dona da pasta SIGAEDUCA e cadastre os 4 secrets (veja docs/GOOGLE_DRIVE_INSTITUCIONAL.md).",
+    );
+  }
+
+  const accessToken = await getTokenFromRefresh(
+    clientId,
+    clientSecret,
+    refreshToken,
+  );
+  return {
+    accessToken,
+    mode: "oauth",
+    label: "conta Google da escola (OAuth)",
+  };
+}
+
+async function getTokenFromRefresh(
+  clientId: string,
+  clientSecret: string,
+  refreshToken: string,
+) {
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+  const tokenJson = await tokenRes.json();
+  if (!tokenRes.ok || !tokenJson.access_token) {
+    throw new Error(
+      tokenJson.error_description ||
+        tokenJson.error ||
+        "Falha ao renovar token OAuth do Drive. Gere de novo o GOOGLE_OAUTH_REFRESH_TOKEN com a conta dona da pasta SIGAEDUCA.",
+    );
+  }
+  return tokenJson.access_token as string;
+}
+
 function normalizeFolderId(raw: string) {
   const s = String(raw || "").trim().replace(/^["']|["']$/g, "");
   if (!s) return "";
@@ -197,7 +211,6 @@ function normalizeFolderId(raw: string) {
 }
 
 function isLikelyDriveId(id: string) {
-  // IDs do Drive costumam ter ~25+ chars; rejeita "." "root" "SIGAEDUCA" etc.
   if (!id || id === "." || id === "root") return false;
   if (/^[a-zA-Z0-9_-]{10,}$/.test(id)) return true;
   return false;
@@ -206,7 +219,7 @@ function isLikelyDriveId(id: string) {
 async function assertRootFolderAccessible(
   token: string,
   folderId: string,
-  saEmail: string,
+  accountLabel: string,
 ) {
   const url =
     `${DRIVE_API}/files/${encodeURIComponent(folderId)}` +
@@ -217,14 +230,14 @@ async function assertRootFolderAccessible(
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(
-      `Pasta SIGAEDUCA inacessível (ID ${folderId}). ` +
-        `Confira GOOGLE_DRIVE_ROOT_FOLDER_ID e compartilhe a pasta com ${saEmail} como Editor. ` +
+      `Pasta SIGAEDUCA inacessível (ID ${folderId}) para ${accountLabel}. ` +
+        `Confira GOOGLE_DRIVE_ROOT_FOLDER_ID e se a conta autorizada é a dona/editora da pasta. ` +
         `(Google: ${body?.error?.message || res.status})`,
     );
   }
   if (body.mimeType && body.mimeType !== "application/vnd.google-apps.folder") {
     throw new Error(
-      `GOOGLE_DRIVE_ROOT_FOLDER_ID não é uma pasta (é "${body.name || folderId}"). Use o ID da pasta SIGAEDUCA.`,
+      `GOOGLE_DRIVE_ROOT_FOLDER_ID não é uma pasta (é "${body.name || folderId}").`,
     );
   }
 }
@@ -257,50 +270,7 @@ function base64ToUint8Array(b64: string) {
   return out;
 }
 
-async function getAccessToken(
-  sa: Record<string, string>,
-  impersonateEmail: string | null,
-) {
-  const clientEmail = sa.client_email;
-  let privateKey = sa.private_key;
-  if (!clientEmail || !privateKey) {
-    throw new Error("Service account sem client_email/private_key.");
-  }
-  privateKey = privateKey.replace(/\\n/g, "\n");
-  const key = await importPKCS8(privateKey, "RS256");
-  const now = Math.floor(Date.now() / 1000);
-  // Sem impersonação: age como a própria SA (precisa Shared Drive).
-  // Com GOOGLE_DRIVE_IMPERSONATE_EMAIL: Domain-Wide Delegation (Workspace).
-  const subject = impersonateEmail || clientEmail;
-  const jwt = await new SignJWT({ scope: DRIVE_SCOPE })
-    .setProtectedHeader({ alg: "RS256", typ: "JWT" })
-    .setIssuer(clientEmail)
-    .setSubject(subject)
-    .setAudience("https://oauth2.googleapis.com/token")
-    .setIssuedAt(now)
-    .setExpirationTime(now + 3600)
-    .sign(key);
-
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-  const tokenJson = await tokenRes.json();
-  if (!tokenRes.ok || !tokenJson.access_token) {
-    throw new Error(
-      tokenJson.error_description ||
-        tokenJson.error ||
-        "Falha ao obter token Google",
-    );
-  }
-  return tokenJson.access_token as string;
-}
-
-function mapDriveQuotaError(err: unknown, saEmail: string) {
+function mapDriveQuotaError(err: unknown, _accountLabel: string) {
   const message = err instanceof Error ? err.message : String(err);
   const lower = message.toLowerCase();
   if (
@@ -308,11 +278,9 @@ function mapDriveQuotaError(err: unknown, saEmail: string) {
     lower.includes("service accounts do not have storage")
   ) {
     return (
-      "A Conta de Serviço não tem cota no Meu Drive. " +
-      "Coloque SIGAEDUCA em um Drive compartilhado (Shared Drive) e adicione " +
-      saEmail +
-      " como Gerenciador de conteúdo — ou configure GOOGLE_DRIVE_IMPERSONATE_EMAIL (Workspace). " +
-      "Detalhe: " + message
+      "Erro de cota de Conta de Serviço. Este fluxo usa só OAuth da conta dona de SIGAEDUCA. " +
+      "Cadastre GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET e GOOGLE_OAUTH_REFRESH_TOKEN " +
+      "(docs/GOOGLE_DRIVE_INSTITUCIONAL.md). Detalhe: " + message
     );
   }
   return message;
@@ -417,7 +385,6 @@ async function uploadFile(
   return jsonBody;
 }
 
-/** Qualquer pessoa com o link pode ver (sem conta Google). */
 async function shareAnyoneWithLink(token: string, fileId: string) {
   const res = await fetch(
     `${DRIVE_API}/files/${encodeURIComponent(fileId)}/permissions?supportsAllDrives=true&sendNotificationEmail=false`,

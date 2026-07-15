@@ -11,7 +11,7 @@ window.SIGA_SUPABASE_CONFIG = {
   anonKey: 'your_anon_or_publishable_key',
   projectId: 'YOUR_PROJECT_REF',
   googleClientId: 'YOUR_GOOGLE_OAUTH_WEB_CLIENT_ID.apps.googleusercontent.com',
-  // Drive institucional via Edge Function drive-upload-file:
-  // secrets GOOGLE_SERVICE_ACCOUNT_JSON + GOOGLE_DRIVE_ROOT_FOLDER_ID
+  // Drive institucional (Meu Drive) via Edge Function drive-upload-file:
+  // secrets GOOGLE_OAUTH_* + GOOGLE_DRIVE_ROOT_FOLDER_ID
   driveInstitutional: true
 };

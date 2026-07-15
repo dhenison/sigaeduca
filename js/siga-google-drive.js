@@ -1,6 +1,6 @@
 /**
  * SIGA EDUCA — Google Drive institucional (Edge Function)
- * Upload via service account; metadados no SIGA; abrir arquivo no Drive.
+ * Upload via OAuth da conta dona de SIGAEDUCA; metadados no SIGA.
  */
 (function () {
   'use strict';
@@ -76,13 +76,13 @@
     }
     if (typeof onProgress === 'function') onProgress(15, 'Enviando ao Drive da escola…');
 
-    // Drive usa SEMPRE a Service Account do sistema (secret no servidor).
-    // O usuário do SIGA só autentica a chamada — não precisa de JSON/Google pessoal.
+    // Drive institucional: OAuth da conta da escola nos secrets do servidor.
+    // O usuário do SIGA só autentica a chamada — sem login Google pessoal.
     return sb.auth.getSession().then(function (sessRes) {
       var session = sessRes && sessRes.data && sessRes.data.session;
       if (!session || !session.access_token) {
         throw new Error(
-          'Sessão Supabase ausente. Faça logout e login de novo no SIGA (e-mail/senha). O Drive institucional não usa conta Google pessoal.'
+          'Sessão Supabase ausente. Faça logout e login de novo no SIGA. O Drive usa a conta da escola (OAuth no servidor), não Google pessoal.'
         );
       }
       if (typeof onProgress === 'function') onProgress(35, 'Gravando no Drive institucional…');

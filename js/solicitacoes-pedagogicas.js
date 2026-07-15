@@ -39,14 +39,14 @@
 
     if (!ready) {
       if (hint) {
-        hint.textContent = 'Drive institucional: faça login no SIGA (Supabase). Usa a conta do sistema drive@siga-educa-drive… — não a Google pessoal.';
+        hint.textContent = 'Drive institucional: faça login no SIGA. Configure OAuth da conta dona de SIGAEDUCA (secrets no Supabase).';
       }
       return;
     }
     if (label) label.textContent = 'Drive da escola';
     if (icon) icon.textContent = 'cloud_done';
     if (hint) {
-      hint.textContent = 'Arquivos vão para SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Seu nome] → [Tipo], pela conta do sistema (sem login Google pessoal).';
+      hint.textContent = 'Arquivos vão para SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Seu nome] → [Tipo] (conta da escola; sem login Google pessoal).';
     }
   }
 
@@ -59,7 +59,7 @@
     var drive = getDriveApi();
     if (!drive || !drive.isConfigured()) {
       return Promise.reject(new Error(
-        'Supabase/Drive não configurado. Faça login no SIGA e configure drive-upload-file.'
+        'Supabase/Drive não configurado. Faça login no SIGA e cadastre os secrets OAuth (docs/GOOGLE_DRIVE_INSTITUCIONAL.md).'
       ));
     }
     return Promise.resolve(drive);
