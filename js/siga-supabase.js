@@ -39,7 +39,7 @@
             return 'E-mail ou senha incorretos (Supabase).';
         }
         if (lower.indexOf('email not confirmed') !== -1) {
-            return 'Confirme o e-mail no Supabase antes de entrar.';
+            return 'E-mail ainda não confirmado no Authentication. Peça ao administrador para confirmar o acesso.';
         }
         return msg;
     }

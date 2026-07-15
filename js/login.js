@@ -381,6 +381,18 @@
             if (authErrorMessage) {
                 console.info('[SIGA] Auth falhou; tentando usuários locais.', authErrorMessage);
             }
+            ensureSystemAdminLocalUser(email);
+            var users = getUsers();
+            var user = users.find(function (u) { return normEmail(u.email) === email; });
+            if (!user) {
+                // Evita mensagem enganosa: o usuário existe no banco, mas Auth falhou
+                toast(
+                    authErrorMessage ||
+                    'Não foi possível entrar. Verifique e-mail/senha ou se o acesso Auth está ativo.',
+                    'error'
+                );
+                return;
+            }
             finishServidorLocal();
         }
 
