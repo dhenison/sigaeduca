@@ -251,6 +251,19 @@ function loadData() {
                 }
             }
         });
+
+        // Inclui turmas/disciplinas novas do data.js (ex.: M2NNM03) que faltam no localStorage
+        INITIAL_LOTACAO_DATA.forEach(function (initItem) {
+            var exists = loaded.some(function (localItem) {
+                return localItem.turma === initItem.turma &&
+                    localItem.disciplina === initItem.disciplina &&
+                    String(localItem.oferta) === String(initItem.oferta);
+            });
+            if (!exists) {
+                loaded.push(Object.assign({}, initItem));
+                upgraded = true;
+            }
+        });
         
         appState.data = loaded;
         if (loaded.length !== initialCount || upgraded) {

@@ -396,6 +396,31 @@
       });
   }
 
+  /** Remove o registro sincronizado no Supabase antes de apagá-lo localmente. */
+  function deleteDocumentoSecretariaCloud(doc) {
+    const sb = getSupabaseClient();
+    const schoolId = getActiveSchoolId();
+    if (!sb || !schoolId || !doc || !doc.protocolo) {
+      return Promise.resolve({ ok: true, reason: 'no_cloud' });
+    }
+
+    return sb.from('secretary_documents')
+      .delete()
+      .eq('school_id', schoolId)
+      .eq('protocolo', doc.protocolo)
+      .then(function (res) {
+        if (res.error) {
+          console.warn('[SIGA] delete secretary_documents:', res.error.message);
+          return { ok: false, message: res.error.message };
+        }
+        return { ok: true };
+      })
+      .catch(function (err) {
+        console.warn('[SIGA] delete secretary_documents:', err);
+        return { ok: false, message: (err && err.message) || 'erro' };
+      });
+  }
+
   function statusLabel(status) {
     const map = {
       concluido: 'Concluído',
@@ -1460,11 +1485,42 @@
             '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
             'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Imprimir comprovante">' +
             '<span class="material-symbols-outlined text-xl">print</span></button>' +
+            '<button type="button" class="p-2 text-text-secondary hover:text-error rounded-lg" ' +
+            'onclick="excluirSolicitacaoSecretaria(\'' + doc.id + '\')" title="Excluir solicitação" ' +
+            'aria-label="Excluir solicitação ' + escapeHtml(doc.protocolo) + '">' +
+            '<span class="material-symbols-outlined text-xl">delete</span></button>' +
             '</td></tr>'
           );
         }).join('');
       }
     }
+  }
+
+  async function excluirSolicitacaoSecretaria(id) {
+    const docs = getSecDocumentos();
+    const index = docs.findIndex(function (doc) { return doc.id === id; });
+    const doc = index >= 0 ? docs[index] : null;
+
+    if (!doc || !isRequerimento(doc.tipo)) {
+      showSecToast('Solicitação não encontrada.', 'error');
+      return;
+    }
+
+    const confirmou = window.confirm(
+      'Excluir permanentemente a solicitação ' + doc.protocolo + '?\n\nEsta ação não pode ser desfeita.'
+    );
+    if (!confirmou) return;
+
+    const cloudResult = await deleteDocumentoSecretariaCloud(doc);
+    if (!cloudResult.ok) {
+      showSecToast('Não foi possível excluir a solicitação. Tente novamente.', 'error');
+      return;
+    }
+
+    docs.splice(index, 1);
+    saveSecDocumentos(docs);
+    renderSecPage();
+    showSecToast('Solicitação excluída com sucesso.', 'success');
   }
 
   // ─── Public validation lookup ──────────────────────────────────────────────
@@ -1699,6 +1755,7 @@
   window.statusValidadeLabel = statusValidadeLabel;
   window.getValidationUrl = getValidationUrl;
   window.syncDocumentoSecretariaCloud = syncDocumentoSecretariaCloud;
+  window.excluirSolicitacaoSecretaria = excluirSolicitacaoSecretaria;
   window.formatarCPF = window.formatarCPF || formatarCPF;
   window.formatarDataBr = formatarDataBr;
   window.formatarDataPorExtenso = formatarDataPorExtenso;
