@@ -51,7 +51,9 @@ aside#sidebar .text-label-md { font-size: 12px !important; font-weight: 500 !imp
 .sidebar-scroll::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
 .custom-shadow { box-shadow: 0px 4px 12px rgba(0,0,0,0.03); }
 .adm-om-editor b, .adm-om-editor strong { font-weight: 700; }
-.adm-om-editor:empty:before { content: attr(data-placeholder); color: #6B7280; pointer-events: none; }
+.adm-om-editor { text-align: justify; }
+.adm-om-editor p, .adm-om-editor div { text-align: justify; text-indent: 1.25cm; margin: 0 0 0.65em; }
+.adm-om-editor:empty:before { content: attr(data-placeholder); color: #6B7280; pointer-events: none; text-indent: 0; }
 :root { --sidebar-width: 260px; }
 body.sidebar-collapsed { --sidebar-width: 72px; }
 aside#sidebar { width: var(--sidebar-width) !important; transition: width 0.3s cubic-bezier(0.4,0,0.2,1) !important; overflow: visible !important; }
@@ -390,8 +392,8 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
 <div class="rounded-xl bg-surface-container-low/70 border border-border-subtle p-4 text-sm text-on-surface">
 <p id="adm-om-hint" class="text-text-secondary">Modelo no papel timbrado da escola.</p>
-<p id="adm-om-local-preview" class="mt-2 text-right font-medium text-on-surface">Ourilândia do Norte, —</p>
-<p id="adm-om-titulo-preview" class="mt-1 text-center font-bold tracking-wide uppercase text-on-surface">OFÍCIO Nº —/2026</p>
+<p id="adm-om-local-preview" class="mt-2 text-right font-bold text-on-surface">Ourilândia do Norte, —</p>
+<p id="adm-om-titulo-preview" class="mt-1 text-left font-bold tracking-wide uppercase text-on-surface">OFÍCIO Nº —/2026</p>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -427,8 +429,7 @@ Diretor, Vice-diretor Administrativo e Vice-diretor Pedagógico.
 </div>
 
 <div class="rounded-xl border border-dashed border-border-subtle p-4 text-center text-sm text-text-secondary">
-<p class="font-bold tracking-widest text-on-surface">ATENCIOSAMENTE</p>
-<p class="mt-6 border-t border-on-surface/40 w-48 mx-auto pt-2 text-on-surface">Gestão Escolar</p>
+<p class="mt-2 border-t border-on-surface/40 w-48 mx-auto pt-2 text-on-surface">Gestão Escolar</p>
 </div>
 </div>
 

@@ -525,6 +525,49 @@
         return escapeHtml(s).replace(/\r\n|\r|\n/g, '<br/>');
     }
 
+    /** Quebra o corpo em parágrafos com recuo (TAB) no início para impressão. */
+    function formatCorpoParagraphsForPrint(raw) {
+        var sanitized = getCorpoHtmlForPrint(raw);
+        if (!sanitized) return '';
+
+        var root = document.createElement('div');
+        root.innerHTML = sanitized;
+        var blocks = [];
+        var buf = '';
+
+        function pushBuf() {
+            var inner = buf.replace(/^(<br\s*\/?>|\s|&nbsp;)+|(<br\s*\/?>|\s|&nbsp;)+$/gi, '').trim();
+            buf = '';
+            if (stripHtmlText(inner)) blocks.push('<p>' + inner + '</p>');
+        }
+
+        Array.prototype.forEach.call(root.childNodes, function (node) {
+            if (node.nodeType === 1) {
+                var tag = node.tagName.toLowerCase();
+                if (tag === 'br') {
+                    pushBuf();
+                    return;
+                }
+                if (tag === 'div' || tag === 'p') {
+                    pushBuf();
+                    var inner = sanitizeCorpoHtml(node.innerHTML);
+                    if (stripHtmlText(inner)) blocks.push('<p>' + inner + '</p>');
+                    return;
+                }
+                buf += node.outerHTML;
+                return;
+            }
+            if (node.nodeType === 3) {
+                buf += escapeHtml(node.nodeValue || '');
+            }
+        });
+        pushBuf();
+        if (!blocks.length && stripHtmlText(sanitized)) {
+            return '<p>' + sanitized + '</p>';
+        }
+        return blocks.join('');
+    }
+
     function fillOmForm(data) {
         var kind = data.kind === 'memorando' ? 'memorando' : 'oficio';
         if ($('adm-om-numero')) $('adm-om-numero').value = data.numero != null ? String(data.numero) : String(peekNumero(kind));
@@ -767,7 +810,7 @@
         var titulo = tituloDocumento(kind, data.numero, ano);
         var local = formatLocalExtenso(data.dataDocumento);
         var bg = getTimbradoUrl().replace(/'/g, "\\'");
-        var corpo = getCorpoHtmlForPrint(data.corpo);
+        var corpo = formatCorpoParagraphsForPrint(data.corpo);
         var para = escapeHtml(data.para || '');
         var de = escapeHtml(data.de || DE_PADRAO);
 
@@ -781,14 +824,14 @@
             "background-image:url('" + bg + "');",
             'background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
             '.content{box-sizing:border-box;height:100%;padding:48mm 18mm 34mm 18mm;display:flex;flex-direction:column}',
-            '.local{text-align:right;font-size:12pt;margin:0 0 18px}',
-            '.titulo{text-align:center;font-size:14pt;font-weight:700;letter-spacing:.04em;margin:0 0 22px;text-transform:uppercase}',
+            '.local{text-align:right;font-size:12pt;font-weight:700;margin:0 0 18px}',
+            '.titulo{text-align:left;font-size:13pt;font-weight:700;letter-spacing:.03em;margin:0 0 20px;text-transform:uppercase}',
             '.meta{font-size:12pt;line-height:1.55;margin:0 0 16px}',
             '.meta .lbl{font-weight:700}',
-            '.corpo{flex:1;border:1px solid #222;border-radius:2px;padding:12px 14px;font-size:12pt;line-height:1.55;text-align:justify;white-space:normal;min-height:90mm;background:rgba(255,255,255,.55)}',
+            '.corpo{flex:1;border:none;padding:0;font-size:12pt;line-height:1.55;text-align:justify;min-height:90mm;background:transparent}',
+            '.corpo p{margin:0 0 0.85em;text-align:justify;text-indent:1.25cm}',
             '.corpo b,.corpo strong{font-weight:700}',
-            '.fecho{margin-top:28px;text-align:center}',
-            '.fecho .atenciosamente{font-size:12pt;font-weight:700;letter-spacing:.06em;margin:0 0 36px}',
+            '.fecho{margin-top:36px;text-align:center}',
             '.fecho .linha{width:58%;margin:0 auto;border-top:1px solid #111;padding-top:8px}',
             '.fecho .cargo{font-size:11pt;margin:0}',
             '@media print{html,body{margin:0!important;padding:0!important}.page{page-break-inside:avoid}}',
@@ -801,7 +844,6 @@
             '</div>',
             '<div class="corpo">', corpo || '&nbsp;', '</div>',
             '<div class="fecho">',
-            '<p class="atenciosamente">ATENCIOSAMENTE</p>',
             '<div class="linha"><p class="cargo">Gestão Escolar</p></div>',
             '</div>',
             '</div></div></body></html>'
