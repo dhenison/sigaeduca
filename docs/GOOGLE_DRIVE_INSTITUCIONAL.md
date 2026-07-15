@@ -19,9 +19,9 @@ Dashboard → Edge Functions → Secrets (ou CLI):
 
 | Secret | Valor |
 |--------|--------|
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | **Arquivo JSON inteiro** da conta `drive@siga-educa-drive.iam.gserviceaccount.com` (não só o e-mail) |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | **Arquivo JSON inteiro** da conta `siga-drive@siga-educa-drive.iam.gserviceaccount.com` (não só o e-mail) |
 | `GOOGLE_DRIVE_ROOT_FOLDER_ID` | ID da pasta `SIGAEDUCA` (URL `.../folders/ID`) |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` (opcional) | Confirma o e-mail esperado: `drive@siga-educa-drive.iam.gserviceaccount.com` |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` (opcional) | Confirma o e-mail esperado: `siga-drive@siga-educa-drive.iam.gserviceaccount.com` |
 
 Esse JSON é **único do sistema** (secret no servidor). Nenhum usuário do SIGA precisa ter JSON nem login Google: basta estar logado no SIGA (Supabase Auth).
 

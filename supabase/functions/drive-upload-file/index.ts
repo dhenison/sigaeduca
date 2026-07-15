@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     } catch {
       return json({
         error:
-          "GOOGLE_SERVICE_ACCOUNT_JSON inválido. Cole o arquivo .json completo da conta drive@siga-educa-drive.iam.gserviceaccount.com (não o e-mail sozinho).",
+          "GOOGLE_SERVICE_ACCOUNT_JSON inválido. Cole o arquivo .json completo da conta siga-drive@siga-educa-drive.iam.gserviceaccount.com (não o e-mail sozinho).",
       }, 500);
     }
 
@@ -76,13 +76,13 @@ Deno.serve(async (req) => {
     if (!saEmail || !sa.private_key) {
       return json({
         error:
-          "GOOGLE_SERVICE_ACCOUNT_JSON incompleto (faltam client_email/private_key). Use o JSON da conta drive@siga-educa-drive.iam.gserviceaccount.com.",
+          "GOOGLE_SERVICE_ACCOUNT_JSON incompleto (faltam client_email/private_key). Use o JSON da conta siga-drive@siga-educa-drive.iam.gserviceaccount.com.",
       }, 500);
     }
 
     const expectedSa =
       (Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL") ||
-        "drive@siga-educa-drive.iam.gserviceaccount.com").trim().toLowerCase();
+        "siga-drive@siga-educa-drive.iam.gserviceaccount.com").trim().toLowerCase();
     if (saEmail.toLowerCase() !== expectedSa) {
       console.warn(
         "[drive-upload-file] client_email diferente do esperado:",
