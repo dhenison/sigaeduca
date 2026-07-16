@@ -112,6 +112,8 @@
           ('https://drive.google.com/file/d/' + data.fileId + '/view?usp=sharing'),
         folderId: data.folderId || null,
         folderPath: data.folderPath || '',
+        folderWebLink: data.folderWebLink ||
+          (data.folderId ? ('https://drive.google.com/drive/folders/' + data.folderId) : ''),
         uploadedAt: data.uploadedAt || new Date().toISOString(),
         serviceAccountEmail: data.serviceAccountEmail || null
       };

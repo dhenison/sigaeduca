@@ -126,6 +126,7 @@ Deno.serve(async (req) => {
       webViewLink,
       folderId,
       folderPath,
+      folderWebLink: `https://drive.google.com/drive/folders/${folderId}`,
       uploadedAt: new Date().toISOString(),
       uploadedBy: userData.user.email || userData.user.id,
       driveAuthMode: auth.mode,
@@ -250,6 +251,7 @@ async function assertRootFolderAccessible(
 
 function sanitizeFolderName(name: string) {
   return String(name || "Sem nome")
+    .normalize("NFC")
     .replace(/[\\/:*?"<>|]/g, "-")
     .replace(/\s+/g, " ")
     .trim()
@@ -319,10 +321,10 @@ async function findChildFolder(
   if (!res.ok) {
     throw new Error(body?.error?.message || "Erro ao buscar pasta no Drive");
   }
-  const target = String(name || "").trim().toLocaleLowerCase("pt-BR");
+  const target = String(name || "").normalize("NFC").trim().toLocaleLowerCase("pt-BR");
   const files = (body.files || []) as Array<{ id: string; name?: string }>;
   const match = files.find((f) =>
-    String(f.name || "").trim().toLocaleLowerCase("pt-BR") === target
+    String(f.name || "").normalize("NFC").trim().toLocaleLowerCase("pt-BR") === target
   );
   return match || null;
 }

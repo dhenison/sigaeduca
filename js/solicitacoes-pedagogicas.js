@@ -506,7 +506,9 @@
         '<span class="material-symbols-outlined">' + iconForTipo(item.tipo) + '</span></div>' +
         '<div class="min-w-0">' +
         '<h3 class="text-headline-sm text-on-surface truncate">' + escapeHtml(item.tipo) + '</h3>' +
-        '<p class="text-label-md text-text-secondary">Solicitação: ' + escapeHtml(formatDateBr(item.dataSolicitacao)) + '</p>' +
+        '<p class="text-label-md text-text-secondary">Solicitação: ' + escapeHtml(formatDateBr(item.dataSolicitacao)) +
+        (item.solicitante ? (' · ' + escapeHtml(item.solicitante)) : '') +
+        '</p>' +
         '</div></div>' +
         '<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ' + statusCls + '">' +
         statusLabel + '</span></div>' +
@@ -524,10 +526,14 @@
         '</div>' +
         '<div class="px-4 py-3 border-t border-border-subtle bg-surface-container-low/60 flex flex-wrap gap-2">' +
         '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-border-subtle hover:border-primary hover:text-primary transition-colors flex items-center gap-1" onclick="abrirArquivoSolicitacaoPed(\'' + item.id + '\')">' +
-        '<span class="material-symbols-outlined text-[18px]">attach_file</span>Abrir Arquivo</button>' +
+        '<span class="material-symbols-outlined text-[18px]">' +
+        (item.drive && (item.drive.webViewLink || item.drive.fileId) ? 'cloud_download' : 'attach_file') +
+        '</span>' +
+        (item.drive && (item.drive.webViewLink || item.drive.fileId) ? 'Abrir no Drive' : 'Abrir Arquivo') +
+        '</button>' +
         (item.drive && (item.drive.webViewLink || item.drive.fileId)
-          ? '<span class="px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-100 flex items-center gap-1" title="' + escapeHtml((item.drive && item.drive.folderPath) || 'Salvo no Drive da escola') + '">' +
-            '<span class="material-symbols-outlined text-[18px]">cloud_done</span>No Drive</span>'
+          ? '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-100 hover:border-emerald-300 transition-colors flex items-center gap-1" onclick="abrirPastaDriveSolicitacaoPed(\'' + item.id + '\')" title="' + escapeHtml((item.drive && item.drive.folderPath) || 'Salvo no Drive da escola') + '">' +
+            '<span class="material-symbols-outlined text-[18px]">folder_open</span>Pasta Drive</button>'
           : '<button type="button" class="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-amber-200 text-amber-800 hover:border-amber-400 transition-colors flex items-center gap-1" onclick="enviarAoDriveSolicitacaoPed(\'' + item.id + '\')">' +
             '<span class="material-symbols-outlined text-[18px]">cloud_upload</span>Enviar ao Drive</button>') +
         (status === 'pendente'
@@ -713,7 +719,13 @@
       }
       saveList(list);
       uploadBusy = false;
-      showToast(existing ? 'Solicitação atualizada e salva no Drive.' : 'Solicitação enviada e salva no Drive!', 'success');
+      var pathMsg = (driveMeta && driveMeta.folderPath)
+        ? (' Salvo em: ' + driveMeta.folderPath)
+        : '';
+      showToast(
+        (existing ? 'Solicitação atualizada.' : 'Solicitação enviada.') + pathMsg,
+        'success'
+      );
       fecharModal(true);
       renderList();
     }).catch(function (err) {
@@ -732,17 +744,30 @@
   }
 
   function abrirPastaDrive(id) {
-    // Não abre drive.google.com (pede login Google). Só mostra onde ficou salvo.
     var item = findById(id);
     if (!item || !item.drive) {
       showToast('Esta solicitação ainda não tem arquivo no Drive da escola.', 'error');
+      return;
+    }
+    var folderLink = item.drive.folderWebLink ||
+      (item.drive.folderId
+        ? ('https://drive.google.com/drive/folders/' + item.drive.folderId)
+        : '');
+    if (folderLink) {
+      window.open(folderLink, '_blank', 'noopener,noreferrer');
+      showToast(
+        item.drive.folderPath
+          ? ('Abrindo pasta: ' + item.drive.folderPath)
+          : 'Abrindo pasta no Drive…',
+        'success'
+      );
       return;
     }
     showToast(
       (item.drive.folderPath
         ? ('Salvo em: ' + item.drive.folderPath)
         : 'Arquivo no Drive institucional da escola.') +
-        ' Use “Abrir Arquivo” no SIGA (sem login Google).',
+        ' Use “Abrir Arquivo” no SIGA.',
       'success'
     );
   }
@@ -795,22 +820,27 @@
       showToast('Solicitação não encontrada.', 'error');
       return;
     }
-    // 1) Abrir no SIGA (IndexedDB) — sem autenticação Google
+    // Preferir Drive institucional (destino real). blob: é só cópia local no navegador.
+    if (item.drive && (item.drive.webViewLink || item.drive.fileId)) {
+      var drive = getDriveApi();
+      if (drive && drive.openInDrive) {
+        drive.openInDrive(item.drive.webViewLink || item.drive.fileId);
+      } else {
+        var link = item.drive.webViewLink ||
+          ('https://drive.google.com/file/d/' + item.drive.fileId + '/view?usp=sharing');
+        window.open(link, '_blank', 'noopener,noreferrer');
+      }
+      if (item.drive.folderPath) {
+        showToast('Abrindo arquivo do Drive: ' + item.drive.folderPath, 'success');
+      }
+      return;
+    }
     openLocalAnexo(item.arquivo).then(function (ok) {
-      if (ok) return;
-      // 2) Link compartilhado do Drive institucional (anyone with link)
-      if (item.drive && (item.drive.webViewLink || item.drive.fileId)) {
-        var drive = getDriveApi();
-        if (drive && drive.openInDrive) {
-          drive.openInDrive(item.drive.webViewLink || item.drive.fileId);
-        } else {
-          var link = item.drive.webViewLink ||
-            ('https://drive.google.com/file/d/' + item.drive.fileId + '/view?usp=sharing');
-          window.open(link, '_blank', 'noopener,noreferrer');
-        }
+      if (ok) {
+        showToast('Arquivo local (ainda não está no Drive). Use “Enviar ao Drive”.', 'error');
         return;
       }
-      showToast('Arquivo não encontrado neste aparelho. Reenvie a solicitação.', 'error');
+      showToast('Arquivo não encontrado. Reenvie a solicitação.', 'error');
     });
   }
 
@@ -849,7 +879,17 @@
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Status</dt><dd>' + escapeHtml((item.status || 'pendente') === 'aceita' ? 'Aceita' : 'Pendente') + '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Arquivo</dt><dd>' + escapeHtml((item.arquivo && item.arquivo.name) || '—') + '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Drive da escola</dt><dd>' +
-      escapeHtml((item.drive && item.drive.folderPath) || 'Ainda não enviado') +
+      (item.drive && (item.drive.folderPath || item.drive.fileId)
+        ? (escapeHtml(item.drive.folderPath || 'Salvo no Drive') +
+          (item.drive.webViewLink
+            ? ' · <a class="text-primary font-semibold underline" href="' + escapeHtml(item.drive.webViewLink) + '" target="_blank" rel="noopener">abrir arquivo</a>'
+            : '') +
+          (item.drive.folderWebLink || item.drive.folderId
+            ? ' · <a class="text-primary font-semibold underline" href="' +
+              escapeHtml(item.drive.folderWebLink || ('https://drive.google.com/drive/folders/' + item.drive.folderId)) +
+              '" target="_blank" rel="noopener">abrir pasta</a>'
+            : ''))
+        : 'Ainda não enviado — use “Enviar ao Drive”') +
       '</dd></div>' +
       '<div><dt class="text-[10px] uppercase font-bold text-text-secondary">Observações</dt><dd class="whitespace-pre-wrap">' + escapeHtml(item.observacoes || '—') + '</dd></div>' +
       '</dl>';
