@@ -46,7 +46,8 @@
     if (label) label.textContent = 'Drive da escola';
     if (icon) icon.textContent = 'cloud_done';
     if (hint) {
-      hint.textContent = 'Arquivos vão para SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Seu nome] → [Tipo] (conta da escola; sem login Google pessoal).';
+      hint.textContent =
+        'Drive: SIGAEDUCA → SOLICITAÇÕES PEDAGÓGICAS → [Seu nome] → [Tipo da solicitação] → arquivo. Pastas criadas uma vez e reutilizadas.';
     }
   }
 
@@ -65,15 +66,23 @@
     return Promise.resolve(drive);
   }
 
-  function getSolicitanteNome() {
+  function getSolicitanteNome(preferred) {
+    var fromPreferred = String(preferred || '').trim();
+    if (fromPreferred && !/^usu[aá]rio$/i.test(fromPreferred) && fromPreferred.toLowerCase() !== 'sem nome') {
+      return fromPreferred;
+    }
     try {
       var session = JSON.parse(localStorage.getItem('siga_session') || 'null');
-      if (session && session.nome) return String(session.nome).trim();
+      if (session && session.nome && String(session.nome).trim()) {
+        return String(session.nome).trim();
+      }
     } catch (e) { /* ignore */ }
-    return localStorage.getItem('siga_profile_name') || 'Usuário';
+    var profile = String(localStorage.getItem('siga_profile_name') || '').trim();
+    if (profile) return profile;
+    return 'Usuário';
   }
 
-  function uploadToDriveFromLocal(tipo, arquivoMeta, onProgress) {
+  function uploadToDriveFromLocal(tipo, arquivoMeta, onProgress, solicitanteNome) {
     if (!arquivoMeta || !arquivoMeta.id) {
       return Promise.reject(new Error('Anexo local não encontrado para enviar ao Drive.'));
     }
@@ -88,7 +97,7 @@
           arquivoMeta.name || rec.name || 'arquivo',
           arquivoMeta.mime || rec.mime || 'application/octet-stream',
           onProgress,
-          getSolicitanteNome()
+          getSolicitanteNome(solicitanteNome)
         );
       });
     });
@@ -664,9 +673,10 @@
         }
 
         setUploadProgress(40, 'Enviando ao Google Drive…');
+        var solicitanteDrive = (existing && existing.solicitante) || getSolicitanteNome();
         return uploadToDriveFromLocal(tipo, arquivoMeta, function (pct, label) {
           setUploadProgress(40 + Math.round((pct || 0) * 0.55), label || 'Google Drive…');
-        }).then(function (driveMeta) {
+        }, solicitanteDrive).then(function (driveMeta) {
           setUploadProgress(100, 'Concluído');
           return { arquivoMeta: arquivoMeta, driveMeta: driveMeta };
         });
@@ -675,7 +685,7 @@
       var arquivoMeta = result.arquivoMeta;
       var driveMeta = result.driveMeta;
       var now = todayIso();
-      var solicitante = getSolicitanteNome();
+      var solicitante = (existing && existing.solicitante) || getSolicitanteNome();
       if (existing) {
         existing.tipo = tipo;
         existing.dataAplicacao = dataAplicacao;
@@ -683,6 +693,7 @@
         existing.observacoes = observacoes;
         existing.arquivo = arquivoMeta || existing.arquivo || null;
         if (driveMeta) existing.drive = driveMeta;
+        if (!existing.solicitante) existing.solicitante = solicitante;
         existing.updatedAt = new Date().toISOString();
       } else {
         list.unshift({
@@ -693,7 +704,7 @@
           dataAplicacao: dataAplicacao,
           observacoes: observacoes,
           status: 'pendente',
-          solicitante: getSolicitanteNome(),
+          solicitante: solicitante,
           arquivo: arquivoMeta,
           drive: driveMeta || null,
           createdAt: new Date().toISOString(),
@@ -748,11 +759,15 @@
       return;
     }
     showToast('Enviando ao Drive da escola…', 'success');
-    uploadToDriveFromLocal(item.tipo, item.arquivo, null).then(function (driveMeta) {
+    uploadToDriveFromLocal(item.tipo, item.arquivo, null, item.solicitante).then(function (driveMeta) {
       item.drive = driveMeta;
+      if (!item.solicitante) item.solicitante = getSolicitanteNome();
       item.updatedAt = new Date().toISOString();
       saveList(list);
-      showToast('Arquivo salvo no Drive da escola.', 'success');
+      showToast(
+        'Arquivo salvo em: ' + (driveMeta.folderPath || 'Drive da escola'),
+        'success'
+      );
       renderList();
     }).catch(function (err) {
       showToast((err && err.message) || 'Falha ao enviar ao Drive.', 'error');

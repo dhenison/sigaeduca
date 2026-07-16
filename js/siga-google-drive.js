@@ -119,20 +119,23 @@
   }
 
   /**
-   * Solicitações: SIGAEDUCA / SOLICITAÇÕES PEDAGÓGICAS / {usuário} / {tipo}
+   * Solicitações: SIGAEDUCA / SOLICITAÇÕES PEDAGÓGICAS / {usuário} / {tipo} / arquivo
+   * Pastas criadas uma vez; novos arquivos reutilizam a pasta do professor e do tipo.
    */
   function uploadSolicitacaoFile(tipo, blob, fileName, mimeType, onProgress, solicitanteNome) {
     if (!blob) return Promise.reject(new Error('Arquivo inválido.'));
-    var nome = solicitanteNome ||
-      localStorage.getItem('siga_profile_name') ||
-      (function () {
-        try {
-          var s = JSON.parse(localStorage.getItem('siga_session') || 'null');
-          return (s && s.nome) || 'Usuário';
-        } catch (e) {
-          return 'Usuário';
-        }
-      })();
+    var nome = String(solicitanteNome || '').trim();
+    if (!nome) {
+      nome = localStorage.getItem('siga_profile_name') ||
+        (function () {
+          try {
+            var s = JSON.parse(localStorage.getItem('siga_session') || 'null');
+            return (s && s.nome) || 'Usuário';
+          } catch (e) {
+            return 'Usuário';
+          }
+        })();
+    }
 
     if (typeof onProgress === 'function') onProgress(5, 'Preparando arquivo…');
     return blobToBase64(blob).then(function (b64) {

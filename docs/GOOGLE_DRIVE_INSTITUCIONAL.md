@@ -9,12 +9,17 @@ Professores **não** fazem login Google. Só login no SIGA.
 ## Estrutura no Drive
 
 ```
-SIGAEDUCA/                          ← GOOGLE_DRIVE_ROOT_FOLDER_ID
+SIGAEDUCA/                                    ← pasta do sistema (GOOGLE_DRIVE_ROOT_FOLDER_ID)
 └── SOLICITAÇÕES PEDAGÓGICAS/
-    └── {Nome do usuário}/
-        └── {Tipo}/
+    └── {NOME DO PROFESSOR}/                  ← criada 1× por usuário que envia
+        ├── Impressão de Atividade/
+        │   └── arquivo.pdf
+        ├── Impressão de Teste/
+        ├── Agendar Chromebooks/
+        └── Agendar Auditório/
 ```
 
+Pastas de professor e de tipo são **reutilizadas**: cada novo documento só adiciona o arquivo na pasta já existente.
 ## Onde cada coisa salva
 
 | Módulo | Destino |

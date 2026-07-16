@@ -77,10 +77,16 @@ Deno.serve(async (req) => {
     const auth = await resolveDriveAuth();
     await assertRootFolderAccessible(auth.accessToken, rootFolderId, auth.label);
 
+    // Pedagógicas: SIGAEDUCA / SOLICITAÇÕES PEDAGÓGICAS / {Professor} / {Tipo} / arquivo
+    // Pastas são reutilizadas (busca por nome; cria só se ainda não existir).
     const pathParts =
       moduleName === "secretaria"
-        ? [FOLDER_SECRETARIA, tipo]
-        : [FOLDER_SOLICITACOES, sanitizeFolderName(solicitanteNome), tipo];
+        ? [FOLDER_SECRETARIA, sanitizeFolderName(tipo)]
+        : [
+          FOLDER_SOLICITACOES,
+          sanitizePersonFolderName(solicitanteNome),
+          sanitizeFolderName(tipo),
+        ];
 
     let folderId: string;
     try {
@@ -250,6 +256,16 @@ function sanitizeFolderName(name: string) {
     .slice(0, 120) || "Sem nome";
 }
 
+/** Pasta do professor: nome estável (maiúsculas) para não duplicar por variação de capitalização. */
+function sanitizePersonFolderName(name: string) {
+  const base = sanitizeFolderName(name);
+  try {
+    return base.toLocaleUpperCase("pt-BR");
+  } catch {
+    return base.toUpperCase();
+  }
+}
+
 function sanitizeFileName(name: string) {
   return String(name || "arquivo.bin")
     .replace(/[\\/:*?"<>|]/g, "-")
@@ -291,10 +307,11 @@ async function findChildFolder(
   parentId: string,
   name: string,
 ) {
+  // Busca ampla sob o pai e filtra por nome (case-insensitive) para reusar pastas existentes.
   const q =
-    `mimeType = 'application/vnd.google-apps.folder' and name = '${escapeDriveQuery(name)}' and '${parentId}' in parents and trashed = false`;
+    `mimeType = 'application/vnd.google-apps.folder' and '${parentId}' in parents and trashed = false`;
   const url =
-    `${DRIVE_API}/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=5&supportsAllDrives=true&includeItemsFromAllDrives=true`;
+    `${DRIVE_API}/files?q=${encodeURIComponent(q)}&fields=files(id,name,createdTime)&pageSize=100&orderBy=createdTime&supportsAllDrives=true&includeItemsFromAllDrives=true`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -302,8 +319,12 @@ async function findChildFolder(
   if (!res.ok) {
     throw new Error(body?.error?.message || "Erro ao buscar pasta no Drive");
   }
-  const files = body.files || [];
-  return files[0] || null;
+  const target = String(name || "").trim().toLocaleLowerCase("pt-BR");
+  const files = (body.files || []) as Array<{ id: string; name?: string }>;
+  const match = files.find((f) =>
+    String(f.name || "").trim().toLocaleLowerCase("pt-BR") === target
+  );
+  return match || null;
 }
 
 async function createFolder(token: string, parentId: string, name: string) {
@@ -338,7 +359,14 @@ async function ensureFolderPath(
   for (const part of parts) {
     const name = sanitizeFolderName(part);
     let folder = await findChildFolder(token, parentId, name);
-    if (!folder) folder = await createFolder(token, parentId, name);
+    if (!folder) {
+      // Corrida: outro upload pode criar a pasta no meio do caminho — rebuscar após criar.
+      await createFolder(token, parentId, name);
+      folder = await findChildFolder(token, parentId, name);
+      if (!folder) {
+        throw new Error(`Não foi possível criar/localizar a pasta "${name}" no Drive.`);
+      }
+    }
     parentId = folder.id;
   }
   return parentId;
