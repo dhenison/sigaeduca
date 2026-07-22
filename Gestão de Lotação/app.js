@@ -1370,7 +1370,8 @@ function initFichaLotacaoView() {
         
         // Determine how many pages to render (slice into blocks of 10 rows)
         const itemsPerPage = 10;
-        const totalPages = Math.max(1, Math.ceil(profDisciplinas.length / itemsPerPage));
+        // Mantém ao menos uma linha vazia para incluir uma nova turma/disciplina.
+        const totalPages = Math.max(1, Math.ceil((profDisciplinas.length + 1) / itemsPerPage));
         
         const printArea = document.getElementById('fichaLotacaoPrintArea');
         printArea.innerHTML = '';
@@ -1388,6 +1389,147 @@ function initFichaLotacaoView() {
         
         document.getElementById('lotacaoContainer').style.display = 'block';
     };
+}
+
+function getProfessorFichaLotacao() {
+    const select = document.getElementById('lotacaoProfSelect');
+    const selected = select ? select.value : '';
+    if (!selected) return null;
+
+    if (selected === 'AVULSO') {
+        const nome = String(document.getElementById('avulsaNome')?.value || '').trim().toUpperCase();
+        const matricula = String(document.getElementById('avulsaMatricula')?.value || '').trim();
+        const dv = String(document.getElementById('avulsaDV')?.value || '').trim();
+        if (!nome || !matricula) return null;
+        return {
+            nome,
+            matricula,
+            dv,
+            cargo: document.getElementById('avulsaCargo')?.value || 'PROFESSOR',
+            vinculo: document.getElementById('avulsaVinculo')?.value || 'EFETIVO',
+            setor: '',
+            avulso: true
+        };
+    }
+
+    const cadastrado = appState.professores.find(prof => prof.nome === selected);
+    return cadastrado ? { ...cadastrado, avulso: false } : null;
+}
+
+function matriculaCompletaProfessor(professor) {
+    const matricula = String(professor?.matricula || '').trim();
+    const dv = String(professor?.dv || '').trim();
+    if (!matricula) return '-';
+    if (!dv || matricula.endsWith(`-${dv}`)) return matricula;
+    return `${matricula}-${dv}`;
+}
+
+function salvarFichaLotacao() {
+    const professor = getProfessorFichaLotacao();
+    if (!professor) {
+        showToast('Selecione um professor ou preencha nome e matrícula da ficha avulsa.', 'error');
+        return;
+    }
+
+    const rows = [...document.querySelectorAll('#fichaLotacaoPrintArea .ficha-pesquisa-row')];
+    const selecionados = [];
+    const indicesVistos = new Set();
+    const linhasInvalidas = [];
+
+    rows.forEach((row, rowIndex) => {
+        const turma = String(row.querySelector('.ficha-filtro-turma')?.value || '').trim();
+        const codigo = String(row.querySelector('.ficha-filtro-codigo')?.value || '').trim();
+        if (!turma && !codigo) return;
+
+        if (!turma || !codigo) {
+            linhasInvalidas.push(rowIndex + 1);
+            return;
+        }
+
+        const dataIndex = appState.data.findIndex(item =>
+            formatarTurmaFicha(item) === turma && String(item.codigo || '') === codigo
+        );
+        if (dataIndex < 0) {
+            linhasInvalidas.push(rowIndex + 1);
+            return;
+        }
+
+        if (!indicesVistos.has(dataIndex)) {
+            indicesVistos.add(dataIndex);
+            selecionados.push({ index: dataIndex, item: appState.data[dataIndex] });
+        }
+    });
+
+    if (linhasInvalidas.length) {
+        showToast(`Revise turma e disciplina nas linhas: ${linhasInvalidas.join(', ')}.`, 'error');
+        return;
+    }
+    if (!selecionados.length) {
+        showToast('Inclua ao menos uma turma e disciplina na ficha.', 'error');
+        return;
+    }
+
+    const conflitos = selecionados.filter(({ item }) =>
+        item.professor && item.professor !== '-' && item.professor !== professor.nome
+    );
+    if (conflitos.length) {
+        const resumo = conflitos.slice(0, 5).map(({ item }) =>
+            `${item.turma} - ${item.disciplina}: ${item.professor}`
+        ).join('\n');
+        alert(`Não foi possível salvar. Estas turmas/disciplinas já possuem professor:\n\n${resumo}`);
+        return;
+    }
+
+    const vagas = selecionados.filter(({ item }) => !item.professor || item.professor === '-');
+    if (!vagas.length) {
+        showToast('As turmas desta ficha já estão salvas para o professor selecionado.');
+        return;
+    }
+
+    if (professor.avulso) {
+        const existente = appState.professores.findIndex(item =>
+            item.nome === professor.nome || String(item.matricula) === String(professor.matricula)
+        );
+        const cadastro = {
+            nome: professor.nome,
+            matricula: professor.matricula,
+            dv: professor.dv,
+            cargo: professor.cargo,
+            vinculo: professor.vinculo,
+            setor: professor.setor || ''
+        };
+        if (existente >= 0) appState.professores[existente] = cadastro;
+        else appState.professores.push(cadastro);
+    }
+
+    const matriculaCompleta = matriculaCompletaProfessor(professor);
+    vagas.forEach(({ item }) => {
+        item.professor = professor.nome;
+        item.matricula = matriculaCompleta;
+    });
+
+    const cargaTotal = appState.data
+        .filter(item => item.professor === professor.nome)
+        .reduce((total, item) => total + (Number(item.ch_disciplina) || 0), 0);
+    appState.data.forEach(item => {
+        if (item.professor === professor.nome) {
+            item.matricula = matriculaCompleta;
+            item.ch_professor = cargaTotal;
+        }
+    });
+
+    saveDataToStorage();
+    initFiltersOptions();
+
+    // Reabre a ficha já consolidada para refletir a distribuição salva.
+    initFichaLotacaoView();
+    const select = document.getElementById('lotacaoProfSelect');
+    if (select) {
+        select.value = professor.nome;
+        select.dispatchEvent(new Event('change'));
+    }
+
+    showToast(`${vagas.length} turma(s)/disciplina(s) salva(s) para ${professor.nome}.`);
 }
 
 /* ==========================================================================
@@ -2070,13 +2212,13 @@ function imprimirConsultaProfessor() {
 /* ==========================================================================
    HELPER UTILITIES
    ========================================================================== */
-function showToast(message) {
+function showToast(message, type = 'success') {
     // Basic CSS Toast notification
     const toast = document.createElement('div');
     toast.style.position = 'fixed';
     toast.style.bottom = '2rem';
     toast.style.right = '2rem';
-    toast.style.backgroundColor = 'var(--primary)';
+    toast.style.backgroundColor = type === 'error' ? 'var(--danger)' : 'var(--primary)';
     toast.style.color = '#fff';
     toast.style.padding = '1rem 1.5rem';
     toast.style.borderRadius = 'var(--border-radius-md)';
@@ -2086,7 +2228,7 @@ function showToast(message) {
     toast.style.display = 'flex';
     toast.style.alignItems = 'center';
     toast.style.gap = '0.5rem';
-    toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+    toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${message}`;
     
     document.body.appendChild(toast);
     

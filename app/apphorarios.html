@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Horário de Aula - SIGA EDUCA</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#5c4300",
+                        "outline-variant": "#bdcabc",
+                        "inverse-surface": "#27313f",
+                        "tertiary": "#006d37",
+                        "primary-fixed-dim": "#f9bd22",
+                        "on-primary": "#ffffff",
+                        "on-background": "#121c2a",
+                        "on-tertiary-fixed-variant": "#005228",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#f9bd22",
+                        "on-tertiary-fixed": "#00210c",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#2eaf62",
+                        "outline": "#6e7a6e",
+                        "on-tertiary-container": "#003a1a",
+                        "surface": "#f8f9ff",
+                        "secondary": "#0058be",
+                        "on-primary-container": "#412f00",
+                        "surface-dim": "#d0dbed",
+                        "on-error": "#ffffff",
+                        "primary-container": "#c39200",
+                        "on-surface-variant": "#3e4a3f",
+                        "surface-container-highest": "#d9e3f6",
+                        "surface-tint": "#795900",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary": "#795900",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-primary-fixed": "#261a00",
+                        "tertiary-fixed-dim": "#64de8b",
+                        "background": "#f8f9ff",
+                        "secondary-container": "#2170e4",
+                        "surface-variant": "#d9e3f6",
+                        "surface-container-high": "#dee9fc",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#121c2a",
+                        "tertiary-fixed": "#81fba5",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-low": "#eff4ff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-container": "#e6eeff",
+                        "primary-fixed": "#ffdf9f",
+                        "surface-bright": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1440px",
+                        "margin-desktop": "32px",
+                        "base": "8px",
+                        "sidebar-width": "260px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-day-shadow {
+            box-shadow: 0 4px 14px 0 rgba(46, 175, 98, 0.39);
+        }
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        body {
+            background-color: #F7FAF8; /* Custom greenish light background from prompt */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface antialiased select-none">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm dark:shadow-none flex justify-between items-center h-16 px-4 md:px-8">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 transition-transform duration-150 flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary dark:text-primary-fixed-dim">HORÁRIO DE AULA</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="active:scale-95 transition-transform duration-150 flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a university student with a friendly expression, set against a clean, softly lit architectural background with subtle wooden textures and academic lighting. The image maintains a high-end corporate minimalist aesthetic with a soft color palette consistent with educational SaaS interfaces." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcMJrWyWQhA80VdNoHbywMu_VnDzqEwApYsZVPofbd3jajU1O_BUpiEpJoiSkRfElFGC_nlub4af4N07uY9dM_5tsCL0e7layfkAVzhpy9B6ezVTykTXKlUVHgDUT3mQb17MS8T6BTUpRto3VeaDPpafSJsbTAI0GEtFfL0zxedirkG_uzQQGiuVN-G1J-0xxHlJzC3kbPtMXpURyiuV_0ImrWRpPcV-lxF-lce3Fr5kzRhTZ63dmsuUJFjBIDE6geSlhv8nj0wv8"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="pt-20 pb-28 px-4 max-w-container-max mx-auto">
+<!-- Day Selector (Horizontal Scroll) -->
+<section class="mb-8">
+<div class="flex overflow-x-auto gap-3 py-2 -mx-4 px-4 scroll-smooth">
+<!-- Seg -->
+<button class="flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-2xl bg-white shadow-sm border border-outline-variant transition-all duration-200 active:scale-95">
+<span class="text-label-sm font-label-sm text-on-surface-variant">SEG</span>
+<span class="text-headline-sm font-headline-sm text-on-surface">12</span>
+</button>
+<!-- Ter (Active) -->
+<button class="flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-2xl bg-tertiary-container text-white active-day-shadow transition-all duration-200 active:scale-95">
+<span class="text-label-sm font-label-sm opacity-90">TER</span>
+<span class="text-headline-sm font-headline-sm">13</span>
+</button>
+<!-- Qua -->
+<button class="flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-2xl bg-white shadow-sm border border-outline-variant transition-all duration-200 active:scale-95">
+<span class="text-label-sm font-label-sm text-on-surface-variant">QUA</span>
+<span class="text-headline-sm font-headline-sm text-on-surface">14</span>
+</button>
+<!-- Qui -->
+<button class="flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-2xl bg-white shadow-sm border border-outline-variant transition-all duration-200 active:scale-95">
+<span class="text-label-sm font-label-sm text-on-surface-variant">QUI</span>
+<span class="text-headline-sm font-headline-sm text-on-surface">15</span>
+</button>
+<!-- Sex -->
+<button class="flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 rounded-2xl bg-white shadow-sm border border-outline-variant transition-all duration-200 active:scale-95">
+<span class="text-label-sm font-label-sm text-on-surface-variant">SEX</span>
+<span class="text-headline-sm font-headline-sm text-on-surface">16</span>
+</button>
+</div>
+</section>
+<!-- Current Status Info -->
+<div class="mb-6 px-1">
+<h2 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">
+                Terça-feira
+                <span class="text-body-sm font-body-sm text-on-surface-variant font-normal">• 13 de Maio</span>
+</h2>
+</div>
+<!-- Schedule List -->
+<div class="space-y-4">
+<!-- Class Item 1: Completed -->
+<div class="relative bg-white p-5 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] border border-outline-variant/30 flex gap-4 overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-outline-variant"></div>
+<div class="flex flex-col items-center justify-center min-w-[70px] text-on-surface-variant">
+<span class="text-label-sm font-label-sm">07:30</span>
+<div class="h-8 w-[1px] bg-outline-variant my-1"></div>
+<span class="text-label-sm font-label-sm">08:20</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-sm font-headline-sm text-on-surface line-through decoration-on-surface-variant/40">Matemática</h3>
+<span class="bg-surface-variant text-on-surface-variant text-[10px] px-2 py-0.5 rounded-full font-bold">CONCLUÍDA</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person</span>
+                        Prof. Carlos Eduardo
+                    </p>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                        Sala 102 • Bloco A
+                    </div>
+</div>
+</div>
+<!-- Class Item 2: ACTIVE / NOW -->
+<div class="relative bg-tertiary-container/5 p-5 rounded-2xl shadow-[0_8px_24px_rgba(46,175,98,0.08)] border border-tertiary-container/20 flex gap-4 overflow-hidden ring-1 ring-tertiary-container/30">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary-container"></div>
+<div class="flex flex-col items-center justify-center min-w-[70px] text-tertiary">
+<span class="text-label-sm font-label-sm font-bold">08:20</span>
+<div class="h-8 w-[1px] bg-tertiary-container my-1"></div>
+<span class="text-label-sm font-label-sm font-bold">09:10</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Língua Portuguesa</h3>
+<span class="bg-tertiary-container text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">AGORA</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person</span>
+                        Profa. Ana Beatriz
+                    </p>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-tertiary">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                        Laboratório 03
+                    </div>
+</div>
+</div>
+<!-- Class Item 3: Next -->
+<div class="relative bg-white p-5 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] border border-outline-variant/30 flex gap-4 overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary-container"></div>
+<div class="flex flex-col items-center justify-center min-w-[70px] text-on-surface-variant">
+<span class="text-label-sm font-label-sm">09:30</span>
+<div class="h-8 w-[1px] bg-outline-variant my-1"></div>
+<span class="text-label-sm font-label-sm">10:20</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">História Mundial</h3>
+<span class="text-secondary-container"><span class="material-symbols-outlined text-[20px]">timer</span></span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person</span>
+                        Prof. Ricardo Silva
+                    </p>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                        Auditório Principal
+                    </div>
+</div>
+</div>
+<!-- Class Item 4: Next -->
+<div class="relative bg-white p-5 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] border border-outline-variant/30 flex gap-4 overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+<div class="flex flex-col items-center justify-center min-w-[70px] text-on-surface-variant">
+<span class="text-label-sm font-label-sm">10:20</span>
+<div class="h-8 w-[1px] bg-outline-variant my-1"></div>
+<span class="text-label-sm font-label-sm">11:10</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Geografia</h3>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person</span>
+                        Profa. Marina Costa
+                    </p>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                        Sala 102 • Bloco A
+                    </div>
+</div>
+</div>
+<!-- Class Item 5: Next -->
+<div class="relative bg-white p-5 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] border border-outline-variant/30 flex gap-4 overflow-hidden opacity-80">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary"></div>
+<div class="flex flex-col items-center justify-center min-w-[70px] text-on-surface-variant">
+<span class="text-label-sm font-label-sm">11:10</span>
+<div class="h-8 w-[1px] bg-outline-variant my-1"></div>
+<span class="text-label-sm font-label-sm">12:00</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Educação Física</h3>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">person</span>
+                        Prof. Marcos Aurelio
+                    </p>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                        Quadra Poliesportiva
+                    </div>
+</div>
+</div>
+</div>
+<!-- FAB (Contextual for Schedule: Download PDF or Reminder) -->
+<button class="fixed right-6 bottom-24 w-14 h-14 bg-tertiary text-white rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all hover:brightness-110 z-40">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">download</span>
+</button>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe bg-surface dark:bg-inverse-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<!-- Dashboard -->
+<button class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 active:scale-90 transition-all duration-200 hover:bg-secondary-container/50 rounded-lg">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md-mobile">Dashboard</span>
+</button>
+<!-- Courses (Active for Schedule context as it's academic content) -->
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="school" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="font-label-md text-label-md-mobile font-bold">Courses</span>
+</button>
+<!-- Grades -->
+<button class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 active:scale-90 transition-all duration-200 hover:bg-secondary-container/50 rounded-lg">
+<span class="material-symbols-outlined" data-icon="grade">grade</span>
+<span class="font-label-md text-label-md-mobile">Grades</span>
+</button>
+<!-- Menu -->
+<button class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 active:scale-90 transition-all duration-200 hover:bg-secondary-container/50 rounded-lg">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+<span class="font-label-md text-label-md-mobile">Menu</span>
+</button>
+</nav>
+<script>
+        // Simple day toggle interaction
+        const dayButtons = document.querySelectorAll('section button');
+        dayButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                dayButtons.forEach(b => {
+                    b.classList.remove('bg-tertiary-container', 'text-white', 'active-day-shadow');
+                    b.classList.add('bg-white', 'text-on-surface');
+                    const label = b.querySelector('.text-label-sm');
+                    if(label) label.classList.add('text-on-surface-variant');
+                });
+                btn.classList.add('bg-tertiary-container', 'text-white', 'active-day-shadow');
+                btn.classList.remove('bg-white', 'text-on-surface');
+                const labelActive = btn.querySelector('.text-label-sm');
+                if(labelActive) labelActive.classList.remove('text-on-surface-variant');
+            });
+        });
+    </script>
+</body></html>

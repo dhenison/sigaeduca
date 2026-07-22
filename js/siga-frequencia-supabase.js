@@ -1,9 +1,8 @@
 /**
  * SIGA EDUCA — Frequência no Supabase (attendance_calls / attendance_marks)
  *
- * Alunos já existem em `students`. O reconhecimento facial só grava foto local
- * e, ao bater ponto, sobe Presença (P) aqui. Esta camada faz a tela Frequência
- * ler/gravar as mesmas tabelas (parâmetros do sistema).
+ * Reconhecimento facial grava P + locked (consolidação individual).
+ * Entrada locked libera Saída daquele aluno; Dia = Entrada + Saída.
  */
 (function (global) {
   "use strict";
@@ -58,9 +57,19 @@
     }
   }
 
+  function emptyMark() {
+    return {
+      status: "P",
+      justification: "",
+      locked: false,
+      source: "manual",
+      marked_at: null,
+      _hasMark: false,
+    };
+  }
+
   /**
    * Carrega chamada + marcas do dia.
-   * @returns {Promise<{ok:boolean, source:string, call:object|null, record:object, studentMap:object}>}
    */
   function loadDay(classCode, dayDate, students) {
     lastError = null;
@@ -130,7 +139,7 @@
             return sb
               .from("attendance_marks")
               .select(
-                "id,student_id,phase,status,justification,marked_at"
+                "id,student_id,phase,status,justification,marked_at,locked,source"
               )
               .eq("call_id", call.id)
               .then(function (marksRes) {
@@ -147,29 +156,36 @@
                   },
                   _callId: call.id,
                   _schoolId: schoolId,
+                  _individualMode: true,
                 };
 
                 (students || []).forEach(function (s) {
                   var sid = String(s.id);
-                  record.entrada.records[sid] = { status: "P", justification: "" };
-                  record.saida.records[sid] = { status: "P", justification: "" };
+                  record.entrada.records[sid] = emptyMark();
+                  record.saida.records[sid] = emptyMark();
                 });
 
                 marks.forEach(function (m) {
                   var sid = String(m.student_id);
                   var phase = m.phase === "saida" ? "saida" : "entrada";
+                  if (!record[phase].records[sid]) {
+                    record[phase].records[sid] = emptyMark();
+                  }
                   record[phase].records[sid] = {
                     status: m.status || "P",
                     justification: m.justification || "",
                     marked_at: m.marked_at || null,
+                    locked: !!m.locked,
+                    source: m.source || "manual",
                     _markId: m.id,
+                    _hasMark: true,
                   };
                 });
 
                 cloudEnabled = true;
                 setStatusBanner(
                   true,
-                  "Frequência no SIGA · batidas faciais aparecem como Presença (P)."
+                  "Frequência no SIGA · batida facial consolida o aluno individualmente (P fechado)."
                 );
                 return {
                   ok: true,
@@ -199,18 +215,36 @@
     });
   }
 
-  function upsertMarks(record) {
+  function upsertMarks(record, options) {
+    options = options || {};
     if (!cloudEnabled || !record || !record._callId || !record._schoolId) {
       return Promise.resolve({ ok: false });
     }
     var sb = getSb();
     if (!sb) return Promise.resolve({ ok: false });
 
+    var onlyStudent = options.studentId ? String(options.studentId) : null;
+    var onlyPhase = options.phase || null;
+    var lockOpt = options.lock;
+
     var rows = [];
     ["entrada", "saida"].forEach(function (phase) {
+      if (onlyPhase && onlyPhase !== phase) return;
       var phaseRec = (record[phase] && record[phase].records) || {};
       Object.keys(phaseRec).forEach(function (studentId) {
+        if (onlyStudent && onlyStudent !== String(studentId)) return;
         var rec = phaseRec[studentId] || {};
+        // Só grava marcas reais (facial ou edição manual explícita)
+        if (!rec._hasMark && !options.force && !onlyStudent) return;
+        if (onlyStudent) {
+          rec._hasMark = true;
+          if (lockOpt === false) rec.locked = false;
+          else if (lockOpt !== false) rec.locked = true;
+          if (!rec.source || rec.source === "manual") {
+            rec.source = options.source || "manual";
+          }
+          phaseRec[studentId] = rec;
+        }
         rows.push({
           school_id: record._schoolId,
           call_id: record._callId,
@@ -219,13 +253,14 @@
           status: rec.status || "P",
           justification: rec.status === "FJ" ? rec.justification || "" : null,
           marked_at: rec.marked_at || new Date().toISOString(),
+          locked: !!rec.locked,
+          source: rec.source || "manual",
         });
       });
     });
 
     if (!rows.length) return Promise.resolve({ ok: true });
 
-    // Upsert em lotes
     var chunk = 80;
     var chain = Promise.resolve();
     for (var i = 0; i < rows.length; i += chunk) {
@@ -255,6 +290,7 @@
   }
 
   function setConsolidation(record, phase, consolidated) {
+    // Mantido por compatibilidade; fluxo facial usa locked por marca.
     if (!cloudEnabled || !record || !record._callId) {
       return Promise.resolve({ ok: false });
     }
@@ -276,7 +312,7 @@
       .eq("id", record._callId)
       .then(function (res) {
         if (res.error) throw res.error;
-        return upsertMarks(record);
+        return upsertMarks(record, { force: true });
       })
       .then(function () {
         return { ok: true };
@@ -291,10 +327,6 @@
       });
   }
 
-  /**
-   * Carrega alunos da turma no Supabase (fonte oficial).
-   * Mapeia para o formato da UI: { id, nome, turma, status, frequencia }
-   */
   function loadStudentsForClass(classCode) {
     if (!isReady() || !classCode) {
       return Promise.resolve([]);

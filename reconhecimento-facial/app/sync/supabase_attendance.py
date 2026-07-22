@@ -14,7 +14,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from typing import Any
 
@@ -255,19 +255,25 @@ class SupabaseAttendanceClient:
         student_id: str,
         phase: str,
         marked_at: str,
+        locked: bool = True,
+        source: str = "facial",
     ) -> str:
+        """Grava presença e consolida individualmente (locked) na fase."""
+        payload = {
+            "school_id": self.school_id,
+            "call_id": call_id,
+            "student_id": student_id,
+            "phase": phase,
+            "status": "P",
+            "marked_at": marked_at,
+            "locked": bool(locked),
+            "source": (source or "facial").strip() or "facial",
+        }
         rows = self._request(
             "POST",
             "attendance_marks",
             params={"on_conflict": "call_id,student_id,phase"},
-            body={
-                "school_id": self.school_id,
-                "call_id": call_id,
-                "student_id": student_id,
-                "phase": phase,
-                "status": "P",
-                "marked_at": marked_at,
-            },
+            body=payload,
             prefer="return=representation,resolution=merge-duplicates",
         )
         if isinstance(rows, list) and rows:
@@ -277,7 +283,7 @@ class SupabaseAttendanceClient:
             "GET",
             "attendance_marks",
             params={
-                "select": "id",
+                "select": "id,locked",
                 "call_id": f"eq.{call_id}",
                 "student_id": f"eq.{student_id}",
                 "phase": f"eq.{phase}",
@@ -290,7 +296,12 @@ class SupabaseAttendanceClient:
                 "PATCH",
                 "attendance_marks",
                 params={"id": f"eq.{mark_id}"},
-                body={"status": "P", "marked_at": marked_at},
+                body={
+                    "status": "P",
+                    "marked_at": marked_at,
+                    "locked": True,
+                    "source": payload["source"],
+                },
                 prefer="return=minimal",
             )
             return mark_id
@@ -324,9 +335,22 @@ def _iso_z(dt: datetime | None) -> str:
 
 
 def _day_date(dt: datetime | None) -> str:
+    """Dia letivo no fuso do Brasil (Frequência do SIGA usa data local, não UTC)."""
+    try:
+        from zoneinfo import ZoneInfo
+
+        tz = ZoneInfo("America/Belem")
+    except Exception:  # noqa: BLE001
+        tz = timezone(timedelta(hours=-3))
+
     if dt is None:
-        dt = datetime.utcnow()
-    return dt.date().isoformat()
+        local = datetime.now(tz)
+    elif dt.tzinfo is None:
+        # Batidas locais são gravadas em UTC “naive”.
+        local = dt.replace(tzinfo=timezone.utc).astimezone(tz)
+    else:
+        local = dt.astimezone(tz)
+    return local.date().isoformat()
 
 
 def should_sync_user(user: User | None) -> tuple[bool, str]:
@@ -459,6 +483,8 @@ def sync_ponto(ponto_id: int) -> SyncResult:
             student_id=student["id"],
             phase=phase,
             marked_at=_iso_z(ponto.timestamp),
+            locked=True,
+            source="facial",
         )
         ponto.sync_status = "synced"
         ponto.synced_at = datetime.utcnow()

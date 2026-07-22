@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Detalhes da Olimpíada - SIGA EDUCA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&family=Space+Grotesk:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#d0dbed",
+                        "secondary": "#0058be",
+                        "surface-variant": "#d9e3f6",
+                        "on-primary-fixed-variant": "#5c4300",
+                        "on-primary-container": "#412f00",
+                        "primary-fixed-dim": "#f9bd22",
+                        "on-tertiary-fixed": "#00210c",
+                        "inverse-surface": "#27313f",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed": "#001a42",
+                        "secondary-fixed": "#d8e2ff",
+                        "outline": "#6e7a6e",
+                        "tertiary-fixed": "#81fba5",
+                        "primary-fixed": "#ffdf9f",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "primary": "#795900",
+                        "on-tertiary-container": "#003a1a",
+                        "on-primary-fixed": "#261a00",
+                        "on-background": "#121c2a",
+                        "surface-bright": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "surface-container-highest": "#d9e3f6",
+                        "secondary-container": "#2170e4",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#2eaf62",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-secondary-container": "#fefcff",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#bdcabc",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#121c2a",
+                        "on-tertiary-fixed-variant": "#005228",
+                        "tertiary-fixed-dim": "#64de8b",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#f9bd22",
+                        "surface-tint": "#795900",
+                        "surface-container": "#e6eeff",
+                        "primary-container": "#c39200",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#3e4a3f",
+                        "surface-container-high": "#dee9fc",
+                        "tertiary": "#006d37",
+                        "on-error": "#ffffff",
+                        "surface": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "16px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "260px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "container-max": "1440px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "headline-lg": ["Space Grotesk"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Space Grotesk"],
+                        "headline-lg-mobile": ["Space Grotesk"],
+                        "body-sm": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f8f9ff;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-pill {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .custom-scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-4">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-transform" onclick="history.back()">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">SIGA EDUCA</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-on-surface-variant">share</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a cheerful diverse student in a modern educational setting, soft natural lighting, vibrant academic atmosphere with primary gold accents, high-quality digital photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjiR1bzADTGdVyZR7AqyItwEsFZjqzA_5eTyvwQOOS3bw3RJZtRpyDDVLkWuBEBVwcBXtGmncNzfkO59D5mZfAAtIyaIKCDE9GsQ58v1lVTpwgdPMGtall2GWzbfzX2yfYdD3dpg9UtiGwVOhWPvPSOijDcFR5g5YpcWmi4jGPiaToTRJD42bO0Zqw-sOAgHALRic7c9nXgeXfoa77UlvB01a8-oOo9P5naaBjuND9Ig_E5y9rVQl2_48FAvrxU-zoefuhT1AaNgE"/>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<main class="mt-16 px-4 pt-6 max-w-container-max mx-auto space-y-6">
+<!-- Hero Section: Logo da Competição -->
+<section class="relative w-full h-48 md:h-64 rounded-2xl overflow-hidden shadow-sm group">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A professional hero image for OBMEP mathematics competition. A clean composition featuring abstract geometric patterns, mathematical formulas, and a golden trophy icon. The aesthetic is clean, academic, and modern, using the institutional green palette of the SIGA EDUCA system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBp6Fe-RzlMJ5bur4uc-y2xIODboi40FP-I9ps1KuIc2PlyCA8Biobpo0LHr7c_RYIuWSVKs67VGkvc2aill25aBjiSJnnwPXMAiY5zCQpIDLMxxjijTofeolBenj1724XxSPltigqE0eYrWkChWpBU9rlwKIm13zKGW-ZXktX1pvjFBzo1cYh7vQoNX5uQwBNfXeLiPzp5yOzQk6iBw9HoxUCggLHo9gj2zoZHUdeMtDDwx6Prn5fOKqJt_rwxwoiICBw8RQ-2Bc0"/>
+<div class="absolute bottom-4 left-4 z-20">
+<span class="inline-block bg-tertiary-container text-on-tertiary px-3 py-1 rounded-full font-label-md text-label-sm mb-2">Inscrições Abertas</span>
+<h2 class="font-headline-lg text-white">18ª OBMEP 2024</h2>
+<p class="text-white/90 font-body-sm">Olimpíada Brasileira de Matemática das Escolas Públicas</p>
+</div>
+</section>
+<!-- CTA: Link do Edital -->
+<section>
+<a class="flex items-center justify-between w-full p-5 bg-tertiary text-on-tertiary rounded-2xl shadow-md active:scale-[0.98] transition-all group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">description</span>
+</div>
+<div>
+<p class="font-headline-sm text-white">Ler Edital Completo</p>
+<p class="text-white/80 font-body-sm">PDF • 1.2 MB • Atualizado hoje</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-white group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+</section>
+<!-- Bento Grid: Informações Gerais -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Datas -->
+<div class="col-span-2 md:col-span-1 bg-surface-container-low p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-tertiary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary">calendar_today</span>
+</div>
+<h3 class="font-headline-sm text-on-surface">Cronograma</h3>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-on-surface-variant">1ª Fase:</span>
+<span class="font-label-md text-on-surface">04 de Junho</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-on-surface-variant">2ª Fase:</span>
+<span class="font-label-md text-on-surface">19 de Outubro</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-on-surface-variant">Resultado:</span>
+<span class="font-label-md text-tertiary font-bold">20 de Dezembro</span>
+</div>
+</div>
+</div>
+<!-- Requisitos -->
+<div class="col-span-1 bg-surface-container-low p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-on-primary-fixed">verified_user</span>
+</div>
+<h3 class="font-label-md text-on-surface">Público Alvo</h3>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">Estudantes do 6º ano do Ensino Fundamental até o 3º ano do Ensino Médio.</p>
+</div>
+<!-- Local -->
+<div class="col-span-1 bg-surface-container-low p-5 rounded-2xl border border-outline-variant shadow-sm flex flex-col gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-on-secondary-fixed">location_on</span>
+</div>
+<h3 class="font-label-md text-on-surface">Local</h3>
+<p class="font-body-sm text-on-surface-variant">Aplicação nas próprias escolas (1ª Fase).</p>
+</div>
+</section>
+<!-- Resultados -->
+<section class="bg-surface-container-highest/30 p-5 rounded-2xl border border-dashed border-outline-variant relative overflow-hidden">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-sm text-on-surface">Resultados</h3>
+<span class="material-symbols-outlined text-on-surface-variant">history</span>
+</div>
+<div class="flex flex-col items-center justify-center py-6 text-center">
+<div class="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mb-4 shadow-inner">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">pending_actions</span>
+</div>
+<p class="font-headline-sm text-on-surface mb-1">Aguardando 1ª Fase</p>
+<p class="font-body-sm text-on-surface-variant max-w-xs">
+                    Os resultados individuais e a lista de classificados para a 2ª fase serão publicados em <span class="font-bold text-tertiary">02/08/2024</span>.
+                </p>
+</div>
+<!-- Histórico Simplificado -->
+<div class="mt-4 pt-4 border-t border-outline-variant">
+<button class="w-full py-2 flex items-center justify-center gap-2 font-label-md text-secondary hover:underline transition-all">
+                    Ver Histórico de Edições Anteriores
+                    <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</section>
+<!-- Mais Informações Card -->
+<section class="bg-surface-container-low rounded-2xl p-6 border border-outline-variant shadow-sm">
+<h3 class="font-headline-sm text-on-surface mb-4">Como se preparar?</h3>
+<div class="space-y-4">
+<div class="flex gap-4 p-3 hover:bg-surface-variant/30 rounded-xl transition-colors cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-tertiary">menu_book</span>
+</div>
+<div>
+<h4 class="font-label-md text-on-surface">Banco de Questões</h4>
+<p class="font-body-sm text-on-surface-variant">Acesse provas de anos anteriores resolvidas.</p>
+</div>
+</div>
+<div class="flex gap-4 p-3 hover:bg-surface-variant/30 rounded-xl transition-colors cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-tertiary">play_circle</span>
+</div>
+<div>
+<h4 class="font-label-md text-on-surface">Videoaulas Oficiais</h4>
+<p class="font-body-sm text-on-surface-variant">Playlist com dicas exclusivas dos professores.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md-mobile">Dashboard</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="school" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="font-label-md text-label-md-mobile">Courses</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="grade">grade</span>
+<span class="font-label-md text-label-md-mobile">Grades</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+<span class="font-label-md text-label-md-mobile">Menu</span>
+</button>
+</nav>
+<script>
+        // Micro-interação simples para efeito de hover/press nos cards
+        document.querySelectorAll('.active\\:scale-\\[0\\.98\\]').forEach(el => {
+            el.addEventListener('touchstart', () => {
+                el.style.transform = 'scale(0.98)';
+            });
+            el.addEventListener('touchend', () => {
+                el.style.transform = 'scale(1)';
+            });
+        });
+
+        // Suprimir FAB conforme regra do sistema para telas de detalhes
+        // (O FAB não foi renderizado conforme a instrução de supressão para páginas de detalhes)
+    </script>
+</body></html>

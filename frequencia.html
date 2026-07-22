@@ -316,7 +316,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260717a"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260717a"></script><script src="js/siga-security.js"></script><script src="js/siga-school-data.js?v=20260722b"></script><script src="js/siga-db.js?v=20260722b"></script><script src="js/siga-frequencia-supabase.js?v=20260717a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260717a"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260717a"></script><script src="js/siga-security.js"></script><script src="js/siga-school-data.js?v=20260722b"></script><script src="js/siga-db.js?v=20260722b"></script><script src="js/siga-frequencia-supabase.js?v=20260722c"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -573,9 +573,11 @@
                 <span>Presentes: 0</span>
                 <span>Faltas: 0</span>
             </div>
-            <button onclick="consolidarEntrada()" id="btn-consolidar-entrada" class="w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/10">
-                <span class="material-symbols-outlined">done_all</span>
-                <span>Consolidar Entrada</span>
+            <p id="hint-entrada-facial" class="text-[11px] text-text-secondary leading-relaxed">
+                Com reconhecimento facial, cada Entrada consolida o aluno automaticamente (P fechado). A Saída daquele aluno fica liberada em seguida.
+            </p>
+            <button type="button" id="btn-consolidar-entrada" class="hidden w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl">
+                Consolidar Entrada
             </button>
             <button onclick="solicitarDesbloqueio('entrada')" id="btn-desbloquear-entrada" class="w-full py-3 border border-border-subtle text-on-surface font-bold text-label-md rounded-xl hover:bg-surface-container transition-all flex items-center justify-center gap-2 hidden">
                 <span class="material-symbols-outlined text-error">lock_open</span>
@@ -583,7 +585,7 @@
             </button>
         </div>
         
-        <!-- Lock Overlay -->
+        <!-- Lock Overlay (turma inteira — legado; oculto no modo individual) -->
         <div id="overlay-entrada" class="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-20 flex items-center justify-center hidden">
             <div class="bg-white/95 p-4 rounded-xl border border-border-subtle shadow-md flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary animate-pulse">lock</span>
@@ -600,7 +602,7 @@
                 <span class="material-symbols-outlined text-primary">logout</span>
                 <h3 class="font-headline-sm font-bold text-on-surface">Chamada de Saída</h3>
             </div>
-            <span class="px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase" id="badge-status-saida">Bloqueada</span>
+            <span class="px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase" id="badge-status-saida">Individual</span>
         </div>
         
         <!-- Student List -->
@@ -614,9 +616,11 @@
                 <span>Presentes: 0</span>
                 <span>Faltas: 0</span>
             </div>
-            <button onclick="consolidarSaida()" id="btn-consolidar-saida" class="w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/10" disabled>
-                <span class="material-symbols-outlined">done_all</span>
-                <span>Consolidar Saída</span>
+            <p id="hint-saida-facial" class="text-[11px] text-text-secondary leading-relaxed">
+                A Saída de cada aluno só libera após a Entrada dele estar consolidada (batida facial ou marca individual).
+            </p>
+            <button type="button" id="btn-consolidar-saida" class="hidden w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl" disabled>
+                Consolidar Saída
             </button>
             <button onclick="solicitarDesbloqueio('saida')" id="btn-desbloquear-saida" class="w-full py-3 border border-border-subtle text-on-surface font-bold text-label-md rounded-xl hover:bg-surface-container transition-all flex items-center justify-center gap-2 hidden">
                 <span class="material-symbols-outlined text-error">lock_open</span>
@@ -624,8 +628,8 @@
             </button>
         </div>
         
-        <!-- Lock/Block Overlays -->
-        <div id="overlay-saida-blocked" class="absolute inset-0 bg-surface-container-low/55 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-6 text-center">
+        <!-- Lock/Block Overlays (legado turma; ocultos no modo individual) -->
+        <div id="overlay-saida-blocked" class="absolute inset-0 bg-surface-container-low/55 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-6 text-center hidden">
             <span class="material-symbols-outlined text-text-secondary text-4xl mb-2">lock</span>
             <p class="font-bold text-on-surface">Aguardando Consolidação</p>
             <p class="text-label-sm text-text-secondary mt-1">Consolide a Chamada de Entrada para habilitar a Chamada de Saída.</p>
@@ -666,13 +670,14 @@
                     * Ocorrências de evasão foram geradas automaticamente.
                 </div>
             </div>
+            <p class="text-[11px] text-text-secondary">Soma do dia = Entrada + Saída de cada aluno (quando as duas fases estiverem consolidadas).</p>
         </div>
         
         <!-- Pending Overlay -->
         <div id="overlay-consolidado-pending" class="absolute inset-0 bg-surface-container-low/55 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-6 text-center">
             <span class="material-symbols-outlined text-text-secondary text-4xl mb-2">hourglass_empty</span>
-            <p class="font-bold text-on-surface">Aguardando Consolidação</p>
-            <p class="text-label-sm text-text-secondary mt-1">Os dados consolidados serão exibidos assim que a Entrada e a Saída forem consolidadas.</p>
+            <p class="font-bold text-on-surface">Aguardando Entrada e Saída</p>
+            <p class="text-label-sm text-text-secondary mt-1">O resultado do dia aparece por aluno assim que Entrada e Saída dele estiverem consolidadas.</p>
         </div>
     </div>
 </div>
@@ -1090,15 +1095,183 @@ function renderAttendance() {
         return;
     }
     
-    // Render Entrada
-    filteredStudents.forEach(s => {
-        const rec = currentRecord.entrada.records[s.id] || { status: 'P', justification: '' };
+    function markLocked(rec) {
+        return !!(rec && rec.locked);
+    }
+
+    function studentPhaseRow(s, phase, rec, disabled, waitingMsg) {
         const isP = rec.status === 'P';
         const isF = rec.status === 'F';
         const isFJ = rec.status === 'FJ';
-        
+        const locked = markLocked(rec);
+        const prefix = phase === 'entrada' ? 'ent' : 'sai';
+        const lockBadge = locked
+            ? `<span class="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-green-100 text-green-800"><span class="material-symbols-outlined text-[12px]">lock</span>${rec.source === 'facial' ? 'Facial' : 'OK'}</span>`
+            : '';
+        const waitNote = waitingMsg
+            ? `<p class="text-[10px] text-amber-700 font-medium mt-1">${waitingMsg}</p>`
+            : '';
+        const dis = disabled || locked ? 'disabled' : '';
+        return `
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all gap-2 ${locked ? 'bg-green-50/40' : ''}">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary text-xs shrink-0">
+                        ${s.nome.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-body-md text-on-surface truncate" title="${s.nome}">${s.nome}${lockBadge}</p>
+                        <p class="text-[11px] text-text-secondary">INEP: ${s.codigo_inep || s.id}</p>
+                        ${waitNote}
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 ${disabled && !locked ? 'opacity-40 pointer-events-none' : ''}">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="${prefix}_${s.id}" class="hidden peer" value="P" ${isP ? 'checked' : ''} onchange="updateStatus('${s.id}', '${phase}', 'P')" ${dis}>
+                        <div class="w-10 h-8 flex items-center justify-center rounded-l-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all font-bold text-xs">P</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="${prefix}_${s.id}" class="hidden peer" value="F" ${isF ? 'checked' : ''} onchange="updateStatus('${s.id}', '${phase}', 'F')" ${dis}>
+                        <div class="w-10 h-8 flex items-center justify-center border-t border-b border-border-subtle bg-white text-text-secondary peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all font-bold text-xs">F</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="${prefix}_${s.id}" class="hidden peer" value="FJ" ${isFJ ? 'checked' : ''} onchange="updateStatus('${s.id}', '${phase}', 'FJ')" ${dis}>
+                        <div class="w-10 h-8 flex items-center justify-center rounded-r-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition-all font-bold text-xs">FJ</div>
+                    </label>
+                </div>
+            </div>
+        `;
+    }
+
+    // Render Entrada (consolidação individual por aluno)
+    document.getElementById('overlay-entrada')?.classList.add('hidden');
+    document.getElementById('btn-consolidar-entrada')?.classList.add('hidden');
+    document.getElementById('btn-desbloquear-entrada')?.classList.add('hidden');
+
+    let lockedEnt = 0;
+    filteredStudents.forEach(s => {
+        const rec = currentRecord.entrada.records[s.id] || { status: 'P', justification: '', locked: false };
+        if (markLocked(rec)) lockedEnt++;
         const row = document.createElement('div');
-        row.className = "flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all gap-2";
+        row.innerHTML = studentPhaseRow(s, 'entrada', rec, !!currentRecord.entrada.consolidado, '');
+        if (rec.status === 'FJ' && rec.justification) {
+            const labelDiv = document.createElement('div');
+            labelDiv.className = "text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium mt-1 ml-3";
+            labelDiv.textContent = rec.justification;
+            row.appendChild(labelDiv);
+        }
+        listEntrada.appendChild(row);
+    });
+    document.getElementById('badge-status-entrada').textContent =
+        lockedEnt ? `${lockedEnt}/${filteredStudents.length} consol.` : 'Individual';
+    document.getElementById('badge-status-entrada').className =
+        lockedEnt === filteredStudents.length && filteredStudents.length
+            ? 'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase'
+            : 'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
+
+    // Render Saída — libera por aluno após Entrada locked
+    document.getElementById('overlay-saida-blocked')?.classList.add('hidden');
+    document.getElementById('overlay-saida-locked')?.classList.add('hidden');
+    document.getElementById('btn-consolidar-saida')?.classList.add('hidden');
+    document.getElementById('btn-desbloquear-saida')?.classList.add('hidden');
+
+    let lockedSai = 0;
+    let openSai = 0;
+    filteredStudents.forEach(s => {
+        const ent = currentRecord.entrada.records[s.id] || { locked: false };
+        const rec = currentRecord.saida.records[s.id] || { status: 'P', justification: '', locked: false };
+        const entradaOk = markLocked(ent) || !!currentRecord.entrada.consolidado;
+        if (markLocked(rec)) lockedSai++;
+        if (entradaOk && !markLocked(rec)) openSai++;
+        const waiting = !entradaOk
+            ? 'Aguardando Entrada consolidada deste aluno (facial).'
+            : '';
+        const row = document.createElement('div');
+        row.innerHTML = studentPhaseRow(
+            s,
+            'saida',
+            rec,
+            !entradaOk || !!currentRecord.saida.consolidado,
+            waiting
+        );
+        if (rec.status === 'FJ' && rec.justification) {
+            const labelDiv = document.createElement('div');
+            labelDiv.className = "text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium mt-1 ml-3";
+            labelDiv.textContent = rec.justification;
+            row.appendChild(labelDiv);
+        }
+        listSaida.appendChild(row);
+    });
+    document.getElementById('badge-status-saida').textContent =
+        openSai ? `${openSai} liberada(s)` : (lockedSai ? `${lockedSai} consol.` : 'Individual');
+    document.getElementById('badge-status-saida').className =
+        'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
+
+    // Dia consolidado — por aluno com Entrada + Saída locked
+    const hasEvasion = { val: false };
+    let totalP = 0;
+    let totalF = 0;
+    let doneStudents = 0;
+
+    filteredStudents.forEach(s => {
+        const ent = currentRecord.entrada.records[s.id] || { status: 'P', justification: '', locked: false };
+        const sai = currentRecord.saida.records[s.id] || { status: 'P', justification: '', locked: false };
+        const ready =
+            (markLocked(ent) && markLocked(sai)) ||
+            (currentRecord.entrada.consolidado && currentRecord.saida.consolidado);
+        if (!ready) return;
+        doneStudents++;
+
+        let finalStatus = 'P';
+        let label = 'Presença';
+        let style = 'bg-[#dcfce7] text-[#14532d] border-[#bbf7d0]';
+        let detail = '';
+
+        if (ent.status === 'P' && sai.status === 'P') {
+            finalStatus = 'P';
+            label = 'Presença';
+            totalP++;
+        } else if (ent.status === 'F' && sai.status === 'F') {
+            finalStatus = 'F';
+            label = 'Falta';
+            style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
+            totalF++;
+        } else if (ent.status === 'P' && sai.status === 'FJ') {
+            finalStatus = 'P';
+            label = 'Presença';
+            detail = `Saída Justificada: ${sai.justification}`;
+            totalP++;
+        } else if (ent.status === 'FJ' && sai.status === 'FJ') {
+            finalStatus = 'P';
+            label = 'Presença (FJ)';
+            detail = `Dia Justificado: ${ent.justification}`;
+            totalP++;
+        } else if (ent.status === 'FJ' && sai.status === 'P') {
+            finalStatus = 'P';
+            label = 'Presença';
+            detail = `Entrada Justificada: ${ent.justification}`;
+            totalP++;
+        } else if (ent.status === 'P' && sai.status === 'F') {
+            finalStatus = 'F';
+            label = 'Falta (Evasão)';
+            style = 'bg-red-100 text-red-800 border-red-300 ring-2 ring-red-500/20';
+            detail = 'Evasão Escolar Detectada';
+            totalF++;
+            hasEvasion.val = true;
+        } else if (ent.status === 'F' && sai.status === 'P') {
+            finalStatus = 'F';
+            label = 'Falta';
+            style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
+            detail = 'Falta na Entrada';
+            totalF++;
+        } else {
+            finalStatus = 'F';
+            label = 'Falta';
+            style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
+            totalF++;
+        }
+
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all";
         row.innerHTML = `
             <div class="flex items-center gap-3 min-w-0">
                 <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary text-xs shrink-0">
@@ -1106,248 +1279,97 @@ function renderAttendance() {
                 </div>
                 <div class="min-w-0">
                     <p class="font-semibold text-body-md text-on-surface truncate" title="${s.nome}">${s.nome}</p>
-                    <p class="text-[11px] text-text-secondary">Matrícula: #${s.id}</p>
+                    ${detail ? `<p class="text-[10px] text-text-secondary truncate font-medium">${detail}</p>` : `<p class="text-[10px] text-text-secondary">Entrada + Saída</p>`}
                 </div>
             </div>
-            <div class="flex items-center gap-1">
-                <label class="cursor-pointer">
-                    <input type="radio" name="ent_${s.id}" class="hidden peer" value="P" ${isP ? 'checked' : ''} onchange="updateStatus('${s.id}', 'entrada', 'P')" ${currentRecord.entrada.consolidado ? 'disabled' : ''}>
-                    <div class="w-10 h-8 flex items-center justify-center rounded-l-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all font-bold text-xs">P</div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="ent_${s.id}" class="hidden peer" value="F" ${isF ? 'checked' : ''} onchange="updateStatus('${s.id}', 'entrada', 'F')" ${currentRecord.entrada.consolidado ? 'disabled' : ''}>
-                    <div class="w-10 h-8 flex items-center justify-center border-t border-b border-border-subtle bg-white text-text-secondary peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all font-bold text-xs">F</div>
-                </label>
-                <label class="cursor-pointer">
-                    <input type="radio" name="ent_${s.id}" class="hidden peer" value="FJ" ${isFJ ? 'checked' : ''} onchange="updateStatus('${s.id}', 'entrada', 'FJ')" ${currentRecord.entrada.consolidado ? 'disabled' : ''}>
-                    <div class="w-10 h-8 flex items-center justify-center rounded-r-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition-all font-bold text-xs">FJ</div>
-                </label>
-            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style} border">${label}</span>
         `;
-        if (isFJ && rec.justification) {
-            const labelDiv = document.createElement('div');
-            labelDiv.className = "text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium mt-1 inline-block self-start sm:self-auto sm:mt-0";
-            labelDiv.textContent = rec.justification;
-            row.appendChild(labelDiv);
-        }
-        listEntrada.appendChild(row);
+        listConsolidado.appendChild(row);
     });
-    
-    // Render Saída (only if Entrada consolidated)
-    if (currentRecord.entrada.consolidado) {
-        document.getElementById('overlay-saida-blocked').classList.add('hidden');
-        document.getElementById('btn-consolidar-saida').disabled = false;
-        
-        filteredStudents.forEach(s => {
-            const rec = currentRecord.saida.records[s.id] || { status: 'P', justification: '' };
-            const isP = rec.status === 'P';
-            const isF = rec.status === 'F';
-            const isFJ = rec.status === 'FJ';
-            
-            const row = document.createElement('div');
-            row.className = "flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all gap-2";
-            row.innerHTML = `
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary text-xs shrink-0">
-                        ${s.nome.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div class="min-w-0">
-                        <p class="font-semibold text-body-md text-on-surface truncate" title="${s.nome}">${s.nome}</p>
-                        <p class="text-[11px] text-text-secondary">Matrícula: #${s.id}</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-1">
-                    <label class="cursor-pointer">
-                        <input type="radio" name="sai_${s.id}" class="hidden peer" value="P" ${isP ? 'checked' : ''} onchange="updateStatus('${s.id}', 'saida', 'P')" ${currentRecord.saida.consolidado ? 'disabled' : ''}>
-                        <div class="w-10 h-8 flex items-center justify-center rounded-l-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all font-bold text-xs">P</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="sai_${s.id}" class="hidden peer" value="F" ${isF ? 'checked' : ''} onchange="updateStatus('${s.id}', 'saida', 'F')" ${currentRecord.saida.consolidado ? 'disabled' : ''}>
-                        <div class="w-10 h-8 flex items-center justify-center border-t border-b border-border-subtle bg-white text-text-secondary peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition-all font-bold text-xs">F</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="sai_${s.id}" class="hidden peer" value="FJ" ${isFJ ? 'checked' : ''} onchange="updateStatus('${s.id}', 'saida', 'FJ')" ${currentRecord.saida.consolidado ? 'disabled' : ''}>
-                        <div class="w-10 h-8 flex items-center justify-center rounded-r-lg border border-border-subtle bg-white text-text-secondary peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition-all font-bold text-xs">FJ</div>
-                    </label>
-                </div>
-            `;
-            if (isFJ && rec.justification) {
-                const labelDiv = document.createElement('div');
-                labelDiv.className = "text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium mt-1 inline-block self-start sm:self-auto sm:mt-0";
-                labelDiv.textContent = rec.justification;
-                row.appendChild(labelDiv);
-            }
-            listSaida.appendChild(row);
-        });
-    } else {
-        document.getElementById('overlay-saida-blocked').classList.remove('hidden');
-        document.getElementById('btn-consolidar-saida').disabled = true;
-    }
-    
-    // Render Dia Consolidado
-    const hasEvasion = { val: false };
-    if (currentRecord.entrada.consolidado && currentRecord.saida.consolidado) {
+
+    if (doneStudents > 0) {
         document.getElementById('overlay-consolidado-pending').classList.add('hidden');
-        
-        let totalP = 0;
-        let totalF = 0;
-        
-        filteredStudents.forEach(s => {
-            const ent = currentRecord.entrada.records[s.id] || { status: 'P', justification: '' };
-            const sai = currentRecord.saida.records[s.id] || { status: 'P', justification: '' };
-            
-            let finalStatus = 'P';
-            let label = 'Presença';
-            let style = 'bg-[#dcfce7] text-[#14532d] border-[#bbf7d0]';
-            let detail = '';
-            
-            // Applying Rules
-            if (ent.status === 'P' && sai.status === 'P') {
-                finalStatus = 'P';
-                label = 'Presença';
-                totalP++;
-            } else if (ent.status === 'F' && sai.status === 'F') {
-                finalStatus = 'F';
-                label = 'Falta';
-                style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
-                totalF++;
-            } else if (ent.status === 'P' && sai.status === 'FJ') {
-                finalStatus = 'P';
-                label = 'Presença';
-                detail = `Saída Justificada: ${sai.justification}`;
-                totalP++;
-            } else if (ent.status === 'FJ' && sai.status === 'FJ') {
-                finalStatus = 'P';
-                label = 'Presença (FJ)';
-                detail = `Dia Justificado: ${ent.justification}`;
-                totalP++;
-            } else if (ent.status === 'FJ' && sai.status === 'P') {
-                finalStatus = 'P';
-                label = 'Presença';
-                detail = `Entrada Justificada: ${ent.justification}`;
-                totalP++;
-            } else if (ent.status === 'P' && sai.status === 'F') {
-                finalStatus = 'F';
-                label = 'Falta (Evasão)';
-                style = 'bg-red-100 text-red-800 border-red-300 ring-2 ring-red-500/20';
-                detail = 'Evasão Escolar Detectada';
-                totalF++;
-                hasEvasion.val = true;
-            } else if (ent.status === 'F' && sai.status === 'P') {
-                finalStatus = 'F';
-                label = 'Falta';
-                style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
-                detail = 'Falta na Entrada';
-                totalF++;
-            } else {
-                finalStatus = 'F';
-                label = 'Falta';
-                style = 'bg-[#fee2e2] text-[#7f1d1d] border-[#fca5a5]';
-                totalF++;
-            }
-            
-            const row = document.createElement('div');
-            row.className = "flex items-center justify-between p-3 border border-border-subtle rounded-xl hover:bg-surface-container-low/20 transition-all";
-            row.innerHTML = `
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary text-xs shrink-0">
-                        ${s.nome.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div class="min-w-0">
-                        <p class="font-semibold text-body-md text-on-surface truncate" title="${s.nome}">${s.nome}</p>
-                        ${detail ? `<p class="text-[10px] text-text-secondary truncate font-medium">${detail}</p>` : `<p class="text-[10px] text-text-secondary">Consolidado</p>`}
-                    </div>
-                </div>
-                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${style} border">${label}</span>
-            `;
-            listConsolidado.appendChild(row);
-        });
-        
         document.getElementById('consolidado-presencas').textContent = totalP;
         document.getElementById('consolidado-faltas').textContent = totalF;
-        document.getElementById('badge-status-consolidado').textContent = 'Concluído';
-        document.getElementById('badge-status-consolidado').className = 'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase';
+        document.getElementById('badge-status-consolidado').textContent =
+            `${doneStudents}/${filteredStudents.length}`;
+        document.getElementById('badge-status-consolidado').className =
+            'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase';
     } else {
         document.getElementById('overlay-consolidado-pending').classList.remove('hidden');
+        document.getElementById('consolidado-presencas').textContent = '0';
+        document.getElementById('consolidado-faltas').textContent = '0';
         document.getElementById('badge-status-consolidado').textContent = 'Pendente';
-        document.getElementById('badge-status-consolidado').className = 'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
+        document.getElementById('badge-status-consolidado').className =
+            'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
     }
-    
+
     if (hasEvasion.val) {
         document.getElementById('evasao-alert-footer').classList.remove('hidden');
     } else {
         document.getElementById('evasao-alert-footer').classList.add('hidden');
     }
-    
-    // Render overlays for locked/consolidated states
-    if (currentRecord.entrada.consolidado) {
-        document.getElementById('overlay-entrada').classList.remove('hidden');
-        document.getElementById('btn-consolidar-entrada').classList.add('hidden');
-        document.getElementById('btn-desbloquear-entrada').classList.remove('hidden');
-        document.getElementById('badge-status-entrada').textContent = 'Consolidada';
-        document.getElementById('badge-status-entrada').className = 'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase';
-    } else {
-        document.getElementById('overlay-entrada').classList.add('hidden');
-        document.getElementById('btn-consolidar-entrada').classList.remove('hidden');
-        document.getElementById('btn-desbloquear-entrada').classList.add('hidden');
-        document.getElementById('badge-status-entrada').textContent = 'Pendente';
-        document.getElementById('badge-status-entrada').className = 'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
-    }
-    
-    if (currentRecord.saida.consolidado) {
-        document.getElementById('overlay-saida-locked').classList.remove('hidden');
-        document.getElementById('btn-consolidar-saida').classList.add('hidden');
-        document.getElementById('btn-desbloquear-saida').classList.remove('hidden');
-        document.getElementById('badge-status-saida').textContent = 'Consolidada';
-        document.getElementById('badge-status-saida').className = 'px-2.5 py-1 bg-green-100 text-green-800 text-[11px] font-bold rounded-full uppercase';
-    } else {
-        document.getElementById('overlay-saida-locked').classList.add('hidden');
-        if (currentRecord.entrada.consolidado) {
-            document.getElementById('btn-consolidar-saida').classList.remove('hidden');
-            document.getElementById('badge-status-saida').textContent = 'Pendente';
-            document.getElementById('badge-status-saida').className = 'px-2.5 py-1 bg-primary/10 text-primary text-[11px] font-bold rounded-full uppercase';
-        } else {
-            document.getElementById('btn-consolidar-saida').classList.add('hidden');
-            document.getElementById('badge-status-saida').textContent = 'Bloqueada';
-            document.getElementById('badge-status-saida').className = 'px-2.5 py-1 bg-surface-container text-text-secondary text-[11px] font-bold rounded-full uppercase';
-        }
-        document.getElementById('btn-desbloquear-saida').classList.add('hidden');
-    }
-    
-    // Update stats counters at bottom of each column
+
     let countEntP = 0, countEntF = 0, countEntFJ = 0;
-    Object.keys(currentRecord.entrada.records).forEach(key => {
-        const val = currentRecord.entrada.records[key].status;
-        if (val === 'P') countEntP++;
-        else if (val === 'F') countEntF++;
-        else if (val === 'FJ') countEntFJ++;
+    filteredStudents.forEach(s => {
+        const rec = currentRecord.entrada.records[s.id];
+        if (!rec || (!rec.locked && !rec._hasMark)) return;
+        if (rec.status === 'P') countEntP++;
+        else if (rec.status === 'F') countEntF++;
+        else if (rec.status === 'FJ') countEntFJ++;
     });
-    document.getElementById('stats-entrada').innerHTML = `<span>Presentes: <strong>${countEntP}</strong></span> <span>Ausentes: <strong>${countEntF + countEntFJ}</strong> (${countEntFJ} Just.)</span>`;
-    
-    if (currentRecord.entrada.consolidado) {
-        let countSaiP = 0, countSaiF = 0, countSaiFJ = 0;
-        Object.keys(currentRecord.saida.records).forEach(key => {
-            const val = currentRecord.saida.records[key].status;
-            if (val === 'P') countSaiP++;
-            else if (val === 'F') countSaiF++;
-            else if (val === 'FJ') countSaiFJ++;
-        });
-        document.getElementById('stats-saida').innerHTML = `<span>Presentes: <strong>${countSaiP}</strong></span> <span>Ausentes: <strong>${countSaiF + countSaiFJ}</strong> (${countSaiFJ} Just.)</span>`;
-    } else {
-        document.getElementById('stats-saida').innerHTML = `<span>Presentes: --</span> <span>Ausentes: --</span>`;
-    }
+    document.getElementById('stats-entrada').innerHTML =
+        `<span>Presentes: <strong>${countEntP}</strong></span> <span>Ausentes: <strong>${countEntF + countEntFJ}</strong> (${countEntFJ} Just.)</span>`;
+
+    let countSaiP = 0, countSaiF = 0, countSaiFJ = 0;
+    filteredStudents.forEach(s => {
+        const rec = currentRecord.saida.records[s.id];
+        if (!rec || (!rec.locked && !rec._hasMark)) return;
+        if (rec.status === 'P') countSaiP++;
+        else if (rec.status === 'F') countSaiF++;
+        else if (rec.status === 'FJ') countSaiFJ++;
+    });
+    document.getElementById('stats-saida').innerHTML =
+        `<span>Presentes: <strong>${countSaiP}</strong></span> <span>Ausentes: <strong>${countSaiF + countSaiFJ}</strong> (${countSaiFJ} Just.)</span>`;
 }
 
 function updateStatus(studentId, type, status) {
+    if (!currentRecord || !currentRecord[type]) return;
+    const existing = currentRecord[type].records[studentId] || {};
+    if (existing.locked) {
+        if (typeof showToast === 'function') {
+            showToast('Este aluno já está consolidado nesta fase (reconhecimento facial).', 'error');
+        }
+        renderAttendance();
+        return;
+    }
+    if (type === 'saida') {
+        const ent = (currentRecord.entrada.records[studentId] || {});
+        if (!ent.locked && !currentRecord.entrada.consolidado) {
+            if (typeof showToast === 'function') {
+                showToast('Aguarde a Entrada consolidada deste aluno antes da Saída.', 'error');
+            }
+            renderAttendance();
+            return;
+        }
+    }
     if (status === 'FJ') {
-        const student = filteredStudents.find(s => s.id === studentId);
+        const student = filteredStudents.find(s => String(s.id) === String(studentId));
         document.getElementById('just-student-id').value = studentId;
         document.getElementById('just-type').value = type;
         document.getElementById('just-student-name').textContent = student ? student.nome : '';
         document.getElementById('modal-justification').classList.remove('hidden');
     } else {
-        currentRecord[type].records[studentId] = { status, justification: '' };
-        saveAttendance();
+        currentRecord[type].records[studentId] = {
+            ...existing,
+            status,
+            justification: '',
+            locked: true,
+            source: existing.source === 'facial' ? 'facial' : 'manual',
+            _hasMark: true,
+            marked_at: new Date().toISOString(),
+        };
+        saveAttendance(studentId, type);
         renderAttendance();
     }
 }
@@ -1355,9 +1377,21 @@ function updateStatus(studentId, type, status) {
 function selectJustification(reason) {
     const studentId = document.getElementById('just-student-id').value;
     const type = document.getElementById('just-type').value;
-    
-    currentRecord[type].records[studentId] = { status: 'FJ', justification: reason };
-    saveAttendance();
+    const existing = (currentRecord[type].records[studentId] || {});
+    if (existing.locked) {
+        closeJustificationModal(false);
+        return;
+    }
+    currentRecord[type].records[studentId] = {
+        ...existing,
+        status: 'FJ',
+        justification: reason,
+        locked: true,
+        source: existing.source === 'facial' ? 'facial' : 'manual',
+        _hasMark: true,
+        marked_at: new Date().toISOString(),
+    };
+    saveAttendance(studentId, type);
     closeJustificationModal(true);
     updateFrequenciaKpis();
 }
@@ -1382,7 +1416,7 @@ function closeJustificationModal(didSelect) {
     }
 }
 
-function saveAttendance() {
+function saveAttendance(studentId, phase) {
     if (!currentClass || !currentDate || !currentRecord) return;
     const storageKey = `siga_attendance_${currentDate}_${currentClass}`;
     try {
@@ -1393,117 +1427,24 @@ function saveAttendance() {
     } catch (e) { /* ignore */ }
     const cloud = window.SigaFrequenciaCloud;
     if (cloud && cloud.isCloudEnabled && cloud.isCloudEnabled() && typeof cloud.upsertMarks === 'function') {
-        cloud.upsertMarks(currentRecord);
+        cloud.upsertMarks(currentRecord, {
+            studentId: studentId || null,
+            phase: phase || null,
+            lock: true,
+            source: 'manual',
+        });
     }
 }
 
 function consolidarEntrada() {
-    if (!currentRecord || !currentClass) return;
-    currentRecord.entrada.consolidado = true;
-    currentRecord.saida.records = JSON.parse(JSON.stringify(currentRecord.entrada.records));
-
-    saveAttendance();
-    const cloud = window.SigaFrequenciaCloud;
-    if (cloud && cloud.isCloudEnabled && cloud.isCloudEnabled() && typeof cloud.setConsolidation === 'function') {
-        cloud.setConsolidation(currentRecord, 'entrada', true);
-    }
-    renderAttendance();
-    updateFrequenciaKpis();
     if (typeof showToast === 'function') {
-        showToast('Chamada de Entrada consolidada com sucesso!');
+        showToast('Com reconhecimento facial, a consolidação é individual automática a cada batida.');
     }
 }
 
 function consolidarSaida() {
-    if (!currentRecord || !currentClass) return;
-    currentRecord.saida.consolidado = true;
-    saveAttendance();
-    const cloud = window.SigaFrequenciaCloud;
-    if (cloud && cloud.isCloudEnabled && cloud.isCloudEnabled() && typeof cloud.setConsolidation === 'function') {
-        cloud.setConsolidation(currentRecord, 'saida', true);
-    }
-
-    let evasionCount = 0;
-    const occurrences = JSON.parse(localStorage.getItem('siga_occurrences')) || [];
-    const now = new Date();
-    const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-    filteredStudents.forEach(s => {
-        const ent = currentRecord.entrada.records[s.id];
-        const sai = currentRecord.saida.records[s.id];
-
-        if (ent && sai && ent.status === 'P' && sai.status === 'F') {
-            // Evita duplicar a mesma evasão (aluno + data + turma)
-            const already = occurrences.some(o =>
-                (o.type === 'Evasão' || o.tipo === 'Evasão') &&
-                (o.date === currentDate || o.data === currentDate) &&
-                (o.turma === currentClass) &&
-                ((o.student || o.aluno) === s.nome || String(o.alunoId) === String(s.id))
-            );
-            if (already) return;
-
-            evasionCount++;
-            const newOcc = {
-                id: 'occ_evasao_' + String(s.id) + '_' + currentDate + '_' + Date.now().toString(36) + '_' + evasionCount,
-                student: s.nome,
-                aluno: s.nome,
-                alunoId: String(s.id),
-                type: 'Evasão',
-                tipo: 'Evasão',
-                date: currentDate,
-                data: currentDate,
-                hora: hora,
-                turma: currentClass,
-                prof: 'Sistema (Automático)',
-                usuario: 'Sistema (Automático)',
-                status: 'Em Análise',
-                desc: 'Evasão escolar detectada automaticamente na chamada de ' +
-                    currentDate.split('-').reverse().join('/') +
-                    ' (turma ' + currentClass + '): presença confirmada na entrada e falta na saída.',
-                descricao: 'Evasão escolar detectada automaticamente na chamada de ' +
-                    currentDate.split('-').reverse().join('/') +
-                    ' (turma ' + currentClass + '): presença confirmada na entrada e falta na saída.',
-                origem: 'automatica',
-                origemChamada: {
-                    data: currentDate,
-                    turma: currentClass,
-                    entrada: 'P',
-                    saida: 'F'
-                },
-                envolvidos: [],
-                tratamento: null,
-                dataRetorno: ''
-            };
-            occurrences.unshift(newOcc);
-
-            // Espelha na ficha do aluno
-            try {
-                const fichas = JSON.parse(localStorage.getItem('siga_student_occurrences') || '{}');
-                const key = s.nome;
-                if (!fichas[key]) fichas[key] = [];
-                fichas[key].unshift({
-                    id: newOcc.id,
-                    tipo: 'Evasão',
-                    data: currentDate,
-                    hora: hora,
-                    origem: 'automatica'
-                });
-                localStorage.setItem('siga_student_occurrences', JSON.stringify(fichas));
-            } catch (e) { /* ignore */ }
-        }
-    });
-
-    if (evasionCount > 0) {
-        localStorage.setItem('siga_occurrences', JSON.stringify(occurrences));
-        if (typeof showToast === 'function') {
-            showToast(`${evasionCount} ocorrência(s) de evasão gerada(s)! Abra em Ocorrências para visualizar, tratar e imprimir.`, 'error');
-        }
-    }
-
-    renderAttendance();
-    updateFrequenciaKpis();
     if (typeof showToast === 'function') {
-        showToast('Chamada de Saída consolidada com sucesso!');
+        showToast('Com reconhecimento facial, a consolidação é individual automática a cada batida.');
     }
 }
 
@@ -1540,7 +1481,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (type === 'entrada') {
                     currentRecord.saida.consolidado = false;
                 }
+                // Desbloqueia marcas individuais da fase (coordenador)
+                Object.keys(currentRecord[type].records || {}).forEach((sid) => {
+                    const rec = currentRecord[type].records[sid];
+                    if (rec) {
+                        rec.locked = false;
+                        currentRecord[type].records[sid] = rec;
+                    }
+                });
                 saveAttendance();
+                const cloud = window.SigaFrequenciaCloud;
+                if (cloud && cloud.isCloudEnabled && cloud.isCloudEnabled()) {
+                    Object.keys(currentRecord[type].records || {}).forEach((sid) => {
+                        cloud.upsertMarks(currentRecord, {
+                            studentId: sid,
+                            phase: type,
+                            lock: false,
+                            force: true,
+                        });
+                    });
+                }
                 closeUnlockModal();
                 renderAttendance();
                 updateFrequenciaKpis();

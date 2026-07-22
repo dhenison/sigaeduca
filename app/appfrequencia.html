@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#293430",
+                    "surface-container-low": "#f0f3ff",
+                    "on-surface-variant": "#3e4a3f",
+                    "on-primary": "#ffffff",
+                    "primary": "#006d37",
+                    "on-secondary-fixed-variant": "#454749",
+                    "tertiary-fixed": "#d9e5df",
+                    "surface-bright": "#f9f9ff",
+                    "inverse-surface": "#2a313d",
+                    "surface-dim": "#d3daea",
+                    "primary-fixed-dim": "#64de8b",
+                    "surface-container": "#e7eefe",
+                    "secondary": "#5d5e61",
+                    "surface-tint": "#006d37",
+                    "tertiary-fixed-dim": "#bdc9c3",
+                    "inverse-primary": "#64de8b",
+                    "on-secondary-fixed": "#1a1c1e",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#dce2f3",
+                    "tertiary-container": "#909d97",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#81fba5",
+                    "outline-variant": "#bdcabc",
+                    "on-primary-fixed-variant": "#005228",
+                    "inverse-on-surface": "#ebf1ff",
+                    "secondary-fixed": "#e2e2e5",
+                    "on-surface": "#151c27",
+                    "surface-container-high": "#e2e8f8",
+                    "surface-container-highest": "#dce2f3",
+                    "background": "#f9f9ff",
+                    "secondary-fixed-dim": "#c6c6c9",
+                    "secondary-container": "#e2e2e5",
+                    "on-primary-container": "#003a1a",
+                    "on-secondary-container": "#636467",
+                    "on-tertiary-fixed": "#131e1a",
+                    "on-tertiary-fixed-variant": "#3d4944",
+                    "on-secondary": "#ffffff",
+                    "surface": "#f9f9ff",
+                    "on-primary-fixed": "#00210c",
+                    "error-container": "#ffdad6",
+                    "tertiary": "#55615c",
+                    "primary-container": "#2eaf62",
+                    "outline": "#6e7a6e",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#151c27",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-gap-lg": "24px",
+                    "stack-gap-md": "16px",
+                    "inline-gutter": "12px",
+                    "container-padding": "16px",
+                    "touch-target": "48px",
+                    "stack-gap-sm": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-md-mobile": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-sm-mobile": ["16px", {"lineHeight": "22px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-md-mobile": ["20px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .attendance-ring {
+            transition: stroke-dashoffset 1s ease-in-out;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm dark:shadow-none flex justify-between items-center h-16 px-container-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a cheerful diverse student with glasses in a modern campus setting, soft morning sunlight, high-end corporate educational style, professional and clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYSggr9qcOY1rGrOsdRuALFktBLbB-PBjomJEv-p2nun3VftLUIIAKjhDPgGPWzyWAl7uAXs3xfmNr3hDhvfV60y8VOB-UquvT774TEXolAMhs0zknZNZuFdgZSBJnCvBEojjJNTE1FV5FyjjCdvNz7bLsIzSC0hkddcIy_CEYuRw_o7zUZtB4MQFq-SUwVdMnfh7UvMNvtFMtcgRYTXKcXXCq8FcSjIKWszaMdVmgWEQ4KqIEnvzACtSSqh7HAmGvydRZwrbzPjA"/>
+</div>
+<h1 class="font-headline-md-mobile text-headline-md-mobile font-bold text-primary dark:text-primary-fixed-dim">SIGA EDUCA</h1>
+</div>
+<button class="w-touch-target h-touch-target flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 transition-colors rounded-full active:scale-95 duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<main class="pt-20 px-container-padding">
+<!-- Welcome & Date Context -->
+<section class="mb-stack-gap-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Frequência Escolar</h2>
+<p class="font-body-md text-on-surface-variant">Acompanhamento do 1º Bimestre de 2024</p>
+</section>
+<!-- Main Score Visualizer (Bento Pattern) -->
+<div class="grid grid-cols-1 gap-stack-gap-md mb-stack-gap-lg">
+<div class="bg-surface-container-lowest rounded-xl p-stack-gap-md shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant flex flex-col items-center">
+<div class="relative w-48 h-48 flex items-center justify-center">
+<!-- SVG Circular Chart -->
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-variant" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" stroke-width="12"></circle>
+<circle class="text-primary attendance-ring" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" stroke-dasharray="502.6" stroke-dashoffset="40.2" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-black">92%</span>
+<span class="font-label-md text-on-surface-variant">Geral</span>
+</div>
+</div>
+<div class="flex gap-inline-gutter mt-stack-gap-md w-full">
+<div class="flex-1 bg-surface-container-low rounded-lg p-3 text-center">
+<p class="font-label-sm text-on-surface-variant uppercase tracking-wider">Aulas Totais</p>
+<p class="font-headline-sm-mobile text-headline-sm-mobile text-primary">180</p>
+</div>
+<div class="flex-1 bg-surface-container-low rounded-lg p-3 text-center">
+<p class="font-label-sm text-on-surface-variant uppercase tracking-wider">Presenças</p>
+<p class="font-headline-sm-mobile text-headline-sm-mobile text-primary">166</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex gap-2 mb-stack-gap-md overflow-x-auto pb-2 scrollbar-hide">
+<button class="flex-shrink-0 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md transition-all active:scale-95">1º Bimestre</button>
+<button class="flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md transition-all hover:bg-surface-variant">2º Bimestre</button>
+<button class="flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md transition-all hover:bg-surface-variant">Mensal</button>
+<button class="flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md transition-all hover:bg-surface-variant">Anual</button>
+</div>
+<!-- Subject List -->
+<div class="space-y-stack-gap-sm">
+<h3 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface px-1">Por Disciplina</h3>
+<!-- Subject Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center justify-between shadow-sm active:bg-surface-variant/20 transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">calculate</span>
+</div>
+<div>
+<h4 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">Matemática</h4>
+<p class="font-body-md text-on-surface-variant">42/44 presenças</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm-mobile text-headline-sm-mobile text-primary">95%</span>
+<div class="w-16 h-1 bg-surface-variant rounded-full mt-1">
+<div class="h-full bg-primary rounded-full" style="width: 95%"></div>
+</div>
+</div>
+</div>
+<!-- Subject Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center justify-between shadow-sm active:bg-surface-variant/20 transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">history_edu</span>
+</div>
+<div>
+<h4 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">História</h4>
+<p class="font-body-md text-on-surface-variant">36/40 presenças</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm-mobile text-headline-sm-mobile text-primary">88%</span>
+<div class="w-16 h-1 bg-surface-variant rounded-full mt-1">
+<div class="h-full bg-primary rounded-full" style="width: 88%"></div>
+</div>
+</div>
+</div>
+<!-- Subject Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center justify-between shadow-sm active:bg-surface-variant/20 transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">biotech</span>
+</div>
+<div>
+<h4 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">Biologia</h4>
+<p class="font-body-md text-on-surface-variant">38/40 presenças</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm-mobile text-headline-sm-mobile text-primary">92%</span>
+<div class="w-16 h-1 bg-surface-variant rounded-full mt-1">
+<div class="h-full bg-primary rounded-full" style="width: 92%"></div>
+</div>
+</div>
+</div>
+<!-- Subject Card 4 (Lower attendance example) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center justify-between shadow-sm active:bg-surface-variant/20 transition-all cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined">palette</span>
+</div>
+<div>
+<h4 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">Artes</h4>
+<p class="font-body-md text-on-surface-variant">28/40 presenças</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-headline-sm-mobile text-headline-sm-mobile text-secondary">70%</span>
+<div class="w-16 h-1 bg-surface-variant rounded-full mt-1">
+<div class="h-full bg-secondary rounded-full" style="width: 70%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Warning Section -->
+<div class="mt-stack-gap-lg p-4 bg-tertiary-fixed rounded-xl flex items-start gap-3">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant">info</span>
+<p class="font-body-md text-on-tertiary-fixed-variant italic">Lembre-se: O limite de faltas é de 25% por disciplina para aprovação.</p>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe bg-surface dark:bg-inverse-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md-mobile">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-md text-label-md-mobile">Courses</span>
+</a>
+<!-- Active Tab: Attendance/Grades context -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">grade</span>
+<span class="font-label-md text-label-md-mobile">Grades</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">menu</span>
+<span class="font-label-md text-label-md-mobile">Menu</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for subject cards
+        document.querySelectorAll('.cursor-pointer').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.transform = 'scale(0.98)';
+            });
+            card.addEventListener('touchend', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+
+        // Trigger circular progress animation on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const ring = document.querySelector('.attendance-ring');
+            if (ring) {
+                // Calculation: stroke-dasharray - (percentage * stroke-dasharray / 100)
+                // 502.6 - (92 * 502.6 / 100) = 40.2
+                ring.style.strokeDashoffset = '40.2';
+            }
+        });
+    </script>
+</body></html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Olimpíadas do Conhecimento - SIGA EDUCA</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700;800&family=JetBrains+Mono:wght@500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&family=Space+Grotesk:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d0dbed",
+                    "secondary": "#0058be",
+                    "surface-variant": "#d9e3f6",
+                    "on-primary-fixed-variant": "#5c4300",
+                    "on-primary-container": "#412f00",
+                    "primary-fixed-dim": "#f9bd22",
+                    "on-tertiary-fixed": "#00210c",
+                    "inverse-surface": "#27313f",
+                    "background": "#f8f9ff",
+                    "on-secondary-fixed": "#001a42",
+                    "secondary-fixed": "#d8e2ff",
+                    "outline": "#6e7a6e",
+                    "tertiary-fixed": "#81fba5",
+                    "primary-fixed": "#ffdf9f",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "primary": "#795900",
+                    "on-tertiary-container": "#003a1a",
+                    "on-primary-fixed": "#261a00",
+                    "on-background": "#121c2a",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary-fixed-variant": "#004395",
+                    "surface-container-highest": "#d9e3f6",
+                    "secondary-container": "#2170e4",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#eff4ff",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#2eaf62",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-secondary-container": "#fefcff",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#bdcabc",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#121c2a",
+                    "on-tertiary-fixed-variant": "#005228",
+                    "tertiary-fixed-dim": "#64de8b",
+                    "on-tertiary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "inverse-primary": "#f9bd22",
+                    "surface-tint": "#795900",
+                    "surface-container": "#e6eeff",
+                    "primary-container": "#c39200",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#3e4a3f",
+                    "surface-container-high": "#dee9fc",
+                    "tertiary": "#006d37",
+                    "on-error": "#ffffff",
+                    "surface": "#f8f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sidebar-width": "260px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px",
+                    "container-max": "1440px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Space Grotesk"],
+                    "display-lg": ["Space Grotesk"],
+                    "headline-lg": ["Space Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Space Grotesk"],
+                    "headline-lg-mobile": ["Space Grotesk"],
+                    "body-sm": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-pill {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body {
+            background-color: #f8f9ff;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-background pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional high-resolution studio portrait of a young Brazilian student with a bright, welcoming smile. The lighting is soft and natural, reflecting a clean, academic environment. She is wearing a modern school uniform in a light neutral palette, with the background being a slightly out-of-focus modern school library. The overall mood is optimistic, studious, and elite, aligning with a premium educational SaaS aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATrveP26H2Ae1j-VQkuYQ90bj6y53aXBYNvFTrmETZ0kozVSsXyZ-THALwmAVWsmvshuG0rDMNFyk_GNgHB-Oo65YD9XS2oNfd8fkfaNgid0D2iYq4IAVI3qzutQ0EoFBk7i2A0f-S0oyEO5UDwKl2YUJLmyWX3RK5PLJusHB-QVAlLP7ouzqQ3m4RYdGad5hmBczfQUk9OARQ7QvpRW0lQPQuScVntJdAeowzJ-1mU-BEPwYTjP-exM62MOKsxTRLbhEULDIKp5U"/>
+</div>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary">SIGA EDUCA</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="mt-20 px-4 max-w-container-max mx-auto">
+<!-- Hero Section -->
+<div class="relative overflow-hidden rounded-xl bg-tertiary-container p-6 mb-8 text-on-tertiary active:scale-[0.98] transition-all cursor-pointer">
+<div class="relative z-10">
+<span class="inline-block px-3 py-1 bg-white/20 rounded-full text-label-sm font-label-md mb-2">Destaque do Mês</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-white mb-2">Topo do Saber</h2>
+<p class="text-body-sm opacity-90 max-w-[240px]">Explore as maiores competições acadêmicas e conquiste medalhas para sua trajetória.</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-20">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+<section class="mb-6">
+<div class="flex justify-between items-end mb-4">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Olimpíadas Disponíveis</h3>
+<span class="text-label-sm text-tertiary font-bold">3 Ativas</span>
+</div>
+<!-- Bento Grid List -->
+<div class="grid gap-4">
+<!-- Card OBMEP -->
+<div class="bg-surface-container-lowest p-5 rounded-xl card-shadow border border-surface-container-high group active:scale-[0.97] transition-all">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 bg-primary-fixed-dim/20 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">calculate</span>
+</div>
+<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-tertiary-container text-white uppercase tracking-wider">Inscrições Abertas</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">OBMEP</h4>
+<p class="text-label-sm text-on-surface-variant font-medium mb-3">Olimpíada Brasileira de Matemática</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">A maior competição científica do país voltada para o raciocínio lógico e resolução de problemas complexos.</p>
+<div class="mt-5 pt-4 border-t border-surface-container flex justify-between items-center">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-surface-dim border-2 border-white flex items-center justify-center text-[8px] font-bold">3k+</div>
+</div>
+<button class="text-tertiary font-bold text-label-md flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            Ver Detalhes <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Card OBA -->
+<div class="bg-surface-container-lowest p-5 rounded-xl card-shadow border border-surface-container-high group active:scale-[0.97] transition-all">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 bg-secondary-fixed-dim/30 rounded-lg flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+</div>
+<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-surface-variant text-on-surface-variant uppercase tracking-wider">Em Andamento</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">OBA</h4>
+<p class="text-label-sm text-on-surface-variant font-medium mb-3">Olimpíada Brasileira de Astronomia</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">Desvende os mistérios do cosmos e da astronáutica nesta jornada fascinante além da nossa atmosfera.</p>
+<div class="mt-5 pt-4 border-t border-surface-container flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-outline">calendar_today</span>
+<span class="text-label-sm text-outline">Prova: 15 Out</span>
+</div>
+<button class="text-tertiary font-bold text-label-md flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            Acessar <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Card ONHB -->
+<div class="bg-surface-container-lowest p-5 rounded-xl card-shadow border border-surface-container-high group active:scale-[0.97] transition-all">
+<div class="flex items-start justify-between mb-4">
+<div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+</div>
+<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-tertiary-container text-white uppercase tracking-wider">Inscrições Abertas</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">ONHB</h4>
+<p class="text-label-sm text-on-surface-variant font-medium mb-3">Olimpíada Nacional em História do Brasil</p>
+<p class="text-body-sm text-on-surface-variant line-clamp-2">Uma competição em equipes para analisar documentos históricos e debater a formação da nossa sociedade.</p>
+<div class="mt-5 pt-4 border-t border-surface-container flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-outline">group</span>
+<span class="text-label-sm text-outline">Equipes de 3</span>
+</div>
+<button class="text-tertiary font-bold text-label-md flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            Inscrever <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Achievements Mini-section -->
+<section class="mb-10 p-4 bg-white rounded-2xl border border-surface-variant flex items-center gap-4">
+<div class="flex-shrink-0 w-14 h-14 bg-primary-fixed rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed text-2xl">workspace_premium</span>
+</div>
+<div>
+<h5 class="text-label-md font-bold text-on-surface">Suas Medalhas</h5>
+<p class="text-body-sm text-on-surface-variant">Você tem 2 medalhas de prata pendentes de coleta.</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-outline">chevron_right</span>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-label-md text-label-md-mobile">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="font-label-md text-label-md-mobile">Courses</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">grade</span>
+<span class="font-label-md text-label-md-mobile">Grades</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">menu</span>
+<span class="font-label-md text-label-md-mobile">Menu</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.grid > div').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(0.97)';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+
+        // Horizontal scroll animation for badges or other elements if added later
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-4');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.grid > div').forEach(card => {
+            card.classList.add('opacity-0', 'translate-y-4', 'transition-all', 'duration-500');
+            observer.observe(card);
+        });
+    </script>
+</body></html>
