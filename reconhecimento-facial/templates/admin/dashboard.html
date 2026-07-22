@@ -297,7 +297,7 @@
     <div class="flex items-center justify-between px-6 py-5 border-b border-border-subtle">
       <div>
         <h2 class="text-xl font-semibold">Vincular foto facial</h2>
-        <p class="text-sm text-text-secondary">Alunos já existem no SIGA — informe o INEP, busque e só salve a foto.</p>
+        <p class="text-sm text-text-secondary">Para alunos: escolha a turma, selecione o aluno no SIGA online e salve a foto (local + ficha individual).</p>
       </div>
       <button id="closeEnrollment" type="button" class="p-2 rounded-full hover:bg-surface-container"><span class="material-symbols-outlined">close</span></button>
     </div>
@@ -317,18 +317,24 @@
             <option value="portaria">Portaria</option>
           </select>
         </label>
-        <label class="block text-sm font-semibold">Nome completo<input id="studentName" required class="mt-1 w-full rounded-lg border-border-subtle" autocomplete="name"></label>
-        <label class="block text-sm font-semibold"><span id="registrationLabel">Matrícula / código</span>
+        <div id="sigaLookupWrap" class="hidden space-y-3">
+          <p class="text-xs text-text-secondary">O aluno já deve existir no SIGA online. Filtre pela turma e selecione o aluno para vincular a foto facial.</p>
+          <label class="block text-sm font-semibold">Turma *
+            <select id="sigaClassSelect" class="mt-1 w-full rounded-lg border-border-subtle">
+              <option value="">Carregando turmas…</option>
+            </select>
+          </label>
+          <label class="block text-sm font-semibold">Aluno *
+            <select id="sigaStudentPick" class="mt-1 w-full rounded-lg border-border-subtle" disabled>
+              <option value="">Selecione a turma primeiro…</option>
+            </select>
+          </label>
+          <p id="sigaLookupStatus" class="text-xs text-text-secondary"></p>
+        </div>
+        <label id="studentNameWrap" class="block text-sm font-semibold">Nome completo<input id="studentName" required class="mt-1 w-full rounded-lg border-border-subtle" autocomplete="name"></label>
+        <label id="registrationWrap" class="block text-sm font-semibold"><span id="registrationLabel">Matrícula / código</span>
           <input id="studentRegistration" class="mt-1 w-full rounded-lg border-border-subtle" placeholder="INEP do aluno ou código do servidor">
         </label>
-        <div id="sigaLookupWrap" class="hidden space-y-2">
-          <p class="text-xs text-text-secondary">O aluno já deve existir no SIGA. Aqui só salvamos a <strong>foto facial</strong> vinculada ao INEP.</p>
-          <button type="button" id="btnSigaLookup" class="w-full py-2 rounded-lg border border-primary text-primary text-sm font-semibold hover:bg-primary-light/20">
-            Buscar aluno no SIGA
-          </button>
-          <p id="sigaLookupStatus" class="text-xs text-text-secondary"></p>
-          <select id="sigaStudentPick" class="hidden w-full rounded-lg border-border-subtle text-sm"></select>
-        </div>
         <label id="classCodeWrap" class="hidden block text-sm font-semibold">Turma
           <input id="studentClass" class="mt-1 w-full rounded-lg border-border-subtle" placeholder="Preenchida pelo SIGA" readonly>
         </label>
@@ -341,7 +347,7 @@
           </select>
         </label>
         <div class="rounded-xl bg-surface-container-low p-4 text-sm text-text-secondary space-y-2">
-          <p><strong class="text-on-surface">Assistente de enquadramento:</strong> o sistema analisa o rosto ao vivo e só libera a foto na posição ideal.</p>
+          <p><strong class="text-on-surface">Assistente de enquadramento:</strong> o sistema analisa o rosto ao vivo e libera a foto na distância ideal (um pouco mais afastada, sem perder qualidade de leitura).</p>
           <ul id="guideChecklist" class="space-y-1.5 text-xs">
             <li data-check="detected" class="flex items-center gap-2 text-text-secondary"><span class="guide-dot">○</span> Rosto detectado</li>
             <li data-check="single" class="flex items-center gap-2 text-text-secondary"><span class="guide-dot">○</span> Uma pessoa só</li>
@@ -359,7 +365,7 @@
           <video id="enrollmentVideo" class="w-full h-full object-cover -scale-x-100" autoplay muted playsinline></video>
           <img id="capturedPreview" class="hidden absolute inset-0 w-full h-full object-cover" alt="Foto capturada">
           <canvas id="enrollmentGuideCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
-          <div id="enrollmentOval" class="absolute inset-[10%_22%] border-2 border-amber-400/80 rounded-[42%] transition-colors duration-200 pointer-events-none shadow-[0_0_0_999px_rgba(2,6,23,0.45)]"></div>
+          <div id="enrollmentOval" class="absolute inset-[16%_26%] border-2 border-amber-400/80 rounded-[42%] transition-colors duration-200 pointer-events-none shadow-[0_0_0_999px_rgba(2,6,23,0.45)]"></div>
           <div id="guideScoreBadge" class="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-slate-950/70 text-white text-[11px] font-semibold tracking-wide">
             Qualidade <span id="guideScoreValue">0</span>%
           </div>
@@ -410,12 +416,13 @@
     enrollUrl: {{ url_for('admin.api_enroll')|tojson }},
     guideUrl: {{ url_for('admin.api_enroll_guide')|tojson }},
     sigaStudentsUrl: {{ url_for('admin.api_siga_students')|tojson }},
+    sigaClassesUrl: {{ url_for('admin.api_siga_classes')|tojson }},
     syncQueueUrl: {{ url_for('admin.api_sync_queue')|tojson }},
     syncRunUrl: {{ url_for('admin.api_sync_run')|tojson }},
     syncRetryUrl: {{ url_for('admin.api_sync_retry_errors')|tojson }},
     deleteUserUrl: {{ url_for('admin.api_delete_user', user_id=0)|tojson }},
   };
 </script>
-<script src="{{ url_for('static', filename='js/admin-dashboard.js') }}?v=9"></script>
+<script src="{{ url_for('static', filename='js/admin-dashboard.js') }}?v=10"></script>
 </body>
 </html>

@@ -444,40 +444,121 @@
     const regInput = document.getElementById("studentRegistration");
     const nameInput = document.getElementById("studentName");
     const classInput = document.getElementById("studentClass");
+    const classSelect = document.getElementById("sigaClassSelect");
+    const studentPick = document.getElementById("sigaStudentPick");
+    const statusEl = document.getElementById("sigaLookupStatus");
     if (!staffWrap || !classWrap) return;
     staffWrap.classList.toggle("hidden", kind !== "servidor");
     classWrap.classList.toggle("hidden", kind !== "aluno");
     if (lookupWrap) lookupWrap.classList.toggle("hidden", kind !== "aluno");
     if (kind === "aluno") {
-      regLabel.textContent = "Matrícula (INEP) *";
+      regLabel.textContent = "Matrícula (INEP)";
       regInput.required = true;
-      regInput.placeholder = "Digite o INEP e busque no SIGA";
+      regInput.readOnly = true;
+      regInput.placeholder = "Preenchida ao selecionar o aluno";
       if (classInput) classInput.readOnly = true;
-      if (nameInput) nameInput.readOnly = false;
+      if (nameInput) {
+        nameInput.readOnly = true;
+        nameInput.placeholder = "Preenchido ao selecionar o aluno";
+      }
+      nameInput.value = "";
+      regInput.value = "";
+      if (classInput) classInput.value = "";
+      if (statusEl) statusEl.textContent = "";
+      if (studentPick) {
+        studentPick.innerHTML = '<option value="">Selecione a turma primeiro…</option>';
+        studentPick.disabled = true;
+      }
+      loadSigaClasses();
     } else if (kind === "servidor") {
       regLabel.textContent = "Código / matrícula funcional";
       regInput.required = false;
+      regInput.readOnly = false;
       regInput.placeholder = "Opcional";
       if (classInput) classInput.readOnly = false;
+      if (nameInput) {
+        nameInput.readOnly = false;
+        nameInput.placeholder = "";
+      }
+      if (classSelect) classSelect.innerHTML = '<option value="">—</option>';
+      if (studentPick) {
+        studentPick.innerHTML = "";
+        studentPick.disabled = true;
+      }
     } else {
       regLabel.textContent = "Matrícula / código";
       regInput.required = false;
+      regInput.readOnly = false;
+      if (nameInput) nameInput.readOnly = false;
     }
   }
 
-  async function lookupSigaStudent() {
+  let cachedSigaStudents = [];
+
+  async function loadSigaClasses() {
+    const classSelect = document.getElementById("sigaClassSelect");
+    const statusEl = document.getElementById("sigaLookupStatus");
+    const url = cfg.sigaClassesUrl || "/admin/api/siga/classes";
+    if (!classSelect) return;
+    classSelect.innerHTML = '<option value="">Carregando turmas…</option>';
+    classSelect.disabled = true;
+    try {
+      const res = await fetch(url, { headers: { "X-CSRFToken": csrfToken } });
+      const data = await res.json();
+      if (!data.success && !(data.classes || []).length) {
+        classSelect.innerHTML = '<option value="">Sem turmas disponíveis</option>';
+        if (statusEl) {
+          statusEl.textContent =
+            data.message || "Não foi possível carregar as turmas do SIGA.";
+        }
+        return;
+      }
+      const classes = data.classes || [];
+      classSelect.innerHTML =
+        '<option value="">Selecione a turma…</option>' +
+        classes
+          .map((c) => {
+            const code = c.code || "";
+            const serie = c.serie ? ` · ${c.serie}` : "";
+            const turno = c.turno ? ` · ${c.turno}` : "";
+            return `<option value="${code}">${code}${serie}${turno}</option>`;
+          })
+          .join("");
+      classSelect.disabled = false;
+      if (statusEl) {
+        statusEl.textContent = classes.length
+          ? `${classes.length} turma(s) do SIGA — selecione para listar os alunos.`
+          : "Nenhuma turma ativa encontrada.";
+      }
+    } catch (_) {
+      classSelect.innerHTML = '<option value="">Erro ao carregar turmas</option>';
+      if (statusEl) statusEl.textContent = "Erro de comunicação ao listar turmas.";
+    }
+  }
+
+  async function loadSigaStudentsByClass(classCode) {
     const statusEl = document.getElementById("sigaLookupStatus");
     const pick = document.getElementById("sigaStudentPick");
-    const q = document.getElementById("studentRegistration").value.trim();
     const url = cfg.sigaStudentsUrl || "/admin/api/siga/students";
-    if (statusEl) statusEl.textContent = "Buscando no SIGA…";
+    cachedSigaStudents = [];
     if (pick) {
-      pick.classList.add("hidden");
-      pick.innerHTML = "";
+      pick.disabled = true;
+      pick.innerHTML = '<option value="">Carregando alunos…</option>';
     }
+    document.getElementById("studentName").value = "";
+    document.getElementById("studentRegistration").value = "";
+    document.getElementById("studentClass").value = classCode || "";
+    if (!classCode) {
+      if (pick) {
+        pick.innerHTML = '<option value="">Selecione a turma primeiro…</option>';
+      }
+      if (statusEl) statusEl.textContent = "Selecione a turma para listar os alunos.";
+      return;
+    }
+    if (statusEl) statusEl.textContent = `Buscando alunos da turma ${classCode}…`;
     try {
       const res = await fetch(
-        `${url}?q=${encodeURIComponent(q)}`,
+        `${url}?class_code=${encodeURIComponent(classCode)}`,
         { headers: { "X-CSRFToken": csrfToken } }
       );
       const data = await res.json();
@@ -486,26 +567,21 @@
           statusEl.textContent =
             data.message || "Configure o Supabase no .env do reconhecimento facial.";
         }
+        if (pick) pick.innerHTML = '<option value="">Supabase não configurado</option>';
         return;
       }
       if (!data.success) {
         if (statusEl) statusEl.textContent = data.message || "Falha na busca.";
+        if (pick) pick.innerHTML = '<option value="">Falha ao listar alunos</option>';
         return;
       }
       const students = data.students || [];
+      cachedSigaStudents = students;
       if (!students.length) {
+        if (pick) pick.innerHTML = '<option value="">Nenhum aluno nesta turma</option>';
         if (statusEl) {
           statusEl.textContent =
-            "Nenhum aluno encontrado. Cadastre o aluno no SIGA antes de salvar a foto.";
-        }
-        return;
-      }
-      if (students.length === 1) {
-        applySigaStudent(students[0]);
-        if (statusEl) {
-          statusEl.textContent = students[0].has_local_face
-            ? "Aluno encontrado (já tem face local — a foto será atualizada)."
-            : "Aluno encontrado no SIGA. Capture a foto e salve.";
+            "Nenhum aluno ativo nesta turma no SIGA online.";
         }
         return;
       }
@@ -515,18 +591,17 @@
           students
             .map(
               (s) =>
-                `<option value="${s.codigo_inep}">${s.full_name} · ${s.class_code || "sem turma"} · INEP ${s.codigo_inep}${s.has_local_face ? " · face OK" : ""}</option>`
+                `<option value="${s.codigo_inep}">${s.full_name} · INEP ${s.codigo_inep}${s.has_local_face ? " · face OK" : ""}</option>`
             )
             .join("");
-        pick.classList.remove("hidden");
-        pick.onchange = () => {
-          const selected = students.find((s) => s.codigo_inep === pick.value);
-          if (selected) applySigaStudent(selected);
-        };
+        pick.disabled = false;
       }
-      if (statusEl) statusEl.textContent = `${students.length} alunos encontrados — selecione.`;
+      if (statusEl) {
+        statusEl.textContent = `${students.length} aluno(s) na turma ${classCode} — selecione e capture a foto.`;
+      }
     } catch (_) {
       if (statusEl) statusEl.textContent = "Erro de comunicação com o servidor.";
+      if (pick) pick.innerHTML = '<option value="">Erro ao listar alunos</option>';
     }
   }
 
@@ -535,6 +610,13 @@
     document.getElementById("studentRegistration").value = s.codigo_inep || "";
     document.getElementById("studentClass").value = s.class_code || "";
     document.getElementById("studentName").readOnly = true;
+    document.getElementById("studentRegistration").readOnly = true;
+    const statusEl = document.getElementById("sigaLookupStatus");
+    if (statusEl) {
+      statusEl.textContent = s.has_local_face
+        ? "Aluno selecionado (já tem face local — a foto será atualizada no local e na ficha do SIGA)."
+        : "Aluno selecionado. Capture a foto para salvar localmente e na ficha individual do SIGA.";
+    }
   }
 
   function renderLog() {
@@ -604,7 +686,7 @@
     document.getElementById("syncErrorCount").textContent = stats.error || 0;
     document.getElementById("syncSkippedCount").textContent = stats.skipped || 0;
     hint.textContent = payload.configured
-      ? "Supabase configurado. A sincronização é manual."
+      ? "Supabase configurado. ENTRADA/SAÍDA de alunos sobem sozinhas para a Frequência online (com retry automático)."
       : "Configure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e SUPABASE_SCHOOL_ID no .env.";
     hint.classList.toggle("text-error", !payload.configured);
     hint.classList.toggle("text-tertiary", Boolean(payload.configured));
@@ -721,11 +803,11 @@
       return;
     }
     if (personKind === "aluno" && !registration) {
-      showToast("Informe a matrícula (INEP) do aluno.");
+      showToast("Selecione o aluno da turma no SIGA.");
       return;
     }
     if (personKind === "aluno" && !classCode) {
-      showToast("Informe a turma do aluno.");
+      showToast("Selecione a turma do aluno.");
       return;
     }
     if (personKind === "servidor" && !staffRole) {
@@ -763,7 +845,11 @@
       successBox.classList.remove("hidden");
       document.getElementById("enrollmentSuccessName").textContent =
         data.user?.name || document.getElementById("studentName").value;
-      showToast("Cadastro facial concluído.");
+      showToast(
+        data.avatar_synced
+          ? "Cadastro facial concluído (local + foto de perfil no SIGA)."
+          : data.warning || "Cadastro facial concluído."
+      );
       refreshDashboard();
     } catch (_) {
       statusEl.textContent = "Erro de comunicação com o servidor.";
@@ -816,6 +902,13 @@
     renderUsers(document.getElementById("searchUsers").value);
   });
   document.getElementById("personKind")?.addEventListener("change", syncPersonKindFields);
+  document.getElementById("sigaClassSelect")?.addEventListener("change", (e) => {
+    loadSigaStudentsByClass(e.target.value.trim());
+  });
+  document.getElementById("sigaStudentPick")?.addEventListener("change", (e) => {
+    const selected = cachedSigaStudents.find((s) => s.codigo_inep === e.target.value);
+    if (selected) applySigaStudent(selected);
+  });
   syncPersonKindFields();
 
   refreshDashboard().catch(() => showToast("Falha ao carregar o painel."));

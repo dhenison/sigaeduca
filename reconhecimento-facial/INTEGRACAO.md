@@ -43,7 +43,10 @@ SUPABASE_SCHOOL_ID=...          # UUID da escola em public.schools
 SIGA (aluno já cadastrado)
         │
         ▼
-Admin facial → Buscar aluno no SIGA → capturar foto → salvar encoding
+Admin facial → Turma → Aluno no SIGA → capturar foto
+        │
+        ├─► SQLite local (encoding + foto)
+        └─► SIGA online (avatar_url na ficha)
         │
         ▼
 Punch2 reconhece → ENTRADA ou SAÍDA (SQLite)
@@ -59,20 +62,27 @@ frequencia.html (lê Supabase) → Consolidar Entrada/Saída (regras do SIGA)
 ## Cadastro de face (admin)
 
 1. Tipo: **Aluno**
-2. Digite o INEP → **Buscar aluno no SIGA**
-3. Nome e turma vêm do SIGA
+2. Selecione a **Turma** (lista online do SIGA)
+3. Selecione o **Aluno** da turma
 4. Capture a foto e salve
 
-Se o INEP já tiver face local, a foto é **atualizada**.
+Ao salvar:
+- encoding + foto ficam no **SQLite local** (reconhecimento)
+- a mesma foto atualiza o **`avatar_url`** na ficha individual do aluno no SIGA online
+
+Se o INEP já tiver face local, a foto é **atualizada** nos dois lados.
 
 ## Frequência no SIGA
 
 Com login Supabase, a tela Frequência carrega `attendance_marks`.  
-Batidas faciais aparecem como **P**.  
+Cada **ENTRADA** facial vira marca `phase=entrada` com status **P**.  
+Cada **SAÍDA** facial vira marca `phase=saida` com status **P**.  
 Consolidação Entrada/Saída/Dia continua pelos botões da Frequência.
 
-## Independência
+## Independência (local + online)
 
-- Batida sempre grava local, mesmo sem internet
-- Sync dispara na hora; se falhar, fica `pending`/`error`
-- Worker periódico reenvia sozinho ao voltar a rede
+- O app facial roda **só no PC local** (porta 5001)
+- Batida **sempre** grava no SQLite, mesmo sem internet
+- Sync dispara **na hora** da batida; se falhar, fica `pending`/`error`
+- Worker periódico (~45s) reenvia sozinho ao voltar a rede
+- Cadastro facial e frequência online ficam integrados; o reconhecimento em si permanece local

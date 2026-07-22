@@ -230,7 +230,11 @@ def api_siga_students():
     q = (request.args.get("q") or "").strip()
     class_code = (request.args.get("class_code") or "").strip()
     try:
-        students = client.list_students(class_code=class_code, q=q, limit=80)
+        students = client.list_students(
+        class_code=class_code,
+        q=q,
+        limit=200 if class_code else 80,
+    )
     except Exception as exc:  # noqa: BLE001
         return jsonify(success=False, configured=True, message=str(exc), students=[]), 502
 
@@ -507,11 +511,12 @@ def api_enroll():
         return jsonify(success=False, message="Selecione Usuário (servidor) ou Aluno."), 400
 
     # Aluno: dados oficiais vêm do SIGA; aqui só vinculamos a face.
+    siga_student_id = None
     if person_kind == "aluno":
         if not registration:
             return jsonify(
                 success=False,
-                message="Informe a matrícula INEP do aluno já cadastrado no SIGA.",
+                message="Selecione o aluno da turma no SIGA antes de salvar a foto.",
             ), 400
         from app.sync.supabase_attendance import client_from_app
 
@@ -532,6 +537,7 @@ def api_enroll():
             name = (student.get("full_name") or name).strip()
             class_code = (student.get("class_code") or class_code).strip()
             registration = (student.get("codigo_inep") or registration).strip()
+            siga_student_id = student.get("id")
         if not name:
             return jsonify(success=False, message="Informe o nome completo."), 400
         if not class_code:
@@ -558,7 +564,9 @@ def api_enroll():
         return jsonify(success=False, message="A foto precisa ser JPEG ou PNG."), 400
 
     image_bytes = image.read()
-    encoding = encode_face_from_bytes(image_bytes, max_side=640, num_jitters=1)
+    # Cadastro com resolução e jitters um pouco maiores para compensar
+    # enquadramento um pouco mais distante, mantendo boa leitura na frequência.
+    encoding = encode_face_from_bytes(image_bytes, max_side=800, num_jitters=2, upsample=1)
     if encoding is None:
         return (
             jsonify(
@@ -575,6 +583,19 @@ def api_enroll():
     photo_url = url_for("static", filename="uploads/" + filename)
     encoding_json = json.dumps(encoding.tolist())
 
+    avatar_synced = False
+    avatar_warning = ""
+    if person_kind == "aluno" and siga_student_id:
+        try:
+            from app.sync.supabase_attendance import client_from_app, make_avatar_data_url
+
+            client = client_from_app()
+            if client.configured():
+                client.update_student_avatar(str(siga_student_id), make_avatar_data_url(image_bytes))
+                avatar_synced = True
+        except Exception as exc:  # noqa: BLE001
+            avatar_warning = f"Face local salva; foto de perfil no SIGA não atualizou: {exc}"
+
     # Se já existe face local com o mesmo INEP, só atualiza a foto/encoding.
     existing = None
     if registration:
@@ -590,14 +611,16 @@ def api_enroll():
         existing.photo_url = photo_url
         db.session.commit()
         invalidate_known_faces_cache()
-        return jsonify(
-            {
-                "success": True,
-                "message": "Foto facial atualizada (aluno já vinculado).",
-                "updated": True,
-                "user": _serialize_user(existing),
-            }
-        )
+        payload = {
+            "success": True,
+            "message": "Foto facial atualizada (aluno já vinculado).",
+            "updated": True,
+            "avatar_synced": avatar_synced,
+            "user": _serialize_user(existing),
+        }
+        if avatar_warning:
+            payload["warning"] = avatar_warning
+        return jsonify(payload)
 
     username_seed = registration or f"{person_kind}-{name}"
     username = _unique_username(username_seed)
@@ -618,14 +641,16 @@ def api_enroll():
     db.session.commit()
     invalidate_known_faces_cache()
 
-    return jsonify(
-        {
-            "success": True,
-            "message": "Foto facial salva. O aluno já existente no SIGA poderá ser reconhecido.",
-            "updated": False,
-            "user": _serialize_user(user),
-        }
-    )
+    payload = {
+        "success": True,
+        "message": "Foto facial salva. O aluno já existente no SIGA poderá ser reconhecido.",
+        "updated": False,
+        "avatar_synced": avatar_synced,
+        "user": _serialize_user(user),
+    }
+    if avatar_warning:
+        payload["warning"] = avatar_warning
+    return jsonify(payload)
 
 
 @bp.route("/api/users/<int:user_id>", methods=["DELETE"])

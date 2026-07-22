@@ -161,22 +161,24 @@ def assess_face_framing(
     offset_x = abs(cx - width / 2.0) / float(width)
     offset_y = abs(cy - height / 2.0) / float(height)
 
-    size_ok = 0.28 <= width_ratio <= 0.58 and 0.34 <= height_ratio <= 0.72
-    centered = offset_x <= 0.12 and offset_y <= 0.14
+    # Aceita uma distância um pouco maior (rosto menor no quadro), sem abrir
+    # demais para não degradar o encoding usado na frequência.
+    size_ok = 0.20 <= width_ratio <= 0.52 and 0.26 <= height_ratio <= 0.70
+    centered = offset_x <= 0.13 and offset_y <= 0.15
 
     score = 35
     if centered:
         score += 35
     if size_ok:
         score += 30
-    # Bônus por proximidade do “tamanho ideal” (~42% da largura).
-    score -= int(min(20, abs(width_ratio - 0.42) * 100))
+    # Bônus por proximidade do “tamanho ideal” (~34% da largura ≈ um pouco mais longe).
+    score -= int(min(20, abs(width_ratio - 0.34) * 100))
     score = max(0, min(100, score))
 
     if not centered and not size_ok:
-        if width_ratio < 0.28:
-            hint = "Aproxime o rosto e centralize no oval."
-        elif width_ratio > 0.58:
+        if width_ratio < 0.20:
+            hint = "Aproxime um pouco o rosto e centralize no oval."
+        elif width_ratio > 0.52:
             hint = "Afaste um pouco e centralize no oval."
         elif cx < width / 2.0:
             hint = "Mova o rosto um pouco para a direita."
@@ -194,8 +196,8 @@ def assess_face_framing(
                 + ("suba um pouco o queixo." if cy > height / 2.0 else "desça um pouco a cabeça.")
             )
     elif not size_ok:
-        if width_ratio < 0.28:
-            hint = "Aproxime-se: o rosto ainda está pequeno para o cadastro."
+        if width_ratio < 0.20:
+            hint = "Aproxime um pouco: o rosto ainda está pequeno para o cadastro."
         else:
             hint = "Afaste-se um pouco: o rosto está preenchendo demais o quadro."
     else:

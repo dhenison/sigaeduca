@@ -6,6 +6,7 @@ em `attendance_marks` usando a matrícula local = `codigo_inep`.
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import threading
@@ -14,13 +15,46 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from io import BytesIO
 from typing import Any
 
 from flask import current_app
+from PIL import Image
 
 from app.models import Ponto, User, db
 
 logger = logging.getLogger(__name__)
+
+# Limites alinhados ao cadastro de foto do SIGA (ficha individual).
+_AVATAR_MAX_SIDE = 512
+_AVATAR_MAX_RAW_BYTES = 135_000
+
+
+def make_avatar_data_url(image_bytes: bytes) -> str:
+    """JPEG leve em data URL para gravar em `students.avatar_url`."""
+    with Image.open(BytesIO(image_bytes)) as image:
+        image = image.convert("RGB")
+        width, height = image.size
+        longest = max(width, height)
+        if longest > _AVATAR_MAX_SIDE:
+            scale = _AVATAR_MAX_SIDE / float(longest)
+            image = image.resize(
+                (max(1, int(width * scale)), max(1, int(height * scale))),
+                Image.Resampling.LANCZOS,
+            )
+        quality = 72
+        raw = b""
+        while quality >= 45:
+            buf = BytesIO()
+            image.save(buf, format="JPEG", quality=quality, optimize=True)
+            raw = buf.getvalue()
+            if len(raw) <= _AVATAR_MAX_RAW_BYTES:
+                break
+            quality -= 8
+        if not raw:
+            raise ValueError("Não foi possível gerar a foto de perfil.")
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"data:image/jpeg;base64,{encoded}"
 
 
 @dataclass
@@ -118,9 +152,25 @@ class SupabaseAttendanceClient:
             )
         return None
 
+    def update_student_avatar(self, student_id: str, avatar_data_url: str) -> None:
+        """Atualiza a foto de perfil (`avatar_url`) na ficha do aluno no SIGA."""
+        sid = (student_id or "").strip()
+        if not sid:
+            raise ValueError("student_id obrigatório para atualizar avatar.")
+        avatar = (avatar_data_url or "").strip()
+        if not avatar.startswith("data:image/"):
+            raise ValueError("avatar_url deve ser data URL de imagem.")
+        self._request(
+            "PATCH",
+            "students",
+            params={"id": f"eq.{sid}", "school_id": f"eq.{self.school_id}"},
+            body={"avatar_url": avatar},
+            prefer="return=minimal",
+        )
+
     def list_students(self, *, class_code: str = "", q: str = "", limit: int = 80) -> list[dict[str, Any]]:
         params: dict[str, str] = {
-            "select": "id,full_name,class_code,codigo_inep,school_id,status",
+            "select": "id,full_name,class_code,codigo_inep,school_id,status,avatar_url",
             "school_id": f"eq.{self.school_id}",
             "status": "eq.Ativo",
             "order": "full_name.asc",

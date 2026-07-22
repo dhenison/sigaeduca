@@ -279,6 +279,21 @@
       statusChip.textContent = "SAÍDA";
     }
 
+    const syncStatus = (data.sync_status || "").toLowerCase();
+    if (syncStatus === "pending") {
+      statusFooter.textContent =
+        (statusFooter.textContent || "") + " · Enviando à Frequência online…";
+    } else if (syncStatus === "synced") {
+      statusFooter.textContent =
+        (statusFooter.textContent || "") + " · Já na Frequência online";
+    } else if (syncStatus === "skipped" && data.sync_error) {
+      statusFooter.textContent =
+        (statusFooter.textContent || "") + ` · Sync: ${data.sync_error}`;
+    } else if (syncStatus === "error") {
+      statusFooter.textContent =
+        (statusFooter.textContent || "") + " · Sync pendente (retry automático)";
+    }
+
     logTime.textContent = clockEl.textContent;
     confidence.textContent =
       data.confidence != null
