@@ -18,14 +18,22 @@
   </script>
 </head>
 <body class="min-h-screen bg-background-page font-sans text-slate-900 flex items-center justify-center p-6">
+  <noscript>
+    <p style="max-width:28rem;padding:1rem;background:#fff;border:1px solid #ccc;border-radius:12px">
+      Abra o login pelo Flask: <strong>http://127.0.0.1:5001/admin/login</strong>
+      (não abra o arquivo .html pelo Explorer).
+    </p>
+  </noscript>
   <main class="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
     <p class="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-2">Siga Educa</p>
     <h1 class="text-2xl font-bold mb-6">Área administrativa</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <p role="alert" data-category="{{ category }}" class="mb-4 text-sm {% if category == 'error' %}text-red-600{% else %}text-primary{% endif %}">{{ message }}</p>
-      {% endfor %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <p role="alert" data-category="{{ category }}" class="mb-4 text-sm {% if category == 'error' %}text-red-600{% else %}text-primary{% endif %}">{{ message }}</p>
+        {% endfor %}
+      {% endif %}
     {% endwith %}
 
     <form method="post" action="{{ url_for('admin.login') }}" class="space-y-4">
@@ -33,11 +41,13 @@
       <input type="hidden" name="next" value="{{ next_url }}">
 
       <label class="block text-sm font-semibold" for="username">Usuário
-        <input id="username" name="username" type="text" autocomplete="username" required class="mt-1 w-full rounded-lg border-slate-300">
+        <input id="username" name="username" type="text" autocomplete="username" required
+               class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
       </label>
 
       <label class="block text-sm font-semibold" for="password">Senha
-        <input id="password" name="password" type="password" autocomplete="current-password" required class="mt-1 w-full rounded-lg border-slate-300">
+        <input id="password" name="password" type="password" autocomplete="current-password" required
+               class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
       </label>
 
       <button type="submit" class="w-full bg-primary text-white font-bold py-3 rounded-xl hover:opacity-90">Entrar</button>
@@ -46,5 +56,18 @@
       <a class="text-primary font-semibold" href="{{ url_for('punch.stations') }}">Abrir estações da portaria</a>
     </p>
   </main>
+  <script>
+    (function () {
+      if (location.protocol !== "file:") return;
+      document.body.innerHTML =
+        '<main style="max-width:28rem;margin:3rem auto;padding:1.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:1rem;font-family:system-ui,sans-serif">' +
+        '<p style="color:#006d37;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.75rem">Siga Educa</p>' +
+        "<h1 style=\"font-size:1.4rem;margin:.5rem 0 1rem\">Abra pelo servidor local</h1>" +
+        "<p style=\"color:#475569;line-height:1.5\">Esta tela não pode ser aberta pelo Explorer / Live Server. " +
+        "Inicie o reconhecimento facial (<code>iniciar.bat</code>) e use:</p>" +
+        '<p style="margin-top:1rem"><a href="http://127.0.0.1:5001/admin/login" style="color:#006d37;font-weight:700">http://127.0.0.1:5001/admin/login</a></p>' +
+        "</main>";
+    })();
+  </script>
 </body>
 </html>

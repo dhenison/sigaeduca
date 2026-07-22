@@ -116,6 +116,12 @@
         return s ? s : null;
     }
 
+    function isUuid(v) {
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            String(v || '').trim()
+        );
+    }
+
     function parseAge(v) {
         if (v == null || v === '') return null;
         var n = parseInt(String(v).replace(/\D/g, ''), 10);
@@ -175,7 +181,7 @@
         }
         aee = aee.filter(function (c) { return c !== regular; });
 
-        return {
+        var row = {
             school_id: schoolId,
             codigo_inep: nullIfEmpty(s.codigoInep),
             full_name: String(s.nome || s.full_name || '').trim(),
@@ -197,6 +203,9 @@
             avatar_url: nullIfEmpty(s.avatar || s.avatar_url),
             class_history: Array.isArray(s.classHistory) ? s.classHistory : (s.class_history || [])
         };
+        // Só envia id se for UUID (evita Date.now() local no Postgres).
+        if (isUuid(s.id)) row.id = String(s.id).trim();
+        return row;
     }
 
     function rowToStudent(row) {
@@ -547,6 +556,11 @@
 
     function matchExistingStudent(existingList, row) {
         var i;
+        if (row.id) {
+            for (i = 0; i < existingList.length; i++) {
+                if (String(existingList[i].id || '') === String(row.id)) return existingList[i];
+            }
+        }
         if (row.cpf) {
             for (i = 0; i < existingList.length; i++) {
                 if (String(existingList[i].cpf || '') === row.cpf) return existingList[i];
@@ -594,6 +608,7 @@
             patch.password_hash = found.password_hash;
             patch.needs_password_set = found.needs_password_set;
         }
+        delete patch.id;
         return patch;
     }
 
@@ -723,6 +738,67 @@
             });
     }
 
+    function deleteStudent(studentOrId) {
+        var ready = cloudReady();
+        if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason, message: ready.message });
+
+        var local = typeof studentOrId === 'object' && studentOrId
+            ? studentOrId
+            : { id: studentOrId };
+        var row = studentToRow(ready.schoolId, local);
+        var sid = isUuid(local.id) ? String(local.id).trim() : null;
+
+        function removeById(id) {
+            return ready.sb
+                .from('students')
+                .delete()
+                .eq('school_id', ready.schoolId)
+                .eq('id', id)
+                .then(function (res) {
+                    if (res.error) throw res.error;
+                    return fetchStudents(ready.schoolId).then(function (loaded) {
+                        return {
+                            ok: true,
+                            data: loaded.data || [],
+                            message: 'Aluno removido do banco.'
+                        };
+                    });
+                });
+        }
+
+        var findId = Promise.resolve(sid);
+        if (!sid) {
+            findId = fetchAllRows(function () {
+                return ready.sb.from('students')
+                    .select('id,cpf,codigo_inep,email')
+                    .eq('school_id', ready.schoolId)
+                    .order('id', { ascending: true });
+            }).then(function (existing) {
+                var found = matchExistingStudent(existing || [], row);
+                return found ? found.id : null;
+            });
+        }
+
+        return findId
+            .then(function (id) {
+                if (!id) {
+                    return {
+                        ok: true,
+                        skipped: true,
+                        message: 'Aluno não existia no banco online.'
+                    };
+                }
+                return removeById(id);
+            })
+            .catch(function (err) {
+                return {
+                    ok: false,
+                    reason: 'delete_error',
+                    message: (err && err.message) || 'Falha ao excluir aluno no Supabase.'
+                };
+            });
+    }
+
     /** Carrega turmas do banco para o cache local (se possível). */
     function hydrateClasses() {
         return fetchClasses().then(function (res) {
@@ -763,6 +839,7 @@
         upsertClasses: upsertClasses,
         deleteClass: deleteClass,
         upsertStudents: upsertStudents,
+        deleteStudent: deleteStudent,
         hydrateClasses: hydrateClasses,
         hydrateStudents: hydrateStudents,
         classToRow: classToRow,

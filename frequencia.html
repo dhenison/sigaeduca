@@ -316,7 +316,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260717a"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260717a"></script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><script src="js/siga-frequencia-supabase.js?v=20260717a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260717a"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260717a"></script><script src="js/siga-security.js"></script><script src="js/siga-school-data.js?v=20260722b"></script><script src="js/siga-db.js?v=20260722b"></script><script src="js/siga-frequencia-supabase.js?v=20260717a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -735,45 +735,53 @@ let filteredStudents = [];
 let calendarDays = {};
 
 function initFrequencia() {
-    // 1. Load data from local storage
     calendarDays = window.getCalendarDays ? window.getCalendarDays() : {};
     allStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
 
-    // 2. Load classes and populate filter
-    const classes = (typeof window.getClasses === 'function'
-        ? window.getClasses()
-        : JSON.parse(localStorage.getItem('siga_classes')) || []) || [];
-    const turmaSelect = document.getElementById('filter-turma-select');
-    if (turmaSelect) {
-        const active = classes.filter(c => String(c.status || 'Ativo').toLowerCase() !== 'inativo');
-        const list = active.length ? active : classes;
-        if (!list.length) {
-            turmaSelect.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
-        } else {
-            turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>' +
-                list.map(c => `<option value="${c.code}">${c.code} — ${c.serie || ''} (${c.turno || ''})</option>`).join('');
+    function finishInit() {
+        allStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
+
+        const classes = (typeof window.getClasses === 'function'
+            ? window.getClasses()
+            : JSON.parse(localStorage.getItem('siga_classes')) || []) || [];
+        const turmaSelect = document.getElementById('filter-turma-select');
+        if (turmaSelect) {
+            const active = classes.filter(c => String(c.status || 'Ativo').toLowerCase() !== 'inativo');
+            const list = active.length ? active : classes;
+            if (!list.length) {
+                turmaSelect.innerHTML = '<option value="">Nenhuma turma cadastrada</option>';
+            } else {
+                turmaSelect.innerHTML = '<option value="">Selecione uma turma</option>' +
+                    list.map(c => `<option value="${c.code}">${c.code} — ${c.serie || ''} (${c.turno || ''})</option>`).join('');
+            }
         }
+
+        const dateInput = document.getElementById('filter-date-input');
+        if (dateInput) {
+            dateInput.value = pickDefaultAttendanceDate();
+        }
+
+        if (turmaSelect && !turmaSelect.dataset.bound) {
+            turmaSelect.addEventListener('change', loadAttendanceData);
+            turmaSelect.dataset.bound = '1';
+        }
+        if (dateInput && !dateInput.dataset.bound) {
+            dateInput.addEventListener('change', loadAttendanceData);
+            dateInput.dataset.bound = '1';
+        }
+
+        loadAttendanceData();
+        updateFrequenciaKpis();
     }
 
-    // 3. Default date: first weekday letivo in calendar, else 2026-05-14
-    const dateInput = document.getElementById('filter-date-input');
-    if (dateInput) {
-        dateInput.value = pickDefaultAttendanceDate();
+    const cloud = window.SigaSchoolData;
+    if (cloud && typeof cloud.hydrateStudents === 'function') {
+        const tasks = [cloud.hydrateStudents()];
+        if (typeof cloud.hydrateClasses === 'function') tasks.push(cloud.hydrateClasses());
+        Promise.all(tasks).then(finishInit).catch(finishInit);
+    } else {
+        finishInit();
     }
-
-    // 4. Bind events (once)
-    if (turmaSelect && !turmaSelect.dataset.bound) {
-        turmaSelect.addEventListener('change', loadAttendanceData);
-        turmaSelect.dataset.bound = '1';
-    }
-    if (dateInput && !dateInput.dataset.bound) {
-        dateInput.addEventListener('change', loadAttendanceData);
-        dateInput.dataset.bound = '1';
-    }
-
-    // 5. Load initial
-    loadAttendanceData();
-    updateFrequenciaKpis();
 }
 
 function pickDefaultAttendanceDate() {

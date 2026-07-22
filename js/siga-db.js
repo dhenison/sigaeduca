@@ -2218,6 +2218,36 @@ function renderAlunos(searchTerm) {
     tbody.innerHTML = html;
 }
 
+function newStudentLocalId() {
+    try {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+    } catch (e) { /* ignore */ }
+    return Date.now().toString() + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+async function syncStudentsToCloud(students, successMsg) {
+    if (!window.SigaSchoolData || typeof window.SigaSchoolData.upsertStudents !== 'function') {
+        showToast(successMsg || 'Aluno salvo localmente.');
+        return { ok: false, skipped: true };
+    }
+    showToast('Sincronizando aluno com o banco online…');
+    const cloud = await window.SigaSchoolData.upsertStudents(
+        Array.isArray(students) ? students : [students]
+    );
+    if (cloud && cloud.ok) {
+        showToast(successMsg || cloud.message || 'Aluno gravado no banco online.');
+        if (typeof renderAlunos === 'function') renderAlunos();
+        return cloud;
+    }
+    showToast(
+        'Salvo localmente. Banco online: ' + ((cloud && cloud.message) || 'não sincronizado'),
+        'error'
+    );
+    return cloud || { ok: false };
+}
+
 function openNewStudentModal() {
     let modal = document.getElementById('siga-modal-student');
     if (modal) modal.remove();
@@ -2346,7 +2376,7 @@ function openNewStudentModal() {
         const email = document.getElementById('std-email-institucional').value;
         const senha = (document.getElementById('std-senha') || {}).value || '';
 
-        const id = Date.now().toString();
+        const id = newStudentLocalId();
         const persist = async () => {
             let hashed = senha;
             if (window.SigaSecurity && senha) {
@@ -2365,7 +2395,7 @@ function openNewStudentModal() {
 
             modal.remove();
             renderAlunos();
-            showToast('Aluno cadastrado com sucesso!');
+            await syncStudentsToCloud([newStudent], 'Aluno cadastrado e gravado no banco online.');
         };
         persist();
     });
@@ -2511,6 +2541,7 @@ function openEditStudentModal(studentId) {
         const persist = async () => {
             const currentStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
             const index = currentStudents.findIndex(s => s.id === studentId);
+            let updated = null;
             if (index !== -1) {
                 let nextSenha = currentStudents[index].senha || '';
                 let precisa = currentStudents[index].precisaDefinirSenha;
@@ -2526,12 +2557,17 @@ function openEditStudentModal(studentId) {
                     senha: nextSenha,
                     precisaDefinirSenha: !!precisa && !nextSenha
                 };
+                updated = currentStudents[index];
                 localStorage.setItem('siga_students', JSON.stringify(currentStudents));
             }
 
             modal.remove();
             renderAlunos();
-            showToast('Cadastro atualizado!');
+            if (updated) {
+                await syncStudentsToCloud([updated], 'Cadastro atualizado e gravado no banco online.');
+            } else {
+                showToast('Cadastro atualizado!');
+            }
         };
         persist();
     });
@@ -2573,14 +2609,30 @@ function openDeleteStudentConfirm(studentId) {
     `;
     document.body.appendChild(modal);
 
-    document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+    document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
         const currentStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
+        const target = currentStudents.find(s => s.id === studentId) || student;
         const filteredStudents = currentStudents.filter(s => s.id !== studentId);
         localStorage.setItem('siga_students', JSON.stringify(filteredStudents));
 
         modal.remove();
         renderAlunos();
-        showToast('Aluno removido com sucesso!');
+
+        if (window.SigaSchoolData && typeof window.SigaSchoolData.deleteStudent === 'function') {
+            showToast('Removendo aluno do banco online…');
+            const cloud = await window.SigaSchoolData.deleteStudent(target);
+            if (cloud && cloud.ok) {
+                showToast('Aluno removido do sistema (local + online).');
+                renderAlunos();
+            } else {
+                showToast(
+                    'Removido localmente. Banco: ' + ((cloud && cloud.message) || 'não sincronizado'),
+                    'error'
+                );
+            }
+        } else {
+            showToast('Aluno removido com sucesso!');
+        }
     });
 }
 
@@ -2977,6 +3029,7 @@ function openChangeClassModal() {
         // Save class change in student object
         const currentStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
         const index = currentStudents.findIndex(s => String(s.id) === String(studentId));
+        let updatedStudent = null;
         if (index !== -1) {
             const currentStudent = currentStudents[index];
             if (!currentStudent.classHistory) {
@@ -2998,14 +3051,19 @@ function openChangeClassModal() {
             currentStudent.turno = newTurno;
             currentStudent.serie = targetClass.serie || currentStudent.serie || '';
 
+            updatedStudent = currentStudent;
             localStorage.setItem('siga_students', JSON.stringify(currentStudents));
         }
 
         modal.remove();
-        showToast('Turma alterada com sucesso!');
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
+        if (updatedStudent) {
+            syncStudentsToCloud([updatedStudent], 'Turma alterada e gravada no banco online.').then(() => {
+                setTimeout(() => { window.location.reload(); }, 400);
+            });
+        } else {
+            showToast('Turma alterada com sucesso!');
+            setTimeout(() => { window.location.reload(); }, 500);
+        }
     });
 }
 
@@ -4166,14 +4224,14 @@ window.openEditClassModal = function(classCode) {
             
             // Sync shift of enrolled students too
             const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-            let synced = false;
+            const touchedStudents = [];
             students.forEach(s => {
                 if (s.turma === classCode) {
                     s.turno = turno;
-                    synced = true;
+                    touchedStudents.push(s);
                 }
             });
-            if (synced) {
+            if (touchedStudents.length) {
                 localStorage.setItem('siga_students', JSON.stringify(students));
             }
         }
@@ -4190,6 +4248,11 @@ window.openEditClassModal = function(classCode) {
             showToast('Sincronizando turma com o banco…');
             const cloud = await window.SigaSchoolData.upsertClasses([updatedClass]);
             if (cloud && cloud.ok) {
+                const studentsAfter = JSON.parse(localStorage.getItem('siga_students')) || [];
+                const toSync = studentsAfter.filter(s => s.turma === classCode);
+                if (toSync.length && typeof window.SigaSchoolData.upsertStudents === 'function') {
+                    await window.SigaSchoolData.upsertStudents(toSync);
+                }
                 showToast('Turma atualizada e gravada no banco.');
                 refreshTurmasFilters();
                 renderClasses();
