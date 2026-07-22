@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Reconhecimento Facial · Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#006d37",
+            "primary-light": "#7EDC8A",
+            "background-page": "#F7FAF8",
+            "text-secondary": "#6B7280",
+            "border-subtle": "#E5E7EB",
+            "on-surface": "#121c2a",
+          },
+          fontFamily: { sans: ["Inter", "sans-serif"] },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-background-page text-on-surface min-h-screen font-sans">
+  <main class="max-w-3xl mx-auto px-6 py-16">
+    <p class="text-sm font-semibold text-primary mb-2">SIGA EDUCA · módulo local</p>
+    <h1 class="text-3xl font-bold mb-3">Reconhecimento Facial</h1>
+    <p class="text-text-secondary mb-8 max-w-2xl">
+      As telas <strong class="text-on-surface">não abrem por duplo clique</strong> no HTML
+      (são templates Jinja). Use sempre o servidor Flask e os links abaixo.
+    </p>
+
+    <div class="grid gap-4 mb-10">
+      <a href="{{ url_for('punch.stations') }}"
+         class="block rounded-2xl border border-border-subtle bg-white p-6 hover:border-primary shadow-sm">
+        <h2 class="text-xl font-bold">Estações (1–4)</h2>
+        <p class="text-sm text-text-secondary mt-2">Abrir monitores de portaria por webcam.</p>
+      </a>
+      <a href="{{ url_for('punch.punch2') }}"
+         class="block rounded-2xl border border-border-subtle bg-white p-6 hover:border-primary shadow-sm">
+        <h2 class="text-xl font-bold">Monitor Push2</h2>
+        <p class="text-sm text-text-secondary mt-2">Reconhecimento em tela cheia.</p>
+      </a>
+      <a href="{{ url_for('admin.login') }}"
+         class="block rounded-2xl border border-border-subtle bg-white p-6 hover:border-primary shadow-sm">
+        <h2 class="text-xl font-bold">Admin</h2>
+        <p class="text-sm text-text-secondary mt-2">Cadastro facial e esteira Supabase.</p>
+      </a>
+    </div>
+
+    <div class="rounded-xl bg-white border border-border-subtle p-5 text-sm text-text-secondary space-y-2">
+      <p><strong class="text-on-surface">Como abrir:</strong> rode <code class="bg-background-page px-1 rounded">iniciar.bat</code> e acesse:</p>
+      <p class="font-mono text-on-surface">http://127.0.0.1:{{ port }}/</p>
+      <p>Não use <code class="bg-background-page px-1 rounded">file://</code> nem abra <code class="bg-background-page px-1 rounded">.html</code> pelo Explorer.</p>
+    </div>
+  </main>
+</body>
+</html>

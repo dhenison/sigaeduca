@@ -510,6 +510,41 @@
             });
     }
 
+    function deleteClass(code, yearLabel) {
+        var ready = cloudReady();
+        if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason, message: ready.message });
+
+        var classCode = String(code || '').trim();
+        if (!classCode) {
+            return Promise.resolve({ ok: false, reason: 'invalid', message: 'Código da turma inválido.' });
+        }
+        var year = String(yearLabel || '2026').trim() || '2026';
+
+        return ready.sb
+            .from('classes')
+            .delete()
+            .eq('school_id', ready.schoolId)
+            .eq('code', classCode)
+            .eq('year_label', year)
+            .then(function (res) {
+                if (res.error) throw res.error;
+                return fetchClasses(ready.schoolId).then(function (loaded) {
+                    return {
+                        ok: true,
+                        data: loaded.data || [],
+                        message: 'Turma removida do banco.'
+                    };
+                });
+            })
+            .catch(function (err) {
+                return {
+                    ok: false,
+                    reason: 'delete_error',
+                    message: (err && err.message) || 'Falha ao excluir turma no Supabase.'
+                };
+            });
+    }
+
     function matchExistingStudent(existingList, row) {
         var i;
         if (row.cpf) {
@@ -726,6 +761,7 @@
         fetchClasses: fetchClasses,
         fetchStudents: fetchStudents,
         upsertClasses: upsertClasses,
+        deleteClass: deleteClass,
         upsertStudents: upsertStudents,
         hydrateClasses: hydrateClasses,
         hydrateStudents: hydrateStudents,

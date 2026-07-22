@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="h-full" lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIGA EDUCA - Monitor de Reconhecimento Facial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "inverse-surface": "#27313f",
+          "surface-container-highest": "#d9e3f6",
+          "secondary": "#0058be",
+          "primary-fixed": "#81fba5",
+          "primary": "#006d37",
+          "primary-light": "#7EDC8A",
+          "primary-container": "#2eaf62",
+          "error": "#ba1a1a",
+          "background-surface": "#FFFFFF",
+          "text-secondary": "#6B7280",
+          "on-surface": "#121c2a",
+          "border-subtle": "#E5E7EB",
+          "secondary-fixed": "#d8e2ff",
+        },
+        fontFamily: {
+          sans: ["Inter", "sans-serif"],
+          mono: ["JetBrains Mono", "monospace"],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: Inter, sans-serif; }
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    vertical-align: middle;
+  }
+  @keyframes scan {
+    0%, 100% { transform: translateY(0); opacity: 0.8; }
+    50% { transform: translateY(400px); opacity: 0.3; }
+  }
+  .scan-line {
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(to right, transparent, #2eaf62, transparent);
+    box-shadow: 0 0 15px #2eaf62;
+    animation: scan 3s ease-in-out infinite;
+  }
+  .scanner-corner {
+    width: 40px;
+    height: 40px;
+    border-color: #2eaf62;
+    position: absolute;
+  }
+  @keyframes face-guide-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.02); }
+  }
+  .face-guide {
+    width: min(68%, 280px);
+    aspect-ratio: 1;
+    border: 3px solid rgba(126, 220, 138, 0.95);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.35),
+      0 0 24px rgba(46, 175, 98, 0.55),
+      inset 0 0 20px rgba(46, 175, 98, 0.18);
+    animation: face-guide-pulse 2.4s ease-in-out infinite;
+  }
+  .face-guide-inner {
+    width: 72%;
+    aspect-ratio: 1;
+    border: 2px dashed rgba(255, 255, 255, 0.55);
+    border-radius: 50%;
+  }
+  .face-guide-label {
+    position: absolute;
+    bottom: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(126, 220, 138, 0.5);
+    color: #7edc8a;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body class="bg-inverse-surface text-on-surface h-screen overflow-hidden selection:bg-primary selection:text-white">
+<main class="relative h-full flex flex-col z-10">
+  <header class="w-full px-12 py-10 flex justify-between items-start">
+    <div class="flex flex-col">
+      <h1 class="text-3xl font-bold text-primary-fixed tracking-tight">SIGA EDUCA</h1>
+      <span class="text-surface-container-highest opacity-60 font-mono text-[11px] tracking-widest uppercase">Facial Access System · Flask/dlib</span>
+      {% if station_label %}
+      <span class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary-light text-xs font-bold tracking-widest uppercase">{{ station_label }}</span>
+      {% endif %}
+      <a href="{{ url_for('admin.dashboard') }}" class="mt-3 text-xs text-primary-light hover:underline">Abrir painel admin</a>
+    </div>
+    <div class="text-right">
+      <div class="text-3xl text-white font-mono leading-none tracking-tighter" id="clock">00:00:00</div>
+      <div class="text-primary-light font-medium mt-1" id="date">—</div>
+      <p id="helperText" class="text-xs text-white/50 mt-2">Iniciando câmera…</p>
+    </div>
+  </header>
+
+  <div class="flex-1 flex items-center justify-center relative px-6">
+    <div class="relative group transition-all duration-700 ease-out" id="camera-container">
+      <div class="relative w-[min(100vw-3rem,600px)] h-[min(70vh,450px)] bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl">
+        <video id="webcam" class="w-full h-full object-cover opacity-90 -scale-x-100" autoplay muted playsinline></video>
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="scan-line absolute top-0 left-0"></div>
+          <div class="absolute top-6 left-6 flex items-center space-x-2 text-primary-light">
+            <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">videocam</span>
+            <span id="cameraStatus" class="font-mono text-[10px] uppercase tracking-widest">Live Feed</span>
+          </div>
+          <div class="absolute bottom-6 right-6 text-white/40 font-mono text-[10px]" id="scanMeta">AGUARDANDO ROSTO</div>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="face-guide flex items-center justify-center relative">
+              <div class="face-guide-inner"></div>
+            </div>
+          </div>
+          <div class="face-guide-label">Centralize o rosto aqui</div>
+        </div>
+        <div class="scanner-corner top-0 left-0 border-t-4 border-l-4 rounded-tl-lg"></div>
+        <div class="scanner-corner top-0 right-0 border-t-4 border-r-4 rounded-tr-lg"></div>
+        <div class="scanner-corner bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg"></div>
+        <div class="scanner-corner bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg"></div>
+      </div>
+
+      <div class="absolute -bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
+        <div class="flex items-center gap-2 flex-wrap justify-center">
+          <label class="px-3 py-2 bg-white/5 border border-white/10 text-white rounded-full text-xs flex items-center gap-2 max-w-[min(100%,22rem)]">
+            <span class="material-symbols-outlined text-sm shrink-0">videocam</span>
+            <select id="cameraSelect" class="bg-transparent border-0 text-xs focus:ring-0 disabled:opacity-50 min-w-[12rem] max-w-[18rem] text-white" disabled title="Escolha a webcam USB desta estação">
+              <option>Carregando…</option>
+            </select>
+          </label>
+          <button id="fullscreenBtn" type="button" class="px-4 py-2 bg-primary text-white rounded-full text-xs font-bold flex items-center gap-2 hover:bg-primary-container transition-all shadow-lg" title="Tela cheia (F11)">
+            <span class="material-symbols-outlined text-base" id="fullscreenIcon">fullscreen</span>
+            <span id="fullscreenLabel">Tela cheia</span>
+          </button>
+        </div>
+        <button id="retryCamera" type="button" class="hidden px-4 py-2 bg-primary/30 border border-primary text-primary-light rounded-full text-xs font-bold hover:bg-primary hover:text-white transition-all">
+          Tentar câmera novamente
+        </button>
+      </div>
+    </div>
+
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 translate-y-10 transition-all duration-500 ease-out" id="overlay-panel">
+      <div class="w-full max-w-4xl grid grid-cols-12 gap-8 px-12">
+        <div class="col-span-12 md:col-span-5 bg-background-surface rounded-3xl p-8 shadow-[0px_8px_48px_rgba(0,0,0,0.4)] pointer-events-auto border border-white/20">
+          <div class="flex flex-col items-center text-center">
+            <div class="w-40 h-40 rounded-2xl overflow-hidden mb-6 border-4 border-primary/20 shadow-lg bg-slate-200 flex items-center justify-center">
+              <img id="student-photo" class="w-full h-full object-cover hidden" alt="Foto reconhecida"/>
+              <span id="student-photo-fallback" class="material-symbols-outlined text-5xl text-slate-400">person</span>
+            </div>
+            <h2 id="student-name" class="text-xl font-semibold text-on-surface mb-1">—</h2>
+            <p class="text-text-secondary font-medium tracking-wide" id="student-meta">—</p>
+            <div class="mt-8 pt-8 border-t border-border-subtle w-full flex justify-around">
+              <div class="text-center">
+                <div class="text-[11px] text-text-secondary uppercase mb-1">Matrícula</div>
+                <div class="font-mono text-on-surface font-bold" id="student-registration">—</div>
+              </div>
+              <div class="text-center">
+                <div class="text-[11px] text-text-secondary uppercase mb-1">Status</div>
+                <div class="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full font-bold" id="status-chip">ATIVO</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-7 rounded-3xl p-10 flex flex-col justify-center shadow-[0px_8px_48px_rgba(0,0,0,0.4)] pointer-events-auto bg-primary" id="status-card">
+          <div class="flex items-center space-x-6 mb-6">
+            <div class="w-20 h-20 rounded-full flex items-center justify-center bg-white/20" id="icon-bg">
+              <span class="material-symbols-outlined text-[48px] text-white" id="status-icon">check_circle</span>
+            </div>
+            <div>
+              <h3 class="text-[36px] text-white font-black leading-tight tracking-tight" id="status-title">ENTRADA CONFIRMADA</h3>
+              <p class="text-white/80 text-lg" id="status-subtitle">Seja bem-vindo!</p>
+            </div>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 mt-4">
+            <div class="flex justify-between items-center text-white">
+              <span class="font-medium">Registro do Sistema:</span>
+              <span class="font-mono bg-white/20 px-3 py-1 rounded" id="log-time">—</span>
+            </div>
+            <p class="text-white/70 text-sm mt-4 font-medium italic" id="status-footer">—</p>
+            <p class="text-white/50 text-xs mt-2 font-mono" id="status-confidence"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="w-full px-12 py-8 flex justify-between items-end opacity-80">
+    <div class="flex flex-col">
+      <span class="text-[10px] text-white/60 font-mono">SERVER STATUS</span>
+      <div class="flex items-center space-x-2">
+        <div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+        <span id="serverStatus" class="text-primary text-xs font-bold">ONLINE</span>
+      </div>
+    </div>
+    <div class="flex items-center space-x-6">
+      <div class="flex flex-col text-right">
+        <span class="text-[10px] text-white/60 font-mono">FACES NO BANCO</span>
+        <span id="databaseStatus" class="text-white text-xs font-bold tracking-widest">—</span>
+      </div>
+      <div class="h-8 w-[1px] bg-white/20"></div>
+      <a href="{{ url_for('punch.stations') }}" class="text-white/70 hover:text-white" title="Estações">
+        <span class="material-symbols-outlined">desktop_windows</span>
+      </a>
+    </div>
+  </footer>
+</main>
+
+<script>
+  window.PUNCH_CONFIG = {
+    csrfToken: {{ csrf_token()|tojson }},
+    punchUrl: {{ url_for('punch.punch')|tojson }},
+    recentUrl: {{ url_for('punch.punch_recent')|tojson }},
+    cooldownMs: 1500,
+    scanGapMs: 450,
+    maxSide: 400,
+    stationId: {{ (station_id or '')|tojson }},
+    stationLabel: {{ (station_label or '')|tojson }},
+  };
+</script>
+<script src="{{ url_for('static', filename='js/push2-punch.js') }}?v=8"></script>
+</body>
+</html>

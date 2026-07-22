@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login administrativo — Siga Educa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { primary: "#006d37", "primary-light": "#7EDC8A", "background-page": "#F7FAF8" },
+          fontFamily: { sans: ["Inter", "sans-serif"] },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-background-page font-sans text-slate-900 flex items-center justify-center p-6">
+  <main class="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
+    <p class="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-2">Siga Educa</p>
+    <h1 class="text-2xl font-bold mb-6">Área administrativa</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <p role="alert" data-category="{{ category }}" class="mb-4 text-sm {% if category == 'error' %}text-red-600{% else %}text-primary{% endif %}">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('admin.login') }}" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ next_url }}">
+
+      <label class="block text-sm font-semibold" for="username">Usuário
+        <input id="username" name="username" type="text" autocomplete="username" required class="mt-1 w-full rounded-lg border-slate-300">
+      </label>
+
+      <label class="block text-sm font-semibold" for="password">Senha
+        <input id="password" name="password" type="password" autocomplete="current-password" required class="mt-1 w-full rounded-lg border-slate-300">
+      </label>
+
+      <button type="submit" class="w-full bg-primary text-white font-bold py-3 rounded-xl hover:opacity-90">Entrar</button>
+    </form>
+    <p class="text-xs text-slate-500 mt-6 text-center">
+      <a class="text-primary font-semibold" href="{{ url_for('punch.stations') }}">Abrir estações da portaria</a>
+    </p>
+  </main>
+</body>
+</html>

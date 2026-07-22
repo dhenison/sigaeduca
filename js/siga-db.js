@@ -4036,7 +4036,7 @@ window.openNewClassModal = function() {
     `;
     document.body.appendChild(modal);
 
-    modal.querySelector('form').addEventListener('submit', (e) => {
+    modal.querySelector('form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const code = document.getElementById('cls-code').value.trim();
         const turno = document.getElementById('cls-turno').value;
@@ -4061,9 +4061,25 @@ window.openNewClassModal = function() {
         localStorage.setItem('siga_classes', JSON.stringify(classes));
 
         modal.remove();
-        showToast('Nova turma criada com sucesso!');
         refreshTurmasFilters();
         renderClasses();
+
+        if (window.SigaSchoolData && typeof window.SigaSchoolData.upsertClasses === 'function') {
+            showToast('Sincronizando turma com o banco…');
+            const cloud = await window.SigaSchoolData.upsertClasses([newClass]);
+            if (cloud && cloud.ok) {
+                showToast('Nova turma criada e gravada no banco.');
+                refreshTurmasFilters();
+                renderClasses();
+            } else {
+                showToast(
+                    'Turma salva localmente. Banco: ' + ((cloud && cloud.message) || 'não sincronizado'),
+                    'error'
+                );
+            }
+        } else {
+            showToast('Nova turma criada com sucesso!');
+        }
     });
 };
 
@@ -4135,15 +4151,17 @@ window.openEditClassModal = function(classCode) {
     `;
     document.body.appendChild(modal);
 
-    modal.querySelector('form').addEventListener('submit', (e) => {
+    modal.querySelector('form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const turno = document.getElementById('cls-turno').value;
         const serie = document.getElementById('cls-serie').value;
         const modalidade = document.getElementById('cls-modalidade').value;
 
         const idx = classes.findIndex(c => c.code === classCode);
+        let updatedClass = null;
         if (idx !== -1) {
             classes[idx] = { ...classes[idx], turno, serie, modalidade };
+            updatedClass = classes[idx];
             localStorage.setItem('siga_classes', JSON.stringify(classes));
             
             // Sync shift of enrolled students too
@@ -4161,13 +4179,34 @@ window.openEditClassModal = function(classCode) {
         }
 
         modal.remove();
-        showToast('Informações da turma atualizadas!');
         refreshTurmasFilters();
         renderClasses();
+
+        if (
+            updatedClass &&
+            window.SigaSchoolData &&
+            typeof window.SigaSchoolData.upsertClasses === 'function'
+        ) {
+            showToast('Sincronizando turma com o banco…');
+            const cloud = await window.SigaSchoolData.upsertClasses([updatedClass]);
+            if (cloud && cloud.ok) {
+                showToast('Turma atualizada e gravada no banco.');
+                refreshTurmasFilters();
+                renderClasses();
+            } else {
+                showToast(
+                    'Turma atualizada localmente. Banco: ' +
+                        ((cloud && cloud.message) || 'não sincronizado'),
+                    'error'
+                );
+            }
+        } else {
+            showToast('Informações da turma atualizadas!');
+        }
     });
 };
 
-window.deleteClass = function(classCode) {
+window.deleteClass = async function(classCode) {
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
     const count = countStudentsInClass(students, classCode);
 
@@ -4176,13 +4215,32 @@ window.deleteClass = function(classCode) {
         warningText += `\n\nATENÇÃO: Existem ${count} aluno(s) matriculado(s) nesta turma! Se você excluir, eles ficarão sem turma atribuída.`;
     }
 
-    if (confirm(warningText)) {
-        const classes = getClasses();
-        const filtered = classes.filter(c => c.code !== classCode);
-        localStorage.setItem('siga_classes', JSON.stringify(filtered));
+    if (!confirm(warningText)) return;
+
+    const classes = getClasses();
+    const target = classes.find(c => c.code === classCode);
+    const yearLabel = (target && (target.anoLetivo || target.year_label)) || '2026';
+    const filtered = classes.filter(c => c.code !== classCode);
+    localStorage.setItem('siga_classes', JSON.stringify(filtered));
+    refreshTurmasFilters();
+    renderClasses();
+
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.deleteClass === 'function') {
+        showToast('Removendo turma do banco…');
+        const cloud = await window.SigaSchoolData.deleteClass(classCode, yearLabel);
+        if (cloud && cloud.ok) {
+            showToast('Turma excluída do sistema.');
+            refreshTurmasFilters();
+            renderClasses();
+        } else {
+            showToast(
+                'Turma removida localmente. Banco: ' +
+                    ((cloud && cloud.message) || 'não sincronizado'),
+                'error'
+            );
+        }
+    } else {
         showToast('Turma excluída com sucesso!');
-        refreshTurmasFilters();
-        renderClasses();
     }
 };
 

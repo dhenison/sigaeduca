@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Estações · PC central · SIGA EDUCA</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#006d37",
+            "primary-light": "#7EDC8A",
+            "on-surface": "#121c2a",
+            "text-secondary": "#6B7280",
+            "border-subtle": "#E5E7EB",
+            "background-page": "#F7FAF8",
+          },
+          fontFamily: { sans: ["Inter", "sans-serif"] },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-background-page text-on-surface min-h-screen font-sans">
+  <main class="max-w-4xl mx-auto px-6 py-16">
+    <p class="text-sm font-semibold text-primary mb-2">Rede interna · um servidor central</p>
+    <h1 class="text-3xl font-bold mb-3">Estações de reconhecimento</h1>
+    <p class="text-text-secondary mb-4 max-w-3xl">
+      Modelo fixo: <strong class="text-on-surface">1 computador = 2 monitores + 2 webcams</strong>.
+      Com <strong class="text-on-surface">2 computadores = 4 monitores + 4 webcams</strong>.
+      Só o PC central roda o Flask e o SQLite; o segundo PC só abre o navegador.
+    </p>
+    <div class="grid sm:grid-cols-2 gap-3 mb-8 text-sm">
+      <div class="rounded-xl border border-border-subtle bg-white px-4 py-3">
+        <p class="font-bold text-on-surface">1 PC</p>
+        <p class="text-text-secondary mt-1">2 telas · 2 webcams · Estações 1 e 2</p>
+      </div>
+      <div class="rounded-xl border border-border-subtle bg-white px-4 py-3">
+        <p class="font-bold text-on-surface">2 PCs</p>
+        <p class="text-text-secondary mt-1">4 telas · 4 webcams · Estações 1–4</p>
+      </div>
+    </div>
+    <p class="text-xs text-text-secondary mb-10 font-mono bg-white border border-border-subtle rounded-lg px-4 py-3">
+      PC 2 (cliente): http://IP-DO-SERVIDOR:{{ server_port }}/punch2?station=3
+      &nbsp;|&nbsp; station=4
+    </p>
+
+    <h2 class="text-sm font-bold uppercase tracking-wider text-text-secondary mb-3">PC 1 · central (neste computador)</h2>
+    <p class="text-sm text-text-secondary mb-3">Windows em <strong class="text-on-surface">Estender</strong> · duas janelas do navegador (F11), cada uma com sua webcam.</p>
+    <div class="grid md:grid-cols-2 gap-4 mb-10">
+      <a href="{{ url_for('punch.punch2', station=1) }}" target="_blank" rel="noopener"
+         class="block rounded-2xl border border-border-subtle bg-white p-6 hover:border-primary transition-colors shadow-sm">
+        <span class="material-symbols-outlined text-primary text-4xl mb-3">desktop_windows</span>
+        <h3 class="text-xl font-bold">Estação 1</h3>
+        <p class="text-sm text-text-secondary mt-2">Monitor 1 + Webcam A</p>
+        <p class="text-xs text-text-secondary mt-3">Arraste esta janela para o monitor 1 e escolha Webcam A no seletor.</p>
+      </a>
+      <a href="{{ url_for('punch.punch2', station=2) }}" target="_blank" rel="noopener"
+         class="block rounded-2xl border border-border-subtle bg-white p-6 hover:border-primary transition-colors shadow-sm">
+        <span class="material-symbols-outlined text-primary text-4xl mb-3">desktop_windows</span>
+        <h3 class="text-xl font-bold">Estação 2</h3>
+        <p class="text-sm text-text-secondary mt-2">Monitor 2 + Webcam B</p>
+        <p class="text-xs text-text-secondary mt-3">Arraste esta janela para o monitor 2 e escolha Webcam B no seletor.</p>
+      </a>
+    </div>
+
+    <h2 class="text-sm font-bold uppercase tracking-wider text-text-secondary mb-3">PC 2 · cliente (outro computador na rede)</h2>
+    <p class="text-sm text-text-secondary mb-3">Mesmo esquema: 2 monitores + 2 webcams. Abra no navegador do PC 2 (sem instalar pasta).</p>
+    <div class="grid md:grid-cols-2 gap-4 mb-10">
+      <a href="{{ url_for('punch.punch2', station=3) }}" target="_blank" rel="noopener"
+         class="block rounded-2xl border border-dashed border-border-subtle bg-white/80 p-6 hover:border-primary transition-colors">
+        <span class="material-symbols-outlined text-primary text-4xl mb-3">lan</span>
+        <h3 class="text-xl font-bold">Estação 3</h3>
+        <p class="text-sm text-text-secondary mt-2">Monitor 1 do PC 2 + Webcam C</p>
+        <p class="text-xs text-text-secondary mt-3">No PC 2: use o IP do servidor nesta URL.</p>
+      </a>
+      <a href="{{ url_for('punch.punch2', station=4) }}" target="_blank" rel="noopener"
+         class="block rounded-2xl border border-dashed border-border-subtle bg-white/80 p-6 hover:border-primary transition-colors">
+        <span class="material-symbols-outlined text-primary text-4xl mb-3">lan</span>
+        <h3 class="text-xl font-bold">Estação 4</h3>
+        <p class="text-sm text-text-secondary mt-2">Monitor 2 do PC 2 + Webcam D</p>
+        <p class="text-xs text-text-secondary mt-3">No PC 2: use o IP do servidor nesta URL.</p>
+      </a>
+    </div>
+
+    <ol class="space-y-3 text-sm text-text-secondary list-decimal pl-5 mb-10">
+      <li>PC 1: Windows → <strong class="text-on-surface">Estender</strong> as duas telas; Flask ligado; abra Estação 1 e 2.</li>
+      <li>Em cada janela, selecione a webcam correta (A na estação 1, B na estação 2) e pressione <strong class="text-on-surface">F11</strong>.</li>
+      <li>PC 2: sem pasta do sistema — só navegador em <code class="text-on-surface">http://IP-DO-PC1:{{ server_port }}/punch2?station=3</code> e <code class="text-on-surface">station=4</code>.</li>
+      <li>Anti-duplicação: a mesma pessoa não registra de novo em nenhuma estação por {{ dedup_seconds }}s.</li>
+      <li>Só o PC central sobe a esteira para o Supabase.</li>
+    </ol>
+
+    <a href="{{ url_for('admin.dashboard') }}" class="text-primary font-semibold text-sm hover:underline">← Voltar ao dashboard</a>
+  </main>
+  <script>
+    // Abre as duas estações do PC central ao carregar (terminais conectados).
+    (function openLocalStations() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("nolaunch") === "1") return;
+      const key = "siga_stations_auto_opened";
+      try {
+        if (sessionStorage.getItem(key) === "1") return;
+        sessionStorage.setItem(key, "1");
+      } catch (_) {}
+      const s1 = {{ url_for('punch.punch2', station=1)|tojson }};
+      const s2 = {{ url_for('punch.punch2', station=2)|tojson }};
+      window.open(s1, "siga_station_1");
+      window.open(s2, "siga_station_2");
+    })();
+  </script>
+</body>
+</html>

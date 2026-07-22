@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Turmas · Reconhecimento Facial · SIGA EDUCA</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#006d37",
+            "primary-light": "#7EDC8A",
+            secondary: "#0058be",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6",
+            "background-page": "#F7FAF8",
+            "background-surface": "#FFFFFF",
+            "border-subtle": "#E5E7EB",
+            "text-secondary": "#6B7280",
+            "on-surface": "#121c2a",
+            "surface-container-low": "#eff4ff",
+            "surface-container": "#e6eeff",
+          },
+          fontFamily: { sans: ["Inter", "sans-serif"] },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: Inter, sans-serif; }
+    .material-symbols-outlined { vertical-align: middle; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  </style>
+</head>
+<body class="bg-background-page text-on-surface">
+<aside class="fixed left-0 top-0 h-screen w-[260px] overflow-y-auto bg-background-surface border-r border-border-subtle shadow-sm flex flex-col py-8 custom-scrollbar z-50">
+  <div class="px-6 mb-8">
+    <h1 class="text-xl font-bold text-primary">SIGA EDUCA</h1>
+    <p class="text-xs text-text-secondary">Reconhecimento Facial</p>
+  </div>
+  <nav class="flex-1 px-4 space-y-1">
+    <a class="flex items-center gap-3 text-text-secondary hover:text-primary px-4 py-2 hover:bg-surface-container-low transition-all rounded-lg" href="{{ url_for('admin.dashboard') }}">
+      <span class="material-symbols-outlined">face</span>
+      <span class="text-xs">Cadastros faciais</span>
+    </a>
+    <a class="flex items-center gap-3 bg-primary-light/20 border-l-4 border-primary text-primary font-semibold px-4 py-2 rounded-r-full" href="{{ url_for('admin.turmas') }}">
+      <span class="material-symbols-outlined">groups</span>
+      <span class="text-xs">Turmas</span>
+    </a>
+    <a class="flex items-center gap-3 text-text-secondary hover:text-primary px-4 py-2 hover:bg-surface-container-low transition-all rounded-lg" href="{{ url_for('punch.stations') }}" target="_blank">
+      <span class="material-symbols-outlined">desktop_windows</span>
+      <span class="text-xs">Estações</span>
+    </a>
+  </nav>
+  <div class="mt-auto px-4 border-t border-border-subtle pt-4">
+    <form method="post" action="{{ url_for('admin.logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="w-full flex items-center gap-3 text-error px-4 py-2 hover:bg-error-container/20 transition-all rounded-lg">
+        <span class="material-symbols-outlined">logout</span>
+        <span class="text-xs">Sair</span>
+      </button>
+    </form>
+  </div>
+</aside>
+
+<header class="fixed top-0 right-0 left-[260px] h-16 z-40 bg-background-surface/80 backdrop-blur-md border-b border-border-subtle flex justify-between items-center px-6">
+  <div>
+    <h2 class="text-sm font-bold text-on-surface">Turmas do SIGA EDUCA</h2>
+    <p class="text-[11px] text-text-secondary" id="turmasDayLabel">Entrada e saída via reconhecimento facial</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <input id="turmasSearch" type="search" placeholder="Filtrar turma…" class="rounded-full border border-border-subtle bg-surface-container-low px-4 py-2 text-sm w-48"/>
+    <button id="refreshTurmas" type="button" class="px-3 py-2 rounded-lg border border-border-subtle text-sm hover:bg-surface-container-low flex items-center gap-1">
+      <span class="material-symbols-outlined text-base">refresh</span>Atualizar
+    </button>
+  </div>
+</header>
+
+<main class="ml-[260px] pt-24 p-8 max-w-[1440px] mx-auto min-h-screen">
+  <div id="turmasConfigWarn" class="hidden mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"></div>
+
+  <div class="grid grid-cols-12 gap-6">
+    <section class="col-span-12 lg:col-span-5 bg-white border border-border-subtle rounded-2xl p-5">
+      <h3 class="font-semibold mb-1">Turmas ativas</h3>
+      <p class="text-xs text-text-secondary mb-4">Dados oficiais do SIGA · faces e batidas locais de hoje</p>
+      <div id="turmasList" class="space-y-2 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <p class="text-sm text-text-secondary text-center py-8">Carregando turmas…</p>
+      </div>
+    </section>
+
+    <section class="col-span-12 lg:col-span-7 bg-white border border-border-subtle rounded-2xl p-5">
+      <div class="flex items-start justify-between gap-3 mb-4 flex-wrap">
+        <div>
+          <h3 class="font-semibold" id="turmaDetailTitle">Selecione uma turma</h3>
+          <p class="text-xs text-text-secondary" id="turmaDetailMeta">Acompanhe quem entrou e saiu pelo reconhecimento facial.</p>
+        </div>
+        <div class="flex gap-2 text-xs font-semibold" id="turmaDetailStats"></div>
+      </div>
+      <div id="turmaStudents" class="space-y-2 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <p class="text-sm text-text-secondary text-center py-16">Clique em uma turma à esquerda.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  window.TURMAS_CONFIG = {
+    csrfToken: {{ csrf_token()|tojson }},
+    classesUrl: {{ url_for('admin.api_siga_classes')|tojson }},
+    turmaHojeUrl: {{ url_for('admin.api_turma_hoje', class_code='__CODE__')|tojson }},
+  };
+</script>
+<script src="{{ url_for('static', filename='js/admin-turmas.js') }}?v=3"></script>
+</body>
+</html>

@@ -316,7 +316,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260717a"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260717a"></script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><script src="js/siga-frequencia-supabase.js?v=20260717a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -519,6 +519,7 @@
                     </button>
 </div>
 </div>
+<div id="freq-cloud-status" class="hidden"></div>
 <!-- Filters Card -->
 <div class="bg-background-surface rounded-[16px] border border-border-subtle custom-shadow p-6 flex flex-col gap-4">
     <div class="flex flex-wrap items-end gap-6">
@@ -968,46 +969,85 @@ function loadAttendanceData() {
         if (columnsContainer) columnsContainer.classList.remove('opacity-30', 'pointer-events-none');
     }
 
-    // 2. Filter students by current class
-    filteredStudents = allStudents.filter(s => s.turma === currentClass);
-
-    // 3. Load or initialize record (only when there is a class)
-    const storageKey = `siga_attendance_${currentDate}_${currentClass}`;
-    let record = JSON.parse(localStorage.getItem(storageKey));
-
-    if (!record) {
-        record = {
-            entrada: {
-                consolidado: false,
-                records: {}
-            },
-            saida: {
-                consolidado: false,
-                records: {}
-            }
-        };
-        filteredStudents.forEach(s => {
-            record.entrada.records[s.id] = { status: 'P', justification: '' };
-            record.saida.records[s.id] = { status: 'P', justification: '' };
-        });
-        if (filteredStudents.length) {
-            localStorage.setItem(storageKey, JSON.stringify(record));
-        }
-    } else {
-        // Sync newly enrolled students into existing day record
-        filteredStudents.forEach(s => {
-            if (!record.entrada.records[s.id]) {
+    // 2. Prefer alunos + marcas do Supabase (mesma base do reconhecimento facial)
+    const cloud = window.SigaFrequenciaCloud;
+    const applyLocalFallback = function () {
+        filteredStudents = allStudents.filter(s => s.turma === currentClass);
+        const storageKey = `siga_attendance_${currentDate}_${currentClass}`;
+        let record = JSON.parse(localStorage.getItem(storageKey));
+        if (!record) {
+            record = {
+                entrada: { consolidado: false, records: {} },
+                saida: { consolidado: false, records: {} }
+            };
+            filteredStudents.forEach(s => {
                 record.entrada.records[s.id] = { status: 'P', justification: '' };
-            }
-            if (!record.saida.records[s.id]) {
                 record.saida.records[s.id] = { status: 'P', justification: '' };
+            });
+            if (filteredStudents.length) {
+                localStorage.setItem(storageKey, JSON.stringify(record));
             }
+        } else {
+            filteredStudents.forEach(s => {
+                if (!record.entrada.records[s.id]) {
+                    record.entrada.records[s.id] = { status: 'P', justification: '' };
+                }
+                if (!record.saida.records[s.id]) {
+                    record.saida.records[s.id] = { status: 'P', justification: '' };
+                }
+            });
+        }
+        currentRecord = record;
+        renderAttendance();
+        updateFrequenciaKpis();
+    };
+
+    if (cloud && typeof cloud.loadStudentsForClass === 'function') {
+        cloud.loadStudentsForClass(currentClass).then(function (cloudStudents) {
+            if (cloudStudents && cloudStudents.length) {
+                filteredStudents = cloudStudents.filter(function (s) {
+                    return String(s.status || 'Ativo').toLowerCase() !== 'inativo';
+                });
+                allStudents = allStudents.filter(function (s) { return s.turma !== currentClass; }).concat(
+                    cloudStudents.map(function (s) {
+                        return {
+                            id: s.id,
+                            nome: s.nome,
+                            turma: s.turma,
+                            status: s.status,
+                            frequencia: s.frequencia,
+                            codigo_inep: s.codigo_inep
+                        };
+                    })
+                );
+            } else {
+                filteredStudents = allStudents.filter(s => s.turma === currentClass);
+            }
+            return cloud.loadDay(currentClass, currentDate, filteredStudents);
+        }).then(function (day) {
+            if (day && day.ok && day.record) {
+                currentRecord = day.record;
+                try {
+                    localStorage.setItem(
+                        `siga_attendance_${currentDate}_${currentClass}`,
+                        JSON.stringify({
+                            entrada: currentRecord.entrada,
+                            saida: currentRecord.saida
+                        })
+                    );
+                } catch (e) { /* ignore */ }
+                renderAttendance();
+                updateFrequenciaKpis();
+            } else {
+                applyLocalFallback();
+            }
+        }).catch(function () {
+            applyLocalFallback();
         });
+        return;
     }
 
-    currentRecord = record;
-    renderAttendance();
-    updateFrequenciaKpis();
+    applyLocalFallback();
 }
 
 function renderAttendance() {
@@ -1337,7 +1377,16 @@ function closeJustificationModal(didSelect) {
 function saveAttendance() {
     if (!currentClass || !currentDate || !currentRecord) return;
     const storageKey = `siga_attendance_${currentDate}_${currentClass}`;
-    localStorage.setItem(storageKey, JSON.stringify(currentRecord));
+    try {
+        localStorage.setItem(storageKey, JSON.stringify({
+            entrada: currentRecord.entrada,
+            saida: currentRecord.saida
+        }));
+    } catch (e) { /* ignore */ }
+    const cloud = window.SigaFrequenciaCloud;
+    if (cloud && cloud.isCloudEnabled && cloud.isCloudEnabled() && typeof cloud.upsertMarks === 'function') {
+        cloud.upsertMarks(currentRecord);
+    }
 }
 
 function consolidarEntrada() {
@@ -1346,6 +1395,10 @@ function consolidarEntrada() {
     currentRecord.saida.records = JSON.parse(JSON.stringify(currentRecord.entrada.records));
 
     saveAttendance();
+    const cloud = window.SigaFrequenciaCloud;
+    if (cloud && cloud.isCloudEnabled && cloud.isCloudEnabled() && typeof cloud.setConsolidation === 'function') {
+        cloud.setConsolidation(currentRecord, 'entrada', true);
+    }
     renderAttendance();
     updateFrequenciaKpis();
     if (typeof showToast === 'function') {
@@ -1357,6 +1410,10 @@ function consolidarSaida() {
     if (!currentRecord || !currentClass) return;
     currentRecord.saida.consolidado = true;
     saveAttendance();
+    const cloud = window.SigaFrequenciaCloud;
+    if (cloud && cloud.isCloudEnabled && cloud.isCloudEnabled() && typeof cloud.setConsolidation === 'function') {
+        cloud.setConsolidation(currentRecord, 'saida', true);
+    }
 
     let evasionCount = 0;
     const occurrences = JSON.parse(localStorage.getItem('siga_occurrences')) || [];
