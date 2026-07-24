@@ -79,7 +79,7 @@
       if (days[iso]) continue;
       var dow = d.getDay();
       if (dow === 0) {
-        days[iso] = { type: "domingo", label: "Domingo (Não Letivo)" };
+        days[iso] = { type: "domingo", label: "Domingo (Não Letivo)", locked: true };
       } else if (dow === 6) {
         days[iso] = { type: "sabado_nao_letivo", label: "Sábado (Não Letivo)" };
       } else {

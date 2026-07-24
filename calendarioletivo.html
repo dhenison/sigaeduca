@@ -315,7 +315,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-security.js?v=20260724y"></script><script src="js/siga-db.js?v=20260724y"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -723,13 +723,28 @@
             const todayIso = getReferenceToday().iso;
             for (let d = 1; d <= numDays; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayInfo = calendarDays[dateStr] || { type: 'letivo', label: 'Dia Letivo' };
+                const dow = new Date(currentYear, currentMonth - 1, d).getDay();
+                const isSunday = dow === 0;
+                const isSaturday = dow === 6;
+                let dayInfo = calendarDays[dateStr];
+                if (isSunday) {
+                    dayInfo = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
+                } else if (!dayInfo) {
+                    dayInfo = isSaturday
+                        ? { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' }
+                        : { type: 'letivo', label: 'Dia Letivo' };
+                } else if (isSaturday && (dayInfo.type === 'letivo' || dayInfo.type === 'evento')) {
+                    dayInfo = { type: 'sabado', label: dayInfo.label || 'Sábado Letivo' };
+                }
                 const isToday = dateStr === todayIso;
                 
                 let cellClass = "hover:bg-surface-container/20 transition-colors cursor-pointer border-r border-b border-border-subtle";
                 let typeBadge = "";
                 
-                if (dayInfo.type === 'letivo') {
+                if (isSunday || dayInfo.type === 'domingo') {
+                    cellClass = "border-r border-b border-border-subtle bg-surface-container-low/40 text-text-secondary opacity-70 cursor-not-allowed select-none";
+                    typeBadge = `<div class="mt-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-text-secondary"><span class="material-symbols-outlined text-[14px]">lock</span> Fechado</div>`;
+                } else if (dayInfo.type === 'letivo') {
                     cellClass += " bg-[#dcfce7]/60 hover:bg-[#dcfce7]/80 text-[#14532d] border-t-2 border-t-[#22c55e]";
                 } else if (dayInfo.type === 'feriado_recesso') {
                     cellClass += " bg-[#fee2e2]/60 hover:bg-[#fee2e2]/80 text-[#7f1d1d] border-t-2 border-t-[#ef4444]";
@@ -740,16 +755,15 @@
                 } else if (dayInfo.type === 'sabado') {
                     cellClass += " bg-[#fef9c3]/60 hover:bg-[#fef9c3]/80 text-[#713f12] border-t-2 border-t-[#eab308]";
                     typeBadge = `<div class="mt-2 px-2 py-1 bg-[#fef9c3] text-[#713f12] text-[10px] font-bold rounded border-l-2 border-l-[#eab308] truncate">${dayInfo.label || 'Sábado Letivo'}</div>`;
-                } else if (dayInfo.type === 'domingo') {
-                    cellClass += " bg-surface-container-low/30 text-text-secondary opacity-60";
                 } else if (dayInfo.type === 'sabado_nao_letivo') {
-                    cellClass += " bg-surface-container-low/30 text-text-secondary opacity-60";
+                    cellClass += " bg-white hover:bg-surface-container-low/50 text-text-secondary border-t-2 border-t-dashed border-t-border-subtle";
+                    typeBadge = `<div class="mt-2 text-[10px] font-semibold text-text-secondary">Clique para marcar</div>`;
                 } else if (dayInfo.type.startsWith('inicio_')) {
                     cellClass += " bg-[#dbeafe]/60 hover:bg-[#dbeafe]/80 text-[#1e3a8a] border-t-2 border-t-[#3b82f6]";
                     typeBadge = `<div class="mt-2 px-2 py-1 bg-[#dbeafe] text-[#1e3a8a] text-[10px] font-bold rounded border-l-2 border-l-[#3b82f6] truncate">${dayInfo.label}</div>`;
                 }
 
-                if (isToday) {
+                if (isToday && !isSunday) {
                     cellClass += " ring-2 ring-inset ring-primary relative z-[1]";
                     typeBadge += `<div class="mt-1 text-[10px] font-bold text-primary uppercase tracking-wide">Hoje · Chamada</div>`;
                 }
@@ -759,10 +773,14 @@
                 if (gridIndex % 7 === 6) {
                     cellClass = cellClass.replace('border-r', '');
                 }
+
+                const clickAttr = isSunday
+                    ? `onclick="showSundayLockedToast()"`
+                    : `onclick="openEditDayModal('${dateStr}', '${dayInfo.type}', '${(dayInfo.label || '').replace(/'/g, "\\'")}')"`;
                 
                 html += `
-                    <div class="calendar-cell p-3 ${cellClass}" onclick="openEditDayModal('${dateStr}', '${dayInfo.type}', '${(dayInfo.label || '').replace(/'/g, "\\'")}')">
-                        <span class="font-label-md text-label-md font-semibold ${isToday ? 'text-primary' : ''}">${d}</span>
+                    <div class="calendar-cell p-3 ${cellClass}" ${clickAttr}>
+                        <span class="font-label-md text-label-md font-semibold ${isToday && !isSunday ? 'text-primary' : ''}">${d}</span>
                         <div class="space-y-1">${typeBadge}</div>
                     </div>
                 `;
@@ -1059,15 +1077,79 @@
             `;
         }
 
+        function showSundayLockedToast() {
+            if (typeof showToast === 'function') {
+                showToast('Domingos ficam fechados: não há dias letivos aos domingos.', 'error');
+            } else {
+                alert('Domingos ficam fechados: não há dias letivos aos domingos.');
+            }
+        }
+        window.showSundayLockedToast = showSundayLockedToast;
+
+        function configureEditDayTypeOptions(dateStr) {
+            const select = document.getElementById('edit-day-type');
+            if (!select) return;
+            const isSat = typeof window.isCalendarSaturday === 'function'
+                ? window.isCalendarSaturday(dateStr)
+                : (function () {
+                    const p = String(dateStr || '').split('-');
+                    if (p.length !== 3) return false;
+                    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay() === 6;
+                })();
+
+            Array.from(select.options).forEach((opt) => {
+                const v = opt.value;
+                if (v === 'domingo') {
+                    opt.hidden = true;
+                    opt.disabled = true;
+                    return;
+                }
+                if (isSat) {
+                    // Sábado: só escolhe se é letivo ou não (e feriado/recesso)
+                    const allowed = v === 'sabado' || v === 'sabado_nao_letivo' || v === 'feriado_recesso';
+                    opt.hidden = !allowed;
+                    opt.disabled = !allowed;
+                } else {
+                    // Dias úteis: esconde opções exclusivas de sábado
+                    const hide = v === 'sabado' || v === 'sabado_nao_letivo';
+                    opt.hidden = hide;
+                    opt.disabled = hide;
+                }
+            });
+        }
+
         function openEditDayModal(dateStr, currentType, currentLabel) {
+            if (typeof window.isCalendarSunday === 'function' ? window.isCalendarSunday(dateStr) : false) {
+                showSundayLockedToast();
+                return;
+            }
+            const parts = String(dateStr || '').split('-');
+            if (parts.length === 3) {
+                const dow = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getDay();
+                if (dow === 0) {
+                    showSundayLockedToast();
+                    return;
+                }
+            }
+
             const modal = document.getElementById('modal-edit-day');
-            const parts = dateStr.split('-');
             const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
             
             document.getElementById('edit-day-modal-title').textContent = `Editar Dia: ${formattedDate}`;
             document.getElementById('edit-day-date').value = dateStr;
-            document.getElementById('edit-day-type').value = currentType;
-            document.getElementById('edit-day-label').value = currentLabel;
+            configureEditDayTypeOptions(dateStr);
+
+            let type = currentType;
+            const isSat = typeof window.isCalendarSaturday === 'function' && window.isCalendarSaturday(dateStr);
+            if (isSat && (type === 'letivo' || type === 'evento' || type === 'domingo')) {
+                type = type === 'domingo' ? 'sabado_nao_letivo' : 'sabado';
+            }
+            const typeEl = document.getElementById('edit-day-type');
+            if (typeEl) {
+                const opt = typeEl.querySelector(`option[value="${type}"]`);
+                typeEl.value = opt && !opt.disabled ? type : (isSat ? 'sabado_nao_letivo' : 'letivo');
+            }
+            document.getElementById('edit-day-label').value = currentLabel || '';
             
             modal.classList.remove('hidden');
         }
@@ -1075,6 +1157,8 @@
         function closeEditDayModal() {
             document.getElementById('modal-edit-day').classList.add('hidden');
         }
+        window.openEditDayModal = openEditDayModal;
+        window.closeEditDayModal = closeEditDayModal;
 
         document.addEventListener('DOMContentLoaded', () => {
             initCalendar();
@@ -1084,8 +1168,27 @@
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
                     const dateStr = document.getElementById('edit-day-date').value;
-                    const type = document.getElementById('edit-day-type').value;
+                    let type = document.getElementById('edit-day-type').value;
                     const label = document.getElementById('edit-day-label').value.trim();
+
+                    if (typeof window.isCalendarSunday === 'function' && window.isCalendarSunday(dateStr)) {
+                        showSundayLockedToast();
+                        closeEditDayModal();
+                        return;
+                    }
+
+                    const isSat = typeof window.isCalendarSaturday === 'function' && window.isCalendarSaturday(dateStr);
+                    if (isSat) {
+                        if (type === 'letivo' || type === 'evento' || type.indexOf('inicio_') === 0) {
+                            type = 'sabado';
+                        }
+                        if (type === 'domingo') type = 'sabado_nao_letivo';
+                        if (type !== 'sabado' && type !== 'sabado_nao_letivo' && type !== 'feriado_recesso') {
+                            type = 'sabado_nao_letivo';
+                        }
+                    } else if (type === 'domingo' || type === 'sabado' || type === 'sabado_nao_letivo') {
+                        type = 'letivo';
+                    }
                     
                     let finalLabel = label;
                     if (!finalLabel) {
@@ -1093,8 +1196,7 @@
                         else if (type === 'feriado_recesso') finalLabel = 'Recesso / Feriado';
                         else if (type === 'evento') finalLabel = 'Evento Escolar';
                         else if (type === 'sabado') finalLabel = 'Sábado Letivo';
-                        else if (type === 'domingo') finalLabel = 'Domingo';
-                        else if (type === 'sabado_nao_letivo') finalLabel = 'Sábado Recesso';
+                        else if (type === 'sabado_nao_letivo') finalLabel = 'Sábado (Não Letivo)';
                         else if (type === 'inicio_1b') finalLabel = 'Início do 1º Bimestre';
                         else if (type === 'inicio_2b') finalLabel = 'Início do 2º Bimestre';
                         else if (type === 'inicio_3b') finalLabel = 'Início do 3º Bimestre';
@@ -1189,8 +1291,8 @@
                     <option value="feriado_recesso">Feriado, Ponto Facultativo ou Recesso</option>
                     <option value="evento">Dia Letivo com Evento</option>
                     <option value="sabado">Sábado Letivo</option>
-                    <option value="domingo">Domingo (Não Letivo)</option>
                     <option value="sabado_nao_letivo">Sábado (Não Letivo)</option>
+                    <option value="domingo" hidden disabled>Domingo (Fechado)</option>
                     <option value="inicio_1b">Início do 1º Bimestre</option>
                     <option value="inicio_2b">Início do 2º Bimestre</option>
                     <option value="inicio_3b">Início do 3º Bimestre</option>

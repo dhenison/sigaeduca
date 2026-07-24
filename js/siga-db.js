@@ -4819,6 +4819,82 @@ window.renderTurmaDetalhe = renderTurmaDetalhe;
 // ==========================================
 // 11. CALENDAR DAYS DATABASE LAYER
 // ==========================================
+const CALENDAR_WEEKEND_RULES_FLAG = 'siga_calendar_weekend_rules_v1';
+
+function parseCalendarISO(dateStr) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr || ''));
+    if (!m) return null;
+    return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+}
+
+function calendarDayOfWeek(dateStr) {
+    const p = parseCalendarISO(dateStr);
+    if (!p) return null;
+    return new Date(p.year, p.month - 1, p.day).getDay(); // 0=Dom, 6=Sáb
+}
+
+function isCalendarSunday(dateStr) {
+    return calendarDayOfWeek(dateStr) === 0;
+}
+
+function isCalendarSaturday(dateStr) {
+    return calendarDayOfWeek(dateStr) === 6;
+}
+
+/** Domingos sempre trancados (não letivos). */
+function lockAllSundaysInCalendar(days) {
+    const map = days || {};
+    let changed = false;
+    const years = new Set();
+    Object.keys(map).forEach((k) => {
+        const p = parseCalendarISO(k);
+        if (p) years.add(p.year);
+    });
+    if (!years.size) years.add(2026);
+
+    years.forEach((year) => {
+        for (let month = 1; month <= 12; month++) {
+            const numDays = new Date(year, month, 0).getDate();
+            for (let d = 1; d <= numDays; d++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                if (new Date(year, month - 1, d).getDay() !== 0) continue;
+                const next = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
+                const cur = map[dateStr];
+                if (!cur || cur.type !== 'domingo' || !cur.locked) {
+                    map[dateStr] = next;
+                    changed = true;
+                }
+            }
+        }
+    });
+    return changed;
+}
+
+/** Uma vez: todos os sábados ficam desmarcados (não letivos) até o usuário escolher. */
+function resetAllSaturdaysUnmarked(days) {
+    const map = days || {};
+    let changed = false;
+    const years = new Set();
+    Object.keys(map).forEach((k) => {
+        const p = parseCalendarISO(k);
+        if (p) years.add(p.year);
+    });
+    if (!years.size) years.add(2026);
+
+    years.forEach((year) => {
+        for (let month = 1; month <= 12; month++) {
+            const numDays = new Date(year, month, 0).getDate();
+            for (let d = 1; d <= numDays; d++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                if (new Date(year, month - 1, d).getDay() !== 6) continue;
+                map[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
+                changed = true;
+            }
+        }
+    });
+    return changed;
+}
+
 function getCalendarDays() {
     let days = JSON.parse(localStorage.getItem('siga_calendar_days'));
     
@@ -4830,7 +4906,7 @@ function getCalendarDays() {
         days = {};
         const year = 2026;
         
-        // Seed May 2026 (Clean slate, weekends are non-letivo, weekdays are letivo)
+        // Seed May 2026 (weekdays letivo; sábados desmarcados; domingos trancados)
         let month = 5;
         let numDays = 31;
         for (let d = 1; d <= numDays; d++) {
@@ -4839,7 +4915,7 @@ function getCalendarDays() {
             const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
             
             if (dayOfWeek === 0) {
-                days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)' };
+                days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
             } else if (dayOfWeek === 6) {
                 days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
             } else {
@@ -4856,22 +4932,45 @@ function getCalendarDays() {
             const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
             
             if (dayOfWeek === 0) {
-                days[dateStr] = { type: 'domingo', label: 'Domingo (Férias Escolares)' };
+                days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
             } else if (dayOfWeek === 6) {
-                days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Férias Escolares)' };
+                days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
             } else {
                 days[dateStr] = { type: 'feriado_recesso', label: 'Férias Escolares' };
             }
         }
         
         localStorage.setItem('siga_calendar_days', JSON.stringify(days));
+        try { localStorage.setItem(CALENDAR_WEEKEND_RULES_FLAG, '1'); } catch (e) { /* ignore */ }
+    }
+
+    let touched = lockAllSundaysInCalendar(days);
+    try {
+        if (!localStorage.getItem(CALENDAR_WEEKEND_RULES_FLAG)) {
+            if (resetAllSaturdaysUnmarked(days)) touched = true;
+            localStorage.setItem(CALENDAR_WEEKEND_RULES_FLAG, '1');
+        }
+    } catch (eFlag) { /* ignore */ }
+
+    if (touched) {
+        localStorage.setItem('siga_calendar_days', JSON.stringify(days));
     }
     return days;
 }
 
 function saveCalendarDays(days) {
-    localStorage.setItem('siga_calendar_days', JSON.stringify(days));
+    const map = days || {};
+    // Nunca permitir domingo letivo / editável
+    Object.keys(map).forEach((dateStr) => {
+        if (isCalendarSunday(dateStr)) {
+            map[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
+        }
+    });
+    localStorage.setItem('siga_calendar_days', JSON.stringify(map));
 }
 
 window.getCalendarDays = getCalendarDays;
 window.saveCalendarDays = saveCalendarDays;
+window.isCalendarSunday = isCalendarSunday;
+window.isCalendarSaturday = isCalendarSaturday;
+window.calendarDayOfWeek = calendarDayOfWeek;
