@@ -173,6 +173,28 @@
                 global.location.replace(appHref('portal-aluno.html'));
                 return false;
             }
+            // Transferidos não acessam o Portal
+            try {
+                var students = JSON.parse(localStorage.getItem(STUDENTS_KEY) || '[]') || [];
+                var st = students.find(function (s) {
+                    return String(s.id) === String(session.id) ||
+                        String(s.email || '').toLowerCase() === String(session.email || '').toLowerCase();
+                });
+                var blocked = false;
+                if (typeof global.isStudentTransferred === 'function') {
+                    blocked = global.isStudentTransferred(st);
+                } else if (st) {
+                    blocked = String(st.status || '') === 'Transferido';
+                }
+                if (blocked) {
+                    try {
+                        localStorage.removeItem(SESSION_KEY);
+                        localStorage.removeItem('siga_portal_aluno_id');
+                    } catch (eClr) { /* ignore */ }
+                    global.location.replace(appHref('login.html'));
+                    return false;
+                }
+            } catch (eXfer) { /* ignore */ }
         }
         return true;
     }

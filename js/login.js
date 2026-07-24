@@ -228,7 +228,29 @@
                 window.SigaPortalAluno.purgeDemoStudents();
             }
 
+            function isPortalBlockedStudent(aluno) {
+                if (!aluno) return false;
+                if (typeof window.isStudentTransferred === 'function') {
+                    return window.isStudentTransferred(aluno);
+                }
+                if (String(aluno.status || '') === 'Transferido') return true;
+                var turma = String(aluno.turma || '')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, '');
+                return turma === 'TRANSFERENCIA';
+            }
+
+            function denyTransferredPortal() {
+                toast('Acesso ao Portal do Aluno indisponível: aluno transferido.', 'error');
+            }
+
             function finishAlunoLocal(aluno) {
+                if (isPortalBlockedStudent(aluno)) {
+                    denyTransferredPortal();
+                    return;
+                }
                 verifyAndMaybeUpgrade(aluno.senha, function (hashed) {
                     if (hashed !== aluno.senha) {
                         saveStudents(getStudents().map(function (s) {
@@ -260,6 +282,10 @@
             }
 
             function finishAlunoCloud(payload) {
+                if (isPortalBlockedStudent(payload) || String(payload.status || '') === 'Transferido') {
+                    denyTransferredPortal();
+                    return;
+                }
                 var local = {
                     id: payload.id,
                     nome: payload.nome || '',
@@ -672,6 +698,14 @@
         });
 
         function openAlunoSenhaStep(found) {
+            if (typeof window.isStudentTransferred === 'function' && window.isStudentTransferred(found)) {
+                toast('Aluno transferido: acesso ao Portal do Aluno indisponível.', 'error');
+                return;
+            }
+            if (String(found.status || '') === 'Transferido') {
+                toast('Aluno transferido: acesso ao Portal do Aluno indisponível.', 'error');
+                return;
+            }
             var email = ensureAlunoEmail(found);
             pendingAlunoId = found.id;
             pendingServidorId = null;

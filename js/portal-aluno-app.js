@@ -156,6 +156,28 @@
       });
   }
 
+  function isStudentPortalBlocked(student) {
+    if (!student) return false;
+    if (typeof global.isStudentTransferred === "function") {
+      return global.isStudentTransferred(student);
+    }
+    if (String(student.status || "") === "Transferido") return true;
+    var turma = String(student.turma || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    return turma === "TRANSFERENCIA";
+  }
+
+  function forceLogoutTransferred() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem("siga_portal_aluno_id");
+    } catch (e) { /* ignore */ }
+    global.location.replace(rootPrefix() + "login.html");
+  }
+
   function requireAlunoSession(options) {
     options = options || {};
     purgeDemoStudents();
@@ -168,6 +190,12 @@
         return null;
       }
       return refreshStudentFromCloud(session).then(function (student) {
+        if (isStudentPortalBlocked(student)) {
+          if (!options.silent) {
+            forceLogoutTransferred();
+          }
+          return null;
+        }
         return { session: session, student: student };
       });
     });
@@ -722,6 +750,7 @@
     upsertLocalStudent: upsertLocalStudent,
     studentFromPortalPayload: studentFromPortalPayload,
     requireAlunoSession: requireAlunoSession,
+    isStudentPortalBlocked: isStudentPortalBlocked,
     findStudentForSession: findStudentForSession,
     refreshStudentFromCloud: refreshStudentFromCloud,
     renderBottomNav: renderBottomNav,

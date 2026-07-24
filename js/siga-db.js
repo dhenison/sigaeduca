@@ -2759,11 +2759,25 @@ function initFichaPage() {
         let statusStyle = "bg-primary-light/20 text-primary";
         if (student.status === "Em Risco") {
             statusStyle = "bg-error-container text-error";
+        } else if (student.status === "Transferido" || isTransferenciaTurma(student.turma)) {
+            statusStyle = "bg-amber-100 text-amber-900";
         } else if (student.status === "Inativo") {
             statusStyle = "bg-surface-container text-text-secondary";
         }
         badgeEl.className = `px-3 py-1 ${statusStyle} text-label-sm font-label-sm rounded-full flex items-center gap-1 uppercase tracking-wider`;
-        badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${student.status === 'Ativo' ? 'bg-primary animate-pulse' : student.status === 'Em Risco' ? 'bg-error animate-pulse' : 'bg-text-secondary'}"></span> ${student.status || 'Ativo'}`;
+        const statusLabel = student.status || 'Ativo';
+        const dot =
+            statusLabel === 'Ativo' ? 'bg-primary animate-pulse' :
+            statusLabel === 'Em Risco' ? 'bg-error animate-pulse' :
+            statusLabel === 'Transferido' ? 'bg-amber-600' :
+            'bg-text-secondary';
+        badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${dot}"></span> ${statusLabel}`;
+        const xferBtn = document.getElementById('btn-transferir-aluno');
+        if (xferBtn) {
+            const already = statusLabel === 'Transferido' || isTransferenciaTurma(student.turma);
+            xferBtn.classList.toggle('hidden', already);
+            xferBtn.disabled = already;
+        }
     }
 
     // 4. Update CPF
@@ -3020,7 +3034,7 @@ function openChangeClassModal() {
                 <div>
                     <label class="block text-label-md font-bold text-on-surface mb-1">Nova Turma</label>
                     <select id="new-turma-select" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all">
-                        ${classes.map(c => `<option value="${c.code}">${c.code} - ${c.serie} (${c.turno})</option>`).join('')}
+                        ${classes.filter((c) => !isTransferenciaTurma(c.code)).map(c => `<option value="${escapeHtml(c.code)}">${escapeHtml(c.code)} - ${escapeHtml(c.serie || '')} (${escapeHtml(c.turno || '')})</option>`).join('')}
                     </select>
                 </div>
                 <div>
@@ -3085,6 +3099,180 @@ function openChangeClassModal() {
         } else {
             showToast('Turma alterada com sucesso!');
             setTimeout(() => { window.location.reload(); }, 500);
+        }
+    });
+}
+
+/** Código da turma especial de alunos transferidos. */
+const TRANSFERENCIA_CLASS_CODE = 'TRANSFERÊNCIA';
+
+function normalizeTurmaKey(code) {
+    return String(code || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '');
+}
+
+function isTransferenciaTurma(code) {
+    return normalizeTurmaKey(code) === 'TRANSFERENCIA';
+}
+
+function isStudentTransferred(student) {
+    if (!student) return false;
+    if (String(student.status || '') === 'Transferido') return true;
+    return isTransferenciaTurma(student.turma);
+}
+
+/**
+ * Garante a turma TRANSFERÊNCIA no cadastro local (e no cloud, se disponível).
+ */
+async function ensureTransferenciaClass() {
+    let classes = getClasses();
+    let cls = classes.find((c) => isTransferenciaTurma(c.code));
+    if (cls) {
+        if (String(cls.code) !== TRANSFERENCIA_CLASS_CODE) {
+            cls = Object.assign({}, cls, { code: TRANSFERENCIA_CLASS_CODE });
+            classes = classes.map((c) => (isTransferenciaTurma(c.code) ? cls : c));
+            localStorage.setItem('siga_classes', JSON.stringify(classes));
+        }
+        return cls;
+    }
+    const year = String(new Date().getFullYear());
+    cls = {
+        code: TRANSFERENCIA_CLASS_CODE,
+        serie: 'Transferência',
+        turno: 'Integral',
+        modalidade: 'Transferência',
+        status: 'Ativo',
+        anoLetivo: year
+    };
+    classes.push(cls);
+    localStorage.setItem('siga_classes', JSON.stringify(classes));
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.upsertClasses === 'function') {
+        try {
+            await window.SigaSchoolData.upsertClasses([cls]);
+        } catch (e) { /* ignore cloud failure — turma fica local */ }
+    }
+    return cls;
+}
+
+/**
+ * Modal: registra solicitação/transferência — move o aluno para TRANSFERÊNCIA,
+ * marca status Transferido e encerra acesso ao Portal do Aluno.
+ */
+function openTransferStudentModal() {
+    let modal = document.getElementById('siga-modal-transfer-student');
+    if (modal) modal.remove();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get('id') || '';
+    const students = JSON.parse(localStorage.getItem('siga_students')) || [];
+    const student = students.find((s) => String(s.id) === String(studentId));
+    if (!student) {
+        showToast('Aluno não encontrado.', 'error');
+        return;
+    }
+    if (isStudentTransferred(student)) {
+        showToast('Este aluno já está na turma TRANSFERÊNCIA.', 'error');
+        return;
+    }
+
+    const currentClassText = formatStudentTurmaLabel(student);
+    const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s == null ? '' : s);
+
+    modal = document.createElement('div');
+    modal.id = 'siga-modal-transfer-student';
+    modal.className = 'fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-on-background/40 backdrop-blur-sm';
+    modal.innerHTML = `
+        <div class="bg-background-surface w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border-subtle flex flex-col animate-in fade-in zoom-in duration-200" style="font-family: 'Inter', sans-serif;">
+            <div class="p-6 border-b border-border-subtle flex justify-between items-center bg-amber-50/80">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-outlined">move_down</span>
+                    </div>
+                    <h3 class="font-headline-sm text-on-surface font-semibold">Transferir aluno</h3>
+                </div>
+                <button type="button" class="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-text-secondary" onclick="document.getElementById('siga-modal-transfer-student').remove()">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+            <form class="p-6 space-y-4">
+                <p class="text-body-md text-on-surface">
+                    <strong>${esc(student.nome || 'Aluno')}</strong> sairá de
+                    <strong>${esc(currentClassText)}</strong> e será colocado na turma
+                    <strong>TRANSFERÊNCIA</strong>.
+                </p>
+                <p class="text-label-md text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    Após a transferência, o aluno <strong>não terá mais acesso ao Portal do Aluno</strong>.
+                </p>
+                <div>
+                    <label class="block text-label-md font-bold text-on-surface mb-1">Motivo / observação</label>
+                    <textarea id="transfer-justification" rows="3" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-amber-600 focus:ring-2 focus:ring-amber-600/10 outline-none transition-all" placeholder="Ex.: Solicitação de transferência para outra escola..." required></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
+                    <button type="button" class="px-5 py-2.5 text-label-md font-bold text-text-secondary hover:bg-surface-container-low rounded-lg transition-colors" onclick="document.getElementById('siga-modal-transfer-student').remove()">Cancelar</button>
+                    <button type="submit" class="px-6 py-2.5 bg-amber-700 text-white rounded-lg font-bold shadow-lg shadow-amber-700/20 hover:brightness-90 transition-all active:scale-95">Confirmar transferência</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const justification = String((document.getElementById('transfer-justification') || {}).value || '').trim();
+        if (!justification) {
+            showToast('Informe o motivo da transferência.', 'error');
+            return;
+        }
+
+        const submitBtn = modal.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processando…';
+        }
+
+        try {
+            const targetClass = await ensureTransferenciaClass();
+            const fullNewTurma = `${targetClass.code} — ${targetClass.serie || 'Transferência'}`;
+            const currentStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
+            const index = currentStudents.findIndex((s) => String(s.id) === String(studentId));
+            if (index === -1) {
+                showToast('Aluno não encontrado.', 'error');
+                return;
+            }
+
+            const currentStudent = currentStudents[index];
+            if (!currentStudent.classHistory) currentStudent.classHistory = [];
+            currentStudent.classHistory.unshift({
+                id: Date.now().toString(),
+                date: new Date().toISOString().split('T')[0],
+                turmaAnterior: currentClassText,
+                turmaNova: fullNewTurma,
+                justificativa: justification,
+                tipo: 'transferencia'
+            });
+            currentStudent.turma = targetClass.code;
+            currentStudent.turno = targetClass.turno || 'Integral';
+            currentStudent.serie = targetClass.serie || 'Transferência';
+            currentStudent.status = 'Transferido';
+
+            currentStudents[index] = currentStudent;
+            localStorage.setItem('siga_students', JSON.stringify(currentStudents));
+
+            modal.remove();
+            await syncStudentsToCloud(
+                [currentStudent],
+                'Aluno transferido para a turma TRANSFERÊNCIA. Portal do Aluno bloqueado.'
+            );
+            setTimeout(() => { window.location.reload(); }, 400);
+        } catch (err) {
+            showToast((err && err.message) || 'Falha ao registrar transferência.', 'error');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Confirmar transferência';
+            }
         }
     });
 }
@@ -4470,6 +4658,8 @@ function renderTurmaDetalhe(classCode) {
         let statusStyle = "bg-primary-light/10 text-primary border-primary-light/20";
         if (s.status === "Em Risco") {
             statusStyle = "bg-error-container text-error border-error/10";
+        } else if (s.status === "Transferido" || isTransferenciaTurma(s.turma)) {
+            statusStyle = "bg-amber-100 text-amber-900 border-amber-200";
         } else if (s.status === "Inativo") {
             statusStyle = "bg-surface-container text-text-secondary border-border-subtle";
         }
@@ -4613,6 +4803,11 @@ window.closeCameraStream = closeCameraStream;
 window.captureSnapshot = captureSnapshot;
 window.updateStudentAvatar = updateStudentAvatar;
 window.openChangeClassModal = openChangeClassModal;
+window.openTransferStudentModal = openTransferStudentModal;
+window.ensureTransferenciaClass = ensureTransferenciaClass;
+window.isTransferenciaTurma = isTransferenciaTurma;
+window.isStudentTransferred = isStudentTransferred;
+window.TRANSFERENCIA_CLASS_CODE = TRANSFERENCIA_CLASS_CODE;
 window.openHistoryDetailModal = openHistoryDetailModal;
 window.initTurmasPage = initTurmasPage;
 window.initTurmaDetalhePage = initTurmaDetalhePage;
