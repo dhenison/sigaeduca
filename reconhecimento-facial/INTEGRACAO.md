@@ -56,7 +56,7 @@ Punch2 reconhece → ENTRADA ou SAÍDA (SQLite)
 Supabase attendance_calls + attendance_marks (status P)
         │
         ▼
-frequencia.html (lê Supabase) → Consolidar Entrada/Saída (regras do SIGA)
+frequencia.html (lê Supabase e acompanha novas batidas automaticamente)
 ```
 
 ## Cadastro de face (admin)
@@ -75,9 +75,16 @@ Se o INEP já tiver face local, a foto é **atualizada** nos dois lados.
 ## Frequência no SIGA
 
 Com login Supabase, a tela Frequência carrega `attendance_marks`.  
-Cada **ENTRADA** facial vira marca `phase=entrada` com status **P**.  
-Cada **SAÍDA** facial vira marca `phase=saida` com status **P**.  
-Consolidação Entrada/Saída/Dia continua pelos botões da Frequência.
+Cada **ENTRADA** facial vira marca `phase=entrada`, status **P** e
+`locked=true`. A Entrada desse aluno fica bloqueada para edição e a Saída
+dele é liberada imediatamente.
+
+Cada **SAÍDA** facial vira marca `phase=saida`, status **P** e `locked=true`.
+Quando Entrada e Saída estão bloqueadas, o dia do aluno é consolidado
+automaticamente.
+
+A tela aberta acompanha as alterações em tempo real e também consulta a base
+periodicamente como contingência, sem exigir atualização manual da página.
 
 ## Independência (local + online)
 

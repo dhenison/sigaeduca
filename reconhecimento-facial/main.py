@@ -105,6 +105,9 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
             or os.environ.get("SYNC_WORKER_INTERVAL")
             or "45"
         ),
+        TIMEZONE=env_file_vals.get("TIMEZONE")
+        or os.environ.get("TIMEZONE")
+        or "America/Sao_Paulo",
     )
 
     if test_config:

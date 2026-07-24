@@ -10,6 +10,11 @@
   var lastCallId = null;
   var lastError = null;
   var cloudEnabled = false;
+  var dayChannel = null;
+  var dayPollTimer = null;
+  var dayRefreshTimer = null;
+  var watchedCallId = null;
+  var watchedCallback = null;
 
   function authApi() {
     return global.SigaSupabase || global.SigaAuth || null;
@@ -360,12 +365,105 @@
     });
   }
 
+  function scheduleWatchedRefresh() {
+    if (dayRefreshTimer) global.clearTimeout(dayRefreshTimer);
+    dayRefreshTimer = global.setTimeout(function () {
+      dayRefreshTimer = null;
+      if (typeof watchedCallback === "function") watchedCallback();
+    }, 350);
+  }
+
+  function stopWatchingDay() {
+    if (dayRefreshTimer) global.clearTimeout(dayRefreshTimer);
+    if (dayPollTimer) global.clearInterval(dayPollTimer);
+    dayRefreshTimer = null;
+    dayPollTimer = null;
+    watchedCallId = null;
+    watchedCallback = null;
+
+    var sb = getSb();
+    if (dayChannel) {
+      try {
+        if (sb && typeof sb.removeChannel === "function") {
+          sb.removeChannel(dayChannel);
+        } else if (typeof dayChannel.unsubscribe === "function") {
+          dayChannel.unsubscribe();
+        }
+      } catch (e) {
+        console.warn("[SIGA Frequência] encerrar atualização automática:", e);
+      }
+    }
+    dayChannel = null;
+  }
+
+  /**
+   * Mantém a chamada aberta sincronizada com as batidas faciais.
+   * Realtime atualiza na hora; a consulta periódica cobre projetos em que a
+   * publicação Realtime ainda não esteja habilitada para estas tabelas.
+   */
+  function watchDay(record, callback) {
+    var callId = record && record._callId ? String(record._callId) : "";
+    if (!callId || typeof callback !== "function") {
+      stopWatchingDay();
+      return;
+    }
+
+    if (watchedCallId === callId) {
+      watchedCallback = callback;
+      return;
+    }
+
+    stopWatchingDay();
+    watchedCallId = callId;
+    watchedCallback = callback;
+
+    var sb = getSb();
+    if (sb && typeof sb.channel === "function") {
+      try {
+        dayChannel = sb
+          .channel("siga-frequencia-" + callId)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "attendance_marks",
+              filter: "call_id=eq." + callId,
+            },
+            scheduleWatchedRefresh
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "attendance_calls",
+              filter: "id=eq." + callId,
+            },
+            scheduleWatchedRefresh
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn("[SIGA Frequência] atualização em tempo real:", err);
+        dayChannel = null;
+      }
+    }
+
+    dayPollTimer = global.setInterval(function () {
+      if (!global.document || global.document.visibilityState !== "hidden") {
+        scheduleWatchedRefresh();
+      }
+    }, 15000);
+  }
+
   global.SigaFrequenciaCloud = {
     isReady: isReady,
     loadDay: loadDay,
     upsertMarks: upsertMarks,
     setConsolidation: setConsolidation,
     loadStudentsForClass: loadStudentsForClass,
+    watchDay: watchDay,
+    stopWatchingDay: stopWatchingDay,
     getLastCallId: function () {
       return lastCallId;
     },

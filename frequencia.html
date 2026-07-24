@@ -316,7 +316,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260717a"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260717a"></script><script src="js/siga-security.js"></script><script src="js/siga-school-data.js?v=20260722b"></script><script src="js/siga-db.js?v=20260722b"></script><script src="js/siga-frequencia-supabase.js?v=20260722c"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260717a"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260717a"></script><script src="js/siga-security.js"></script><script src="js/siga-school-data.js?v=20260722b"></script><script src="js/siga-db.js?v=20260722b"></script><script src="js/siga-frequencia-supabase.js?v=20260724a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -911,6 +911,7 @@ function loadAttendanceData() {
     allStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
 
     if (!currentClass) {
+        window.SigaFrequenciaCloud?.stopWatchingDay?.();
         filteredStudents = [];
         currentRecord = null;
         const listEntrada = document.getElementById('list-entrada-students');
@@ -968,6 +969,7 @@ function loadAttendanceData() {
     const columnsContainer = document.getElementById('attendance-columns-container');
 
     if (!isValidSchoolDay) {
+        window.SigaFrequenciaCloud?.stopWatchingDay?.();
         if (warningBanner && warningMsg) {
             warningMsg.textContent = invalidReason;
             warningBanner.classList.remove('hidden');
@@ -1051,10 +1053,21 @@ function loadAttendanceData() {
                 } catch (e) { /* ignore */ }
                 renderAttendance();
                 updateFrequenciaKpis();
+                if (typeof cloud.watchDay === 'function') {
+                    const watchedClass = currentClass;
+                    const watchedDate = currentDate;
+                    cloud.watchDay(currentRecord, function () {
+                        if (currentClass === watchedClass && currentDate === watchedDate) {
+                            loadAttendanceData();
+                        }
+                    });
+                }
             } else {
+                cloud.stopWatchingDay?.();
                 applyLocalFallback();
             }
         }).catch(function () {
+            cloud.stopWatchingDay?.();
             applyLocalFallback();
         });
         return;
@@ -1062,6 +1075,10 @@ function loadAttendanceData() {
 
     applyLocalFallback();
 }
+
+window.addEventListener('pagehide', function () {
+    window.SigaFrequenciaCloud?.stopWatchingDay?.();
+});
 
 function renderAttendance() {
     const listEntrada = document.getElementById('list-entrada-students');

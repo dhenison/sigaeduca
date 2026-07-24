@@ -1,6 +1,6 @@
 # app/admin/routes.py
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import json
 import re
@@ -21,7 +21,23 @@ from PIL import Image, UnidentifiedImageError
 
 from app.admin import bp
 from app.admin.auth import admin_login_required, is_safe_redirect_target
-from app.models import Ponto, User, db
+from app.models import (
+    ClassRelease,
+    ClassScheduleOverride,
+    ClassShiftMap,
+    Ponto,
+    ShiftSchedule,
+    User,
+    db,
+)
+from app.schedules import (
+    SHIFT_LABELS,
+    effective_schedule,
+    local_day_and_clock,
+    normalize_shift,
+    serialize_schedule,
+    timing_status,
+)
 from app.punch.recognition import (
     assess_face_framing,
     encode_face_from_bytes,
@@ -94,6 +110,132 @@ def turmas():
     return render_template("admin/turmas.html", active_nav="turmas")
 
 
+@bp.route("/horarios")
+@admin_login_required
+def horarios():
+    """Configura os horários de entrada, atraso e saída por turma."""
+    return render_template("admin/horarios.html", active_nav="horarios")
+
+
+def _valid_clock(value: str) -> bool:
+    try:
+        datetime.strptime(value, "%H:%M")
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+@bp.route("/api/horarios", methods=["GET"])
+@admin_login_required
+def api_horarios():
+    shift_rows = {item.shift_code: item for item in ShiftSchedule.query.all()}
+    shifts = []
+    for code, label in SHIFT_LABELS.items():
+        item = shift_rows.get(code)
+        shifts.append(
+            serialize_schedule(item, source="shift", shift_code=code)
+            if item
+            else {
+                "id": None,
+                "source": "shift",
+                "shift_code": code,
+                "shift_label": label,
+                "entry_time": "",
+                "late_after": "",
+                "exit_time": "",
+                "configured": False,
+            }
+        )
+    exceptions = ClassScheduleOverride.query.order_by(
+        ClassScheduleOverride.day_date.desc(),
+        ClassScheduleOverride.class_code.asc(),
+    ).all()
+    return jsonify(
+        success=True,
+        shifts=shifts,
+        exceptions=[serialize_schedule(item, source="exception") for item in exceptions],
+    )
+
+
+def _validated_schedule_values(data):
+    entry_time = (data.get("entry_time") or "").strip()
+    late_after = (data.get("late_after") or "").strip()
+    exit_time = (data.get("exit_time") or "").strip()
+    if not all(_valid_clock(value) for value in (entry_time, late_after, exit_time)):
+        return None, "Informe os três horários no formato HH:MM."
+    if late_after < entry_time:
+        return None, "O limite de atraso não pode ser anterior à entrada."
+    if exit_time <= entry_time:
+        return None, "A saída deve ser posterior à entrada."
+    return (entry_time, late_after, exit_time), ""
+
+
+@bp.route("/api/horarios/turno", methods=["POST"])
+@admin_login_required
+def api_save_horario_turno():
+    data = request.get_json(silent=True) or request.form
+    shift_code = normalize_shift(data.get("shift_code"))
+    if shift_code not in SHIFT_LABELS:
+        return jsonify(success=False, message="Selecione Manhã, Tarde ou Noite."), 400
+    values, error = _validated_schedule_values(data)
+    if error:
+        return jsonify(success=False, message=error), 400
+    schedule = ShiftSchedule.query.filter_by(shift_code=shift_code).first()
+    if schedule is None:
+        schedule = ShiftSchedule(shift_code=shift_code)
+        db.session.add(schedule)
+    schedule.entry_time, schedule.late_after, schedule.exit_time = values
+    schedule.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(
+        success=True,
+        message=f"Horário geral do turno {SHIFT_LABELS[shift_code]} salvo.",
+        schedule=serialize_schedule(schedule, source="shift", shift_code=shift_code),
+    )
+
+
+@bp.route("/api/horarios/excecao", methods=["POST"])
+@admin_login_required
+def api_save_horario_excecao():
+    data = request.get_json(silent=True) or request.form
+    class_code = (data.get("class_code") or "").strip()
+    raw_day = (data.get("day_date") or "").strip()
+    if not class_code:
+        return jsonify(success=False, message="Selecione uma turma."), 400
+    try:
+        day_date = date.fromisoformat(raw_day)
+    except ValueError:
+        return jsonify(success=False, message="Informe uma data válida."), 400
+    values, error = _validated_schedule_values(data)
+    if error:
+        return jsonify(success=False, message=error), 400
+    schedule = ClassScheduleOverride.query.filter_by(
+        class_code=class_code, day_date=day_date
+    ).first()
+    if schedule is None:
+        schedule = ClassScheduleOverride(class_code=class_code, day_date=day_date)
+        db.session.add(schedule)
+    schedule.entry_time, schedule.late_after, schedule.exit_time = values
+    schedule.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(
+        success=True,
+        message=f"Horário diferente de {class_code} em {day_date.strftime('%d/%m/%Y')} salvo.",
+        schedule=serialize_schedule(schedule, source="exception"),
+    )
+
+
+@bp.route("/api/horarios/excecao/<int:schedule_id>", methods=["DELETE"])
+@admin_login_required
+def api_delete_horario_excecao(schedule_id: int):
+    schedule = db.session.get(ClassScheduleOverride, schedule_id)
+    if schedule is None:
+        return jsonify(success=False, message="Horário diferente não encontrado."), 404
+    db.session.delete(schedule)
+    db.session.commit()
+    return jsonify(success=True, message="Horário diferente removido; o turno geral voltará a valer.")
+
+
 @bp.route("/logout", methods=["POST"])
 @admin_login_required
 def logout():
@@ -150,7 +292,7 @@ def _serialize_ponto_admin(ponto: Ponto) -> dict:
 @bp.route("/api/dashboard")
 @admin_login_required
 def api_dashboard():
-    today = datetime.utcnow().date()
+    today = local_day_and_clock()[0]
     start = datetime.combine(today, datetime.min.time())
     end = start + timedelta(days=1)
 
@@ -346,11 +488,24 @@ def api_siga_classes():
     payload = []
     for c in classes:
         code = (c.get("code") or "").strip()
+        shift_label = (c.get("turno") or "").strip()
+        shift_code = normalize_shift(shift_label)
+        if code and shift_code:
+            mapping = ClassShiftMap.query.filter_by(class_code=code).first()
+            if mapping is None:
+                mapping = ClassShiftMap(class_code=code)
+                db.session.add(mapping)
+            mapping.shift_code = shift_code
+            mapping.shift_label = shift_label
+            mapping.updated_at = datetime.utcnow()
         locals_u = local_by_class.get(code, [])
         local_ids = {u.id for u in locals_u}
         faces = len(locals_u)
         ent = len(local_ids & entradas)
         sai = len(local_ids & saidas)
+        schedule, schedule_source, effective_shift = effective_schedule(
+            code, day_date=today, user_shift=shift_label
+        )
         payload.append(
             {
                 "id": c.get("id"),
@@ -368,8 +523,18 @@ def api_siga_classes():
                     if uid in last_by_user
                     and not (last_by_user[uid].tipo or "").upper().startswith("SA")
                 ),
+                "shift_code": shift_code,
+                "schedule": serialize_schedule(
+                    schedule,
+                    source=schedule_source,
+                    shift_code=effective_shift,
+                )
+                if schedule
+                else None,
             }
         )
+
+    db.session.commit()
 
     return jsonify(
         success=True,
@@ -411,7 +576,7 @@ def api_turma_hoje(class_code: str):
             "Cole a chave para ver a lista completa do SIGA."
         )
 
-    today = datetime.utcnow().date()
+    today = local_day_and_clock()[0]
     day_start = datetime.combine(today, datetime.min.time())
     day_end = day_start + timedelta(days=1)
 
@@ -446,6 +611,11 @@ def api_turma_hoje(class_code: str):
     for p in pontos:
         punches_by_user.setdefault(p.user_id, []).append(p)
 
+    local_shift = next((u.schedule or "" for u in local_in_class if u.schedule), "")
+    schedule, schedule_source, effective_shift = effective_schedule(
+        code, day_date=today, user_shift=local_shift
+    )
+    release = ClassRelease.query.filter_by(class_code=code, day_date=today).first()
     rows = []
     for s in students:
         inep = (s.get("codigo_inep") or "").strip()
@@ -473,6 +643,13 @@ def api_turma_hoje(class_code: str):
                 "entrada_at": entrada_at,
                 "saida_at": saida_at,
                 "last_tipo": last_tipo,
+                "timing_status": (
+                    timing_status("SAÍDA", datetime.fromisoformat(saida_at), schedule)
+                    if saida_at
+                    else timing_status("ENTRADA", datetime.fromisoformat(entrada_at), schedule)
+                    if entrada_at
+                    else "sem_batida"
+                ),
                 "status_hoje": (
                     "saida"
                     if saida_at
@@ -490,7 +667,102 @@ def api_turma_hoje(class_code: str):
         warning=warning,
         class_code=code,
         day=today.isoformat(),
+        schedule=serialize_schedule(
+            schedule,
+            source=schedule_source,
+            shift_code=effective_shift,
+        )
+        if schedule
+        else None,
+        release={
+            "released_at": release.released_at.isoformat(sep=" ", timespec="seconds"),
+            "released_count": release.released_count,
+            "reason": release.reason or "",
+        }
+        if release
+        else None,
+        summary={
+            "total": len(rows),
+            "entered": sum(1 for row in rows if row["entrada_at"]),
+            "not_entered": sum(1 for row in rows if not row["entrada_at"]),
+            "present": sum(1 for row in rows if row["status_hoje"] == "entrada"),
+            "late": sum(1 for row in rows if row["timing_status"] == "atrasado"),
+        },
         students=rows,
+    )
+
+
+@bp.route("/api/turmas/<path:class_code>/liberar-saida", methods=["POST"])
+@admin_login_required
+def api_liberar_saida_turma(class_code: str):
+    """Registra saída antecipada para todos que entraram e continuam presentes."""
+    code = (class_code or "").strip()
+    if not code:
+        return jsonify(success=False, message="Informe o código da turma."), 400
+
+    data = request.get_json(silent=True) or request.form
+    reason = (data.get("reason") or "Liberação antecipada da turma").strip()[:200]
+    now = datetime.utcnow()
+    today = now.date()
+    day_start = datetime.combine(today, datetime.min.time())
+    day_end = day_start + timedelta(days=1)
+
+    users = User.query.filter(User.class_code == code).all()
+    released: list[Ponto] = []
+    for user in users:
+        last = (
+            Ponto.query.filter(
+                Ponto.user_id == user.id,
+                Ponto.timestamp >= day_start,
+                Ponto.timestamp < day_end,
+            )
+            .order_by(Ponto.timestamp.desc(), Ponto.id.desc())
+            .first()
+        )
+        if last is None or (last.tipo or "").upper().startswith("SA"):
+            continue
+        ponto = Ponto(
+            user_id=user.id,
+            tipo="SAÍDA",
+            timestamp=now,
+            station_id="admin-turma",
+            timing_status="saida_antecipada",
+            sync_status="pending",
+            sync_attempts=0,
+        )
+        db.session.add(ponto)
+        released.append(ponto)
+
+    record = ClassRelease.query.filter_by(class_code=code, day_date=today).first()
+    if record is None:
+        record = ClassRelease(class_code=code, day_date=today)
+        db.session.add(record)
+    record.released_at = now
+    record.released_count = len(released)
+    record.reason = reason
+    db.session.commit()
+
+    for ponto in released:
+        try:
+            from app.sync.supabase_attendance import schedule_sync_ponto, should_sync_user
+
+            should_sync, skip_reason = should_sync_user(ponto.user)
+            if should_sync:
+                schedule_sync_ponto(current_app._get_current_object(), ponto.id)
+            else:
+                ponto.sync_status = "skipped"
+                ponto.sync_error = skip_reason
+        except Exception:  # noqa: BLE001
+            pass
+    db.session.commit()
+
+    return jsonify(
+        success=True,
+        message=(
+            f"Saída antecipada registrada para {len(released)} aluno(s) da turma {code}."
+        ),
+        released_count=len(released),
+        released_at=now.isoformat(sep=" ", timespec="seconds"),
     )
 
 

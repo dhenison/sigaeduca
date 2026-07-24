@@ -1,6 +1,6 @@
 # app/models.py
 
-from datetime import datetime
+from datetime import date, datetime
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
@@ -53,6 +53,83 @@ class Ponto(db.Model):
     synced_at = db.Column(db.DateTime, nullable=True)
     sync_error = db.Column(db.Text, nullable=True)
     external_mark_id = db.Column(db.String(64), nullable=True)
+    timing_status = db.Column(db.String(30), nullable=True)
+
+
+class ClassSchedule(db.Model):
+    __tablename__ = "class_schedules"
+    id = db.Column(db.Integer, primary_key=True)
+    class_code = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    entry_time = db.Column(db.String(5), nullable=False)
+    late_after = db.Column(db.String(5), nullable=False)
+    exit_time = db.Column(db.String(5), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+
+class ShiftSchedule(db.Model):
+    __tablename__ = "shift_schedules"
+    id = db.Column(db.Integer, primary_key=True)
+    shift_code = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    entry_time = db.Column(db.String(5), nullable=False)
+    late_after = db.Column(db.String(5), nullable=False)
+    exit_time = db.Column(db.String(5), nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+
+class ClassScheduleOverride(db.Model):
+    __tablename__ = "class_schedule_overrides"
+    id = db.Column(db.Integer, primary_key=True)
+    class_code = db.Column(db.String(80), nullable=False, index=True)
+    day_date = db.Column(db.Date, nullable=False, index=True)
+    entry_time = db.Column(db.String(5), nullable=False)
+    late_after = db.Column(db.String(5), nullable=False)
+    exit_time = db.Column(db.String(5), nullable=False)
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "class_code", "day_date", name="uq_class_schedule_override_day"
+        ),
+    )
+
+
+class ClassShiftMap(db.Model):
+    __tablename__ = "class_shift_maps"
+    id = db.Column(db.Integer, primary_key=True)
+    class_code = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    shift_code = db.Column(db.String(20), nullable=False, index=True)
+    shift_label = db.Column(db.String(40), nullable=True)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+
+class ClassRelease(db.Model):
+    __tablename__ = "class_releases"
+    id = db.Column(db.Integer, primary_key=True)
+    class_code = db.Column(db.String(80), nullable=False, index=True)
+    day_date = db.Column(db.Date, nullable=False, default=date.today, index=True)
+    released_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    released_count = db.Column(db.Integer, nullable=False, default=0)
+    reason = db.Column(db.String(200), nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("class_code", "day_date", name="uq_class_release_day"),
+    )
 
 
 def _add_missing_columns(table: str, alterations: list[tuple[str, str]]) -> None:
@@ -86,6 +163,10 @@ def ensure_ponto_sync_columns() -> None:
             (
                 "external_mark_id",
                 "ALTER TABLE pontos ADD COLUMN external_mark_id VARCHAR(64)",
+            ),
+            (
+                "timing_status",
+                "ALTER TABLE pontos ADD COLUMN timing_status VARCHAR(30)",
             ),
         ],
     )

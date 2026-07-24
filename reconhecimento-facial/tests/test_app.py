@@ -1,4 +1,5 @@
 from io import BytesIO
+from datetime import datetime
 
 from PIL import Image
 from sqlalchemy import inspect
@@ -49,7 +50,130 @@ def test_database_tables_are_created(app):
     with app.app_context():
         table_names = set(inspect(db.engine).get_table_names())
 
-    assert {"users", "pontos"}.issubset(table_names)
+    assert {
+        "users",
+        "pontos",
+        "shift_schedules",
+        "class_schedule_overrides",
+        "class_shift_maps",
+        "class_releases",
+    }.issubset(table_names)
+
+
+def test_horarios_page_and_api_save_schedule(app, client):
+    from app.models import ShiftSchedule
+
+    create_admin(app)
+    login_admin(client)
+
+    page = client.get("/admin/horarios")
+    saved = client.post(
+        "/admin/api/horarios/turno",
+        json={
+            "shift_code": "manha",
+            "entry_time": "07:00",
+            "late_after": "07:15",
+            "exit_time": "12:00",
+        },
+    )
+
+    assert page.status_code == 200
+    assert b"Hor" in page.data
+    assert saved.status_code == 200
+    assert saved.get_json()["schedule"]["shift_code"] == "manha"
+    assert saved.get_json()["schedule"]["late_after"] == "07:15"
+    with app.app_context():
+        assert ShiftSchedule.query.filter_by(shift_code="manha").count() == 1
+
+
+def test_class_schedule_exception_overrides_shift_for_selected_day(app, client):
+    from app.models import ClassScheduleOverride, ClassShiftMap
+    from app.schedules import effective_schedule
+
+    create_admin(app)
+    login_admin(client)
+    client.post(
+        "/admin/api/horarios/turno",
+        json={
+            "shift_code": "tarde",
+            "entry_time": "13:00",
+            "late_after": "13:15",
+            "exit_time": "18:00",
+        },
+    )
+    exception = client.post(
+        "/admin/api/horarios/excecao",
+        json={
+            "class_code": "2A",
+            "day_date": "2026-08-10",
+            "entry_time": "14:00",
+            "late_after": "14:10",
+            "exit_time": "17:00",
+        },
+    )
+
+    assert exception.status_code == 200
+    with app.app_context():
+        db.session.add(ClassShiftMap(class_code="2A", shift_code="tarde"))
+        db.session.commit()
+        regular, regular_source, _ = effective_schedule(
+            "2A", day_date=datetime(2026, 8, 11).date()
+        )
+        special, special_source, _ = effective_schedule(
+            "2A", day_date=datetime(2026, 8, 10).date()
+        )
+        assert regular_source == "shift" and regular.entry_time == "13:00"
+        assert special_source == "exception" and special.entry_time == "14:00"
+        assert ClassScheduleOverride.query.count() == 1
+
+
+def test_schedule_rejects_invalid_order(app, client):
+    create_admin(app)
+    login_admin(client)
+
+    response = client.post(
+        "/admin/api/horarios/turno",
+        json={
+            "shift_code": "noite",
+            "entry_time": "07:30",
+            "late_after": "07:10",
+            "exit_time": "12:00",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["success"] is False
+
+
+def test_release_class_creates_exit_only_for_present_students(app, client):
+    from app.models import ClassRelease, Ponto
+
+    create_admin(app)
+    with app.app_context():
+        present = User(username="aluno-presente", name="Aluno Presente", class_code="9A")
+        present.set_password("senha")
+        absent = User(username="aluno-ausente", name="Aluno Ausente", class_code="9A")
+        absent.set_password("senha")
+        db.session.add_all([present, absent])
+        db.session.flush()
+        db.session.add(Ponto(user_id=present.id, tipo="ENTRADA", timestamp=datetime.utcnow()))
+        db.session.commit()
+        present_id = present.id
+        absent_id = absent.id
+
+    login_admin(client)
+    response = client.post(
+        "/admin/api/turmas/9A/liberar-saida",
+        json={"reason": "Reunião pedagógica"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["released_count"] == 1
+    with app.app_context():
+        present_types = [item.tipo for item in Ponto.query.filter_by(user_id=present_id).order_by(Ponto.id).all()]
+        assert present_types[-1].upper().startswith("SA")
+        assert Ponto.query.filter_by(user_id=absent_id).count() == 0
+        assert ClassRelease.query.filter_by(class_code="9A").one().released_count == 1
 
 
 def test_admin_user_list_requires_login(client):

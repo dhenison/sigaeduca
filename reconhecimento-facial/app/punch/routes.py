@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from flask import current_app, jsonify, redirect, render_template, request, url_for
 
 from app.models import Ponto, User, db
+from app.schedules import effective_schedule, local_day_and_clock, timing_status
 from app.punch import bp
 from app.punch.recognition import (
     DEFAULT_MAX_SIDE,
@@ -236,11 +237,21 @@ def punch_submit():
         payload["message"] = f"Rosto reconhecido: {display_name}."
         return jsonify(payload)
 
+    timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
+    local_day, _ = local_day_and_clock(timestamp)
+    schedule, schedule_source, shift_code = effective_schedule(
+        user.class_code or "",
+        day_date=local_day,
+        user_shift=user.schedule or "",
+    )
+    timing_value = timing_status(tipo, timestamp, schedule)
+
     ponto = Ponto(
         user_id=user.id,
         tipo=tipo,
-        timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
+        timestamp=timestamp,
         station_id=station_id,
+        timing_status=timing_value,
         sync_status="pending",
         sync_attempts=0,
         sync_error=None,
@@ -273,6 +284,14 @@ def punch_submit():
     payload["timestamp"] = ponto.timestamp.isoformat(sep=" ", timespec="seconds")
     payload["ponto_id"] = ponto.id
     payload["sync_status"] = ponto.sync_status
+    payload["timing_status"] = ponto.timing_status
+    payload["schedule"] = {
+        "entry_time": schedule.entry_time,
+        "late_after": schedule.late_after,
+        "exit_time": schedule.exit_time,
+        "source": schedule_source,
+        "shift_code": shift_code,
+    } if schedule else None
     if ponto.sync_error:
         payload["sync_error"] = ponto.sync_error
     return jsonify(payload)
@@ -288,6 +307,7 @@ def _serialize_ponto(ponto: Ponto) -> dict:
         else "",
         "station_id": ponto.station_id or "",
         "sync_status": ponto.sync_status or "pending",
+        "timing_status": ponto.timing_status or "sem_horario",
         "user": {
             "id": user.id if user else None,
             "name": (user.name or user.username) if user else "Desconhecido",
