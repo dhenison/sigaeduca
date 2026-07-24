@@ -103,6 +103,10 @@
             background-color: #f9f9ff;
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+        html.siga-theme-dark body {
+            background-color: #0f1419 !important;
         }
         .custom-scrollbar::-webkit-scrollbar {
             display: none;
@@ -115,6 +119,12 @@
         .color-dot-active {
             box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--primary-color);
         }
+        #themeToggle {
+            cursor: pointer;
+        }
+        #toggleThumb {
+            transition: transform 0.3s ease;
+        }
     </style>
 <style>
     body {
@@ -125,27 +135,23 @@
 <body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
 <!-- Top App Bar (Shared Component Strategy) -->
 <header class="w-full sticky top-0 z-50 bg-surface shadow-sm flex justify-between items-center px-container-padding h-touch-target">
-<button class="text-primary active:scale-95 transition-transform duration-150 flex items-center justify-center w-touch-target h-touch-target">
+<button id="perfil-voltar" type="button" class="text-primary active:scale-95 transition-transform duration-150 flex items-center justify-center w-touch-target h-touch-target" title="Voltar">
 <span class="material-symbols-outlined">arrow_back</span>
 </button>
 <h1 class="font-headline-md text-headline-md text-primary font-bold">Perfil</h1>
-<button class="text-on-surface-variant active:scale-95 transition-transform duration-150 flex items-center justify-center w-touch-target h-touch-target">
-<span class="material-symbols-outlined">settings</span>
-</button>
+<span class="w-touch-target h-touch-target"></span>
 </header>
 <main class="pb-32 px-container-padding pt-stack-gap-lg max-w-md mx-auto">
 <!-- Header Section: User Identity -->
 <section class="flex flex-col items-center text-center mb-stack-gap-lg">
 <div class="relative mb-stack-gap-md">
-<div class="w-24 h-24 rounded-full overflow-hidden border-4 border-surface shadow-md">
-<img class="w-full h-full object-cover" data-alt="A professional studio headshot of a young Brazilian male student with short dark hair and a confident, friendly expression. The background is a soft, blurred library setting with warm, focused lighting that creates a bright and studious atmosphere. The color palette is modern, featuring subtle greens and clean whites consistent with a professional corporate education app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDc1zloRBD9G0SN75XtR9FBp2OoW2wMf5d8exSZq2Wjmrm5t7hYdGMxTGsUlKzJEeOvXtonQQBcYcdW5gz9L3G3sQZ_etwtsNcusxwMAcXa7gw47XplwIyUW7-eROocZFaczIiP-qDsymb5RCmvbyl9VjDb5x94FJGfQy4MQi1VCXkr-XCKCUm_cfHlrSmeoBrKHXHgOCnKH3V5PNqMEP6TmOmJd5puwCBd5LblymPIEvnkhXix1PK3RXM0gbJdd32jBdo5_nADjlY"/>
+<div class="w-24 h-24 rounded-full overflow-hidden border-4 border-surface shadow-md bg-primary/15 text-primary flex items-center justify-center text-2xl font-bold">
+<img id="perfil-avatar-img" class="w-full h-full object-cover hidden" alt=""/>
+<span id="perfil-avatar-fallback" class="hidden">AL</span>
 </div>
-<button class="absolute bottom-0 right-0 bg-primary text-on-primary rounded-full p-2 shadow-lg active:scale-90 transition-all">
-<span class="material-symbols-outlined text-sm">edit</span>
-</button>
 </div>
-<h2 class="font-headline-sm text-headline-sm text-on-surface">Mateus Oliveira Santos</h2>
-<p class="font-body-md text-body-md text-on-surface-variant mt-1">RA: 202409871 • Engenharia de Software</p>
+<h2 id="perfil-nome" class="font-headline-sm text-headline-sm text-on-surface">Aluno</h2>
+<p id="perfil-turma" class="font-body-md text-body-md text-on-surface-variant mt-1">—</p>
 </section>
 <!-- Personalization Section: "Do Meu Jeito" -->
 <section class="bg-surface-container-low rounded-xl p-container-padding shadow-sm mb-stack-gap-md">
@@ -153,27 +159,26 @@
 <span class="material-symbols-outlined text-primary">palette</span>
 <h3 class="font-headline-sm text-headline-sm text-on-surface">Do Meu Jeito</h3>
 </div>
-<!-- Appearance Toggle -->
 <div class="flex items-center justify-between mb-stack-gap-lg">
 <div>
 <p class="font-body-lg text-body-lg text-on-surface">Aparência</p>
 <p class="font-label-md text-label-md text-on-surface-variant">Modo Escuro ou Claro</p>
 </div>
-<button class="w-14 h-8 bg-surface-container-highest rounded-full p-1 relative transition-colors duration-300" id="themeToggle">
+<button type="button" class="w-14 h-8 bg-surface-container-highest rounded-full p-1 relative transition-colors duration-300" id="themeToggle" aria-label="Alternar tema">
 <div class="w-6 h-6 bg-white rounded-full shadow-md transform translate-x-0 transition-transform duration-300 flex items-center justify-center" id="toggleThumb">
 <span class="material-symbols-outlined text-[16px] text-on-surface-variant">light_mode</span>
 </div>
 </button>
 </div>
-<!-- Color Picker -->
 <div class="space-y-stack-gap-sm">
 <p class="font-body-lg text-body-lg text-on-surface">Cor de Destaque</p>
-<div class="flex gap-4 overflow-x-auto py-2 custom-scrollbar">
-<button class="flex-shrink-0 w-8 h-8 rounded-full bg-[#006d37] border-2 border-white ring-2 ring-primary"></button>
-<button class="flex-shrink-0 w-8 h-8 rounded-full bg-[#6750A4] border-2 border-transparent"></button>
-<button class="flex-shrink-0 w-8 h-8 rounded-full bg-[#0061A4] border-2 border-transparent"></button>
-<button class="flex-shrink-0 w-8 h-8 rounded-full bg-[#BA1A1A] border-2 border-transparent"></button>
-<button class="flex-shrink-0 w-8 h-8 rounded-full bg-[#E0E2E5] border-2 border-transparent"></button>
+<div id="perfil-cores" class="flex gap-4 overflow-x-auto py-2 custom-scrollbar">
+<button type="button" data-accent="#006d37" class="flex-shrink-0 w-8 h-8 rounded-full bg-[#006d37] border-2 border-white ring-2 ring-primary" title="Verde"></button>
+<button type="button" data-accent="#6750A4" class="flex-shrink-0 w-8 h-8 rounded-full bg-[#6750A4] border-2 border-transparent" title="Roxo"></button>
+<button type="button" data-accent="#0061A4" class="flex-shrink-0 w-8 h-8 rounded-full bg-[#0061A4] border-2 border-transparent" title="Azul"></button>
+<button type="button" data-accent="#BA1A1A" class="flex-shrink-0 w-8 h-8 rounded-full bg-[#BA1A1A] border-2 border-transparent" title="Vermelho"></button>
+<button type="button" data-accent="#C9A227" class="flex-shrink-0 w-8 h-8 rounded-full bg-[#C9A227] border-2 border-transparent" title="Amarelo"></button>
+<button type="button" data-accent="#5d5e61" class="flex-shrink-0 w-8 h-8 rounded-full bg-[#5d5e61] border-2 border-transparent" title="Cinza"></button>
 </div>
 </div>
 </section>
@@ -185,123 +190,45 @@
 </div>
 <div class="space-y-stack-gap-lg">
 <div class="flex flex-col gap-1">
-<label class="font-label-md text-label-md text-on-surface-variant uppercase">Nome Completo</label>
-<input class="w-full h-touch-target px-4 bg-surface-container-lowest border border-outline rounded-lg font-body-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" type="text" value="Mateus Oliveira Santos"/>
+<label class="font-label-md text-label-md text-on-surface-variant uppercase" for="perfil-input-nome">Nome Completo</label>
+<input id="perfil-input-nome" readonly class="w-full h-touch-target px-4 bg-surface-container-low border border-outline rounded-lg font-body-lg outline-none text-on-surface-variant cursor-default" type="text" value=""/>
 </div>
 <div class="flex flex-col gap-1">
-<label class="font-label-md text-label-md text-on-surface-variant uppercase">Email Acadêmico</label>
-<input class="w-full h-touch-target px-4 bg-surface-container-lowest border border-outline rounded-lg font-body-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" type="email" value="mateus.santos@universidade.edu.br"/>
+<label class="font-label-md text-label-md text-on-surface-variant uppercase" for="perfil-input-email">Email Acadêmico</label>
+<input id="perfil-input-email" readonly class="w-full h-touch-target px-4 bg-surface-container-low border border-outline rounded-lg font-body-lg outline-none text-on-surface-variant cursor-default" type="email" value=""/>
 </div>
 <div class="flex flex-col gap-1">
-<label class="font-label-md text-label-md text-on-surface-variant uppercase">Telefone</label>
-<input class="w-full h-touch-target px-4 bg-surface-container-lowest border border-outline rounded-lg font-body-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" type="tel" value="+55 (11) 98765-4321"/>
+<label class="font-label-md text-label-md text-on-surface-variant uppercase" for="perfil-input-telefone">Telefone</label>
+<input id="perfil-input-telefone" class="w-full h-touch-target px-4 bg-surface-container-lowest border border-outline rounded-lg font-body-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" type="tel" placeholder="(00) 00000-0000" value=""/>
 </div>
 </div>
 </section>
 <!-- Academic Summary -->
 <section class="bg-surface rounded-xl border border-outline-variant p-container-padding mb-stack-gap-md">
-<div class="flex items-center gap-2 mb-stack-gap-md">
+<div class="flex items-center justify-between gap-2 mb-stack-gap-md">
+<div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-primary">description</span>
 <h3 class="font-headline-sm text-headline-sm text-on-surface">Resumo Acadêmico</h3>
 </div>
-<textarea class="w-full p-4 bg-surface-container-lowest border border-outline rounded-lg font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none" placeholder="Conte-nos um pouco sobre seus objetivos acadêmicos..." rows="4">Estudante do 4º semestre de Engenharia de Software com foco em desenvolvimento mobile e UX design. Monitor da disciplina de Algoritmos.</textarea>
+<span id="perfil-bio-count" class="font-label-sm text-label-sm text-on-surface-variant">0/150</span>
+</div>
+<textarea id="perfil-input-bio" maxlength="150" class="w-full p-4 bg-surface-container-lowest border border-outline rounded-lg font-body-md focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none" placeholder="Escreva algo sobre você (até 150 caracteres). Pode usar emojis 😊📚" rows="4"></textarea>
 </section>
-<!-- Account Security Section -->
-<section class="bg-surface-container-high rounded-xl p-container-padding mb-stack-gap-md shadow-sm">
-<div class="flex items-center gap-2 mb-stack-gap-lg">
-<span class="material-symbols-outlined text-error">security</span>
-<h3 class="font-headline-sm text-headline-sm text-on-surface">Segurança</h3>
-</div>
-<div class="space-y-stack-gap-md">
-<button class="w-full h-touch-target bg-on-surface text-surface rounded-lg font-label-md flex items-center justify-center gap-2 active:scale-95 transition-all">
-<span class="material-symbols-outlined text-sm">lock</span>
-                    Alterar Senha
-                </button>
-<div class="flex items-center justify-between p-2">
-<div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-on-surface-variant">verified_user</span>
-<div>
-<p class="font-body-md text-body-md text-on-surface">Autenticação em 2 etapas</p>
-<p class="font-label-sm text-label-sm text-on-surface-variant">Proteja sua conta</p>
-</div>
-</div>
-<button class="w-12 h-6 bg-primary-container rounded-full p-1 relative transition-colors duration-300">
-<div class="w-4 h-4 bg-on-primary rounded-full shadow-sm transform translate-x-6 transition-transform duration-300"></div>
+<section class="mb-stack-gap-md space-y-2">
+<button id="perfil-salvar-dados" type="button" class="w-full h-touch-target bg-primary text-on-primary rounded-lg font-label-md flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">save</span>
+Salvar
 </button>
-</div>
-</div>
+<p id="perfil-salvar-msg" class="text-sm text-primary text-center hidden">Dados salvos.</p>
 </section>
 </main>
-<!-- Bottom Navigation Bar (Shared Component Strategy) -->
-<nav class="fixed bottom-0 w-full z-50 bg-surface-container shadow-lg flex justify-around items-center h-[80px] px-container-padding pb-safe">
-<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-secondary-container active:scale-90 transition-all duration-200">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="font-label-md text-label-md">Dashboard</span>
-</button>
-<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-secondary-container active:scale-90 transition-all duration-200">
-<span class="material-symbols-outlined">school</span>
-<span class="font-label-md text-label-md">Cursos</span>
-</button>
-<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-secondary-container active:scale-90 transition-all duration-200">
-<span class="material-symbols-outlined">grade</span>
-<span class="font-label-md text-label-md">Notas</span>
-</button>
-<!-- ACTIVE TAB: Menu/Profile context -->
-<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200">
-<span class="material-symbols-outlined">menu</span>
-<span class="font-label-md text-label-md">Menu</span>
-</button>
-</nav>
+<!-- Bottom nav: portal -->
+<nav id="portal-aluno-bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-20 px-2 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-2xl max-w-lg mx-auto"></nav>
+<script src="../js/siga-security.js?v=20260724b"></script>
+<script src="../js/portal-aluno-app.js?v=20260724f"></script>
 <script>
-        // Micro-interaction for Theme Toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const toggleThumb = document.getElementById('toggleThumb');
-        const icon = toggleThumb.querySelector('span');
-        let isDarkMode = false;
-
-        themeToggle.addEventListener('click', () => {
-            isDarkMode = !isDarkMode;
-            if (isDarkMode) {
-                document.documentElement.classList.add('dark');
-                toggleThumb.style.transform = 'translateX(24px)';
-                themeToggle.classList.replace('bg-surface-container-highest', 'bg-primary');
-                icon.textContent = 'dark_mode';
-                icon.classList.replace('text-on-surface-variant', 'text-primary');
-            } else {
-                document.documentElement.classList.remove('dark');
-                toggleThumb.style.transform = 'translateX(0)';
-                themeToggle.classList.replace('bg-primary', 'bg-surface-container-highest');
-                icon.textContent = 'light_mode';
-                icon.classList.replace('text-primary', 'text-on-surface-variant');
-            }
-        });
-
-        // Micro-interaction for Color Dots
-        const colorDots = document.querySelectorAll('.custom-scrollbar button');
-        colorDots.forEach(dot => {
-            dot.addEventListener('click', () => {
-                colorDots.forEach(d => {
-                    d.classList.remove('ring-2', 'ring-primary', 'border-white');
-                    d.classList.add('border-transparent');
-                });
-                dot.classList.remove('border-transparent');
-                dot.classList.add('ring-2', 'ring-primary', 'border-white');
-                
-                // Simulate accent color change effect
-                const color = window.getComputedStyle(dot).backgroundColor;
-                document.documentElement.style.setProperty('--primary-color', color);
-            });
-        });
-
-        // Form interaction feedback
-        const inputs = document.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            input.addEventListener('focus', () => {
-                input.parentElement.classList.add('scale-[1.01]');
-            });
-            input.addEventListener('blur', () => {
-                input.parentElement.classList.remove('scale-[1.01]');
-            });
-        });
-    </script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.SigaPortalAluno) window.SigaPortalAluno.bootPerfil();
+});
+</script>
 </body></html>

@@ -98,13 +98,33 @@
         return pageName().replace(/\.html$/i, '');
     }
 
+    /**
+     * Resolve páginas do app de forma relativa (file:// e Live Server).
+     * Evita cair em C:/login.html quando o protocolo é file.
+     */
+    function appHref(page) {
+        page = String(page || "").replace(/^\//, "");
+        if (page && page.indexOf(".") === -1) page += ".html";
+        var path = String((global.location && global.location.pathname) || "");
+        var decoded = path;
+        try {
+            decoded = decodeURIComponent(path);
+        } catch (e) { /* ignore */ }
+        var inApp =
+            /\/app\//i.test(path) ||
+            /\/app\//i.test(decoded) ||
+            /\\app\\/i.test(decoded);
+        return (inApp ? "../" : "") + page;
+    }
+
     function isPublicPage() {
         var base = pageBase();
         if (!base) return true;
         return (
             base === 'login' ||
             base === 'validar-documento' ||
-            base === 'index'
+            base === 'index' ||
+            base === 'applogin'
         );
     }
 
@@ -123,7 +143,7 @@
         var session = getSession();
         if (!session || !session.email) {
             if (!options.silent) {
-                global.location.replace('/login.html');
+                global.location.replace(appHref('login.html'));
             }
             return false;
         }
@@ -133,18 +153,26 @@
             var hasSchool = false;
             try { hasSchool = !!localStorage.getItem('siga_active_school'); } catch (e) { /* ignore */ }
             if (!hasSchool) {
-                global.location.replace('/paineladmin.html');
+                global.location.replace(appHref('paineladmin.html'));
                 return false;
             }
         }
         if (base === 'portal-aluno' && session.tipo !== 'aluno') {
-            global.location.replace(isSystemAdminSession(session) ? '/paineladmin.html' : '/painelprincipal.html');
+            global.location.replace(
+                appHref(isSystemAdminSession(session) ? 'paineladmin.html' : 'painelprincipal.html')
+            );
             return false;
         }
-        // Alunos usam apenas o Portal do Aluno (sem Meu Perfil / foto / segurança de servidor)
-        if (session.tipo === 'aluno' && base !== 'portal-aluno') {
-            global.location.replace('/portal-aluno.html');
-            return false;
+        // Alunos usam o Portal do Aluno (+ telas do app em /app)
+        if (session.tipo === 'aluno') {
+            var allowedAluno =
+                base === 'portal-aluno' ||
+                base.indexOf('app') === 0 ||
+                /\/app\//i.test(String(global.location.pathname || ''));
+            if (!allowedAluno) {
+                global.location.replace(appHref('portal-aluno.html'));
+                return false;
+            }
         }
         return true;
     }
@@ -204,7 +232,7 @@
             localStorage.removeItem('siga_supabase_profile');
         } catch (e) { /* ignore */ }
         var done = function () {
-            global.location.replace('/login.html');
+            global.location.replace(appHref('login.html'));
         };
         if (global.SigaSupabase && typeof global.SigaSupabase.signOut === 'function') {
             global.SigaSupabase.signOut().then(done).catch(done);
@@ -225,7 +253,7 @@
         isSystemAdminSession: isSystemAdminSession,
         isPublicPage: isPublicPage,
         requireAuth: requireAuth,
-        isSystemAdminSession: isSystemAdminSession,
+        appHref: appHref,
         canAttemptUnlock: canAttemptUnlock,
         verifyUnlockPassword: verifyUnlockPassword,
         logout: logout,

@@ -566,15 +566,18 @@
                 if (String(existingList[i].cpf || '') === row.cpf) return existingList[i];
             }
         }
-        if (row.codigo_inep) {
-            for (i = 0; i < existingList.length; i++) {
-                if (String(existingList[i].codigo_inep || '') === row.codigo_inep) return existingList[i];
-            }
-        }
         if (row.email) {
             var em = String(row.email).toLowerCase();
             for (i = 0; i < existingList.length; i++) {
                 if (String(existingList[i].email || '').toLowerCase() === em) return existingList[i];
+            }
+        }
+        // INEP só com 11–12 dígitos (ignora notação científica / valores truncados do Excel)
+        var inep = String(row.codigo_inep || '').replace(/\D/g, '');
+        if (/^\d{11,12}$/.test(inep) && !/e[+\-]?\d+/i.test(String(row.codigo_inep || ''))) {
+            for (i = 0; i < existingList.length; i++) {
+                var other = String(existingList[i].codigo_inep || '').replace(/\D/g, '');
+                if (other === inep) return existingList[i];
             }
         }
         return null;

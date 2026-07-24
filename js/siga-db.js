@@ -99,7 +99,7 @@ window.cameraErrorMessage = cameraErrorMessage;
 
 document.addEventListener('DOMContentLoaded', () => {
     const pathForMatch = (window.location.pathname + ' ' + window.location.href).toLowerCase();
-    const isAuthPage = /(?:^|[\/\s])login(?:\.html)?(?:[?#\s]|$)|(?:^|[\/\s])portal-aluno(?:\.html)?(?:[?#\s]|$)/i.test(pathForMatch);
+    const isAuthPage = /(?:^|[\/\s])login(?:\.html)?(?:[?#\s]|$)|(?:^|[\/\s])portal-aluno(?:\.html)?(?:[?#\s]|$)|(?:^|[\/\s])app(?:\/|$)/i.test(pathForMatch);
 
     // Gate de autenticação no cliente (até Supabase Auth)
     if (window.SigaSecurity && typeof window.SigaSecurity.requireAuth === 'function') {
@@ -1769,10 +1769,23 @@ function expandScientificNumber(raw) {
     return digits;
 }
 
+/** True se o valor veio como notação científica (precisão do INEP já perdida no Excel). */
+function isScientificInepRaw(raw) {
+    return /^[0-9]+([.,][0-9]+)?E[+-]?\d+$/i.test(String(raw || '').trim());
+}
+
+/**
+ * Normaliza código INEP (11–12 dígitos).
+ * Valores em notação científica (ex.: 1,24E+11) são descartados — Excel já perdeu os dígitos.
+ */
 function normalizeInepValue(raw) {
+    if (isScientificInepRaw(raw)) return '';
     const expanded = expandScientificNumber(raw);
     const digits = String(expanded || '').replace(/\D/g, '');
-    return digits || String(raw || '').trim();
+    if (digits.length >= 11 && digits.length <= 12) return digits;
+    // Aceita só se já era só dígitos com tamanho plausível; senão ignora lixo
+    if (/^\d{11,12}$/.test(String(raw || '').trim())) return String(raw).trim();
+    return '';
 }
 
 function normalizeCpfValue(raw) {
@@ -1804,8 +1817,14 @@ async function readAlunosSpreadsheetRows(file) {
         const buf = await file.arrayBuffer();
         const wb = XLSX.read(buf, { type: 'array', cellDates: false, raw: false });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
-        return rows.map(r => (Array.isArray(r) ? r.map(c => String(c == null ? '' : c).trim()) : []));
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+        return rows.map(r => (Array.isArray(r) ? r.map(c => {
+            // Evita 1.24e+11 em codigoInep (Excel); formata inteiros grandes como texto.
+            if (typeof c === 'number' && Number.isFinite(c) && Math.abs(c) >= 1e10) {
+                return String(Math.round(c));
+            }
+            return String(c == null ? '' : c).trim();
+        }) : []));
     }
 
     const text = await new Promise((resolve, reject) => {
@@ -1882,14 +1901,17 @@ async function importAlunosFromFile(file) {
         };
         const findStudentIdx = (list, cpf, codigoInep, email, nome, dataNascimento) => {
             let idx = -1;
+            // Ordem segura: CPF → e-mail → nome+nascimento → INEP válido (nunca notação científica)
             if (cpf) idx = list.findIndex(s => (s.cpf || '') === cpf);
-            if (idx < 0 && codigoInep) idx = list.findIndex(s => normalizeInepValue(s.codigoInep) === codigoInep);
             if (idx < 0 && email) idx = list.findIndex(s => (s.email || '').toLowerCase() === email.toLowerCase());
             if (idx < 0 && nome && dataNascimento) {
                 idx = list.findIndex(s =>
                     (s.nome || '').toLowerCase() === nome.toLowerCase() &&
                     (s.dataNascimento || '') === dataNascimento
                 );
+            }
+            if (idx < 0 && codigoInep && /^\d{11,12}$/.test(codigoInep)) {
+                idx = list.findIndex(s => normalizeInepValue(s.codigoInep) === codigoInep);
             }
             return idx;
         };

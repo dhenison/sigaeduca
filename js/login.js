@@ -224,41 +224,141 @@
         }
 
         if (email.endsWith(DOMAIN_ALUNO)) {
-            var students = getStudents();
+            if (window.SigaPortalAluno && typeof window.SigaPortalAluno.purgeDemoStudents === 'function') {
+                window.SigaPortalAluno.purgeDemoStudents();
+            }
+
+            function finishAlunoLocal(aluno) {
+                verifyAndMaybeUpgrade(aluno.senha, function (hashed) {
+                    if (hashed !== aluno.senha) {
+                        saveStudents(getStudents().map(function (s) {
+                            return String(s.id) === String(aluno.id)
+                                ? Object.assign({}, s, { senha: hashed, precisaDefinirSenha: false })
+                                : s;
+                        }));
+                    }
+                    var schoolId = aluno.schoolId || aluno.school_id || null;
+                    try {
+                        var active = localStorage.getItem('siga_active_school');
+                        if (!schoolId && active) schoolId = active;
+                        if (schoolId) localStorage.setItem('siga_active_school', schoolId);
+                    } catch (eSc) { /* ignore */ }
+                    setSession({
+                        tipo: 'aluno',
+                        id: aluno.id,
+                        nome: aluno.nome,
+                        email: email,
+                        role: 'Aluno',
+                        schoolId: schoolId || null
+                    });
+                    try { localStorage.setItem('siga_portal_aluno_id', String(aluno.id)); } catch (eP) { /* ignore */ }
+                    toast('Bem-vindo(a), ' + (aluno.nome || 'aluno') + '!');
+                    setTimeout(function () {
+                        window.location.href = 'portal-aluno.html';
+                    }, 400);
+                });
+            }
+
+            function finishAlunoCloud(payload) {
+                var local = {
+                    id: payload.id,
+                    nome: payload.nome || '',
+                    email: payload.email || email,
+                    turma: payload.turma || '',
+                    serie: payload.serie || '',
+                    turno: payload.turno || '',
+                    avatar: payload.avatar_url || '',
+                    codigoInep: payload.codigo_inep || '',
+                    cpf: payload.cpf || '',
+                    dataNascimento: payload.birth_date || '',
+                    contato: payload.guardian_contact || '',
+                    responsavel: payload.guardian_name || '',
+                    status: payload.status || 'Ativo',
+                    schoolId: payload.school_id || null,
+                    precisaDefinirSenha: false,
+                    senha: '' // hash fica só no cloud após login RPC
+                };
+                if (window.SigaPortalAluno && typeof window.SigaPortalAluno.upsertLocalStudent === 'function') {
+                    window.SigaPortalAluno.upsertLocalStudent(local);
+                } else {
+                    var list = getStudents();
+                    var ix = list.findIndex(function (s) { return String(s.id) === String(local.id); });
+                    if (ix >= 0) list[ix] = Object.assign({}, list[ix], local);
+                    else list.unshift(local);
+                    saveStudents(list);
+                }
+                if (local.schoolId) {
+                    try { localStorage.setItem('siga_active_school', local.schoolId); } catch (e2) { /* ignore */ }
+                }
+                setSession({
+                    tipo: 'aluno',
+                    id: local.id,
+                    nome: local.nome,
+                    email: normEmail(local.email),
+                    role: 'Aluno',
+                    schoolId: local.schoolId || null,
+                    authProvider: 'students'
+                });
+                try { localStorage.setItem('siga_portal_aluno_id', String(local.id)); } catch (e3) { /* ignore */ }
+                toast('Bem-vindo(a), ' + (local.nome || 'aluno') + '!');
+                setTimeout(function () {
+                    window.location.href = 'portal-aluno.html';
+                }, 400);
+            }
+
+            function tryCloudLogin() {
+                var sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
+                    ? window.SigaSupabase.getClient()
+                    : null;
+                if (!sb || !sec || typeof sec.hashPassword !== 'function') {
+                    toast('Aluno não encontrado com este e-mail. Confirme o cadastro no SIGA EDUCA ou defina a senha em “Esqueci minha senha”.', 'error');
+                    return;
+                }
+                sec.hashPassword(senha).then(function (hashed) {
+                    return sb.rpc('student_login_by_hash', {
+                        p_email: email,
+                        p_password_hash: hashed
+                    });
+                }).then(function (res) {
+                    if (res.error || !res.data) {
+                        toast('Aluno não encontrado ou senha incorreta. Se for o primeiro acesso, use “Esqueci minha senha”.', 'error');
+                        return;
+                    }
+                    finishAlunoCloud(res.data);
+                }).catch(function () {
+                    toast('Não foi possível autenticar no SIGA EDUCA. Tente novamente.', 'error');
+                });
+            }
+
+            var students = getStudents().filter(function (s) {
+                return s && !s._demo && String(s.id) !== 'aluno_andre_siga_demo';
+            });
             var aluno = students.find(function (s) {
                 return normEmail(s.email) === email || ensureAlunoEmail(s) === email;
             });
             if (!aluno) {
-                toast('Aluno não encontrado com este e-mail.', 'error');
+                tryCloudLogin();
                 return;
             }
             if (normEmail(aluno.email) !== email) {
                 aluno.email = email;
-                saveStudents(students.map(function (s) {
+                saveStudents(getStudents().map(function (s) {
                     return String(s.id) === String(aluno.id) ? Object.assign({}, s, { email: email }) : s;
                 }));
             }
             if (!aluno.senha || aluno.precisaDefinirSenha) {
-                toast('Defina sua senha em “Esqueci minha senha” antes de entrar.', 'error');
+                // Sem senha local — tenta cloud (aluno já definiu no servidor)
+                tryCloudLogin();
                 return;
             }
-            verifyAndMaybeUpgrade(aluno.senha, function (hashed) {
-                if (hashed !== aluno.senha) {
-                    saveStudents(getStudents().map(function (s) {
-                        return String(s.id) === String(aluno.id)
-                            ? Object.assign({}, s, { senha: hashed, precisaDefinirSenha: false })
-                            : s;
-                    }));
-                }
-                setSession({
-                    tipo: 'aluno',
-                    id: aluno.id,
-                    nome: aluno.nome,
-                    email: email,
-                    role: 'Aluno'
-                });
-                toast('Bem-vindo(a), ' + (aluno.nome || 'aluno') + '!');
-                setTimeout(function () { window.location.href = 'portal-aluno.html'; }, 400);
+            if (!sec) {
+                if (String(aluno.senha || '') === senha) finishAlunoLocal(aluno);
+                else tryCloudLogin();
+                return;
+            }
+            sec.verifyPassword(senha, aluno.senha).then(function (ok) {
+                if (ok) finishAlunoLocal(aluno);
+                else tryCloudLogin();
             });
             return;
         }
@@ -558,10 +658,11 @@
             return;
         }
 
-        // Aluno — localiza e pede nova senha (não exibe senha derivada de CPF)
+        // Aluno — localiza (local ou SIGA) e pede nova senha
         var cpfA = digits((document.getElementById('rec-cpf-aluno') || {}).value);
         var nascA = (document.getElementById('rec-nasc-aluno') || {}).value;
-        if (cpfA.length !== 11 || !parseBrDate(nascA)) {
+        var nascIso = parseBrDate(nascA);
+        if (cpfA.length !== 11 || !nascIso) {
             toast('Informe CPF e Data de Nascimento.', 'error');
             return;
         }
@@ -569,29 +670,68 @@
         var aluno = students.find(function (s) {
             return digits(s.cpf) === cpfA && sameDate(s.dataNascimento, nascA);
         });
-        if (!aluno) {
-            toast('Aluno não encontrado. Verifique os dados informados.', 'error');
+
+        function openAlunoSenhaStep(found) {
+            var email = ensureAlunoEmail(found);
+            pendingAlunoId = found.id;
+            pendingServidorId = null;
+            var list = getStudents();
+            var exists = list.some(function (s) { return String(s.id) === String(found.id); });
+            if (!exists) {
+                list.unshift(Object.assign({}, found, { email: email }));
+            } else {
+                list = list.map(function (s) {
+                    if (String(s.id) !== String(found.id)) return s;
+                    return Object.assign({}, s, { email: email, nome: found.nome || s.nome });
+                });
+            }
+            saveStudents(list);
+            var emailAlunoEl = document.getElementById('rec-aluno-email');
+            if (emailAlunoEl) emailAlunoEl.textContent = email;
+            var nomeAlunoEl = document.getElementById('rec-aluno-nome');
+            if (nomeAlunoEl) nomeAlunoEl.textContent = found.nome || 'Aluno';
+            var emailServ = document.getElementById('rec-servidor-email');
+            if (emailServ) emailServ.textContent = email;
+            var nomeServ = document.getElementById('rec-servidor-nome');
+            if (nomeServ) nomeServ.textContent = found.nome || 'Aluno';
+            showRecoverStep('servidorSenha');
+        }
+
+        if (aluno) {
+            openAlunoSenhaStep(aluno);
             return;
         }
-        var email = ensureAlunoEmail(aluno);
-        pendingAlunoId = aluno.id;
-        pendingServidorId = null;
-        students = students.map(function (s) {
-            if (String(s.id) !== String(aluno.id)) return s;
-            return Object.assign({}, s, { email: email });
-        });
-        saveStudents(students);
 
-        var emailAlunoEl = document.getElementById('rec-aluno-email');
-        if (emailAlunoEl) emailAlunoEl.textContent = email;
-        var nomeAlunoEl = document.getElementById('rec-aluno-nome');
-        if (nomeAlunoEl) nomeAlunoEl.textContent = aluno.nome || 'Aluno';
-        // Reutiliza o passo de definição de senha do servidor
-        var emailServ = document.getElementById('rec-servidor-email');
-        if (emailServ) emailServ.textContent = email;
-        var nomeServ = document.getElementById('rec-servidor-nome');
-        if (nomeServ) nomeServ.textContent = aluno.nome || 'Aluno';
-        showRecoverStep('servidorSenha');
+        var sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
+            ? window.SigaSupabase.getClient()
+            : null;
+        if (!sb) {
+            toast('Aluno não encontrado. Verifique os dados ou sincronize a escola no SIGA EDUCA.', 'error');
+            return;
+        }
+        sb.rpc('student_lookup_by_identity', {
+            p_cpf: cpfA,
+            p_birth_date: nascIso
+        }).then(function (res) {
+            if (res.error || !res.data) {
+                toast('Aluno não encontrado no SIGA EDUCA. Verifique CPF e data de nascimento.', 'error');
+                return;
+            }
+            var d = res.data;
+            openAlunoSenhaStep({
+                id: d.id,
+                nome: d.nome || '',
+                email: d.email || '',
+                turma: d.turma || '',
+                avatar: d.avatar_url || '',
+                schoolId: d.school_id || null,
+                cpf: cpfA,
+                dataNascimento: nascIso,
+                precisaDefinirSenha: true
+            });
+        }).catch(function () {
+            toast('Falha ao consultar o SIGA EDUCA. Tente novamente.', 'error');
+        });
     }
 
     function salvarSenhaServidor() {
@@ -627,8 +767,36 @@
                 students[aidx].senha = hashed;
                 students[aidx].precisaDefinirSenha = false;
                 saveStudents(students);
-                pendingAlunoId = null;
-                finish(emailA);
+                var sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
+                    ? window.SigaSupabase.getClient()
+                    : null;
+                var cpfDigits = digits(students[aidx].cpf);
+                var birth = parseBrDate(students[aidx].dataNascimento) || String(students[aidx].dataNascimento || '').slice(0, 10);
+                function done() {
+                    pendingAlunoId = null;
+                    finish(emailA);
+                }
+                if (sb && cpfDigits.length === 11 && birth) {
+                    sb.rpc('student_set_password_by_identity', {
+                        p_cpf: cpfDigits,
+                        p_birth_date: birth,
+                        p_password_hash: hashed
+                    }).then(function (res) {
+                        if (res.data && res.data.ok && res.data.school_id) {
+                            try { localStorage.setItem('siga_active_school', res.data.school_id); } catch (e) { /* ignore */ }
+                        }
+                        if (res.data && res.data.email) {
+                            students[aidx].email = normEmail(res.data.email);
+                            saveStudents(students);
+                            finish(students[aidx].email);
+                            pendingAlunoId = null;
+                            return;
+                        }
+                        done();
+                    }).catch(done);
+                    return;
+                }
+                done();
             };
             if (sec) sec.hashPassword(nova).then(applyAluno);
             else applyAluno(nova);
@@ -730,6 +898,13 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         getUsers(); // seed se necessário
+        try {
+            var cleaned = getStudents().filter(function (s) {
+                return s && !s._demo && String(s.id) !== 'aluno_andre_siga_demo' &&
+                    normEmail(s.email) !== 'andre.siga' + DOMAIN_ALUNO;
+            });
+            saveStudents(cleaned);
+        } catch (ePurge) { /* ignore */ }
         bindUi();
     });
 })();

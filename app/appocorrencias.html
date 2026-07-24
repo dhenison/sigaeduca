@@ -1,277 +1,122 @@
 <!DOCTYPE html>
-
-<html class="light" lang="pt-BR"><head>
+<html class="light" lang="pt-BR">
+<head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Ocorrências — Portal do Aluno</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "on-tertiary-container": "#293430",
-                    "surface-container-low": "#f0f3ff",
-                    "on-surface-variant": "#3e4a3f",
-                    "on-primary": "#ffffff",
-                    "primary": "#006d37",
-                    "on-secondary-fixed-variant": "#454749",
-                    "tertiary-fixed": "#d9e5df",
-                    "surface-bright": "#f9f9ff",
-                    "inverse-surface": "#2a313d",
-                    "surface-dim": "#d3daea",
-                    "primary-fixed-dim": "#64de8b",
-                    "surface-container": "#e7eefe",
-                    "secondary": "#5d5e61",
-                    "surface-tint": "#006d37",
-                    "tertiary-fixed-dim": "#bdc9c3",
-                    "inverse-primary": "#64de8b",
-                    "on-secondary-fixed": "#1a1c1e",
-                    "on-error-container": "#93000a",
-                    "on-tertiary": "#ffffff",
-                    "surface-variant": "#dce2f3",
-                    "tertiary-container": "#909d97",
-                    "error": "#ba1a1a",
-                    "primary-fixed": "#81fba5",
-                    "outline-variant": "#bdcabc",
-                    "on-primary-fixed-variant": "#005228",
-                    "inverse-on-surface": "#ebf1ff",
-                    "secondary-fixed": "#e2e2e5",
-                    "on-surface": "#151c27",
-                    "surface-container-high": "#e2e8f8",
-                    "surface-container-highest": "#dce2f3",
-                    "background": "#f9f9ff",
-                    "secondary-fixed-dim": "#c6c6c9",
-                    "secondary-container": "#e2e2e5",
-                    "on-primary-container": "#003a1a",
-                    "on-secondary-container": "#636467",
-                    "on-tertiary-fixed": "#131e1a",
-                    "on-tertiary-fixed-variant": "#3d4944",
-                    "on-secondary": "#ffffff",
-                    "surface": "#f9f9ff",
-                    "on-primary-fixed": "#00210c",
-                    "error-container": "#ffdad6",
-                    "tertiary": "#55615c",
-                    "primary-container": "#2eaf62",
-                    "outline": "#6e7a6e",
-                    "surface-container-lowest": "#ffffff",
-                    "on-background": "#151c27",
-                    "on-error": "#ffffff"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-                    "stack-gap-lg": "24px",
-                    "stack-gap-md": "16px",
-                    "inline-gutter": "12px",
-                    "container-padding": "16px",
-                    "touch-target": "48px",
-                    "stack-gap-sm": "8px"
-            },
-            "fontFamily": {
-                    "headline-lg": ["Inter"],
-                    "label-md": ["Inter"],
-                    "headline-sm": ["Inter"],
-                    "body-md": ["Inter"],
-                    "body-lg": ["Inter"],
-                    "label-sm": ["Inter"],
-                    "headline-md": ["Inter"]
-            },
-            "fontSize": {
-                    "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                    "headline-lg-mobile": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
-                    "label-md-mobile": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
-                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
-                    "headline-sm-mobile": ["16px", {"lineHeight": "22px", "fontWeight": "600"}],
-                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
-                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
-                    "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
-                    "headline-md-mobile": ["20px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
-            }
-          },
-        },
-      }
-    </script>
-<style>
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .safe-bottom {
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-    </style>
-<style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
-  </head>
-<body class="bg-background text-on-background min-h-screen pb-24">
-<!-- TopAppBar -->
-<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-container-padding">
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed">
-<img class="w-full h-full object-cover" data-alt="A professional high-quality headshot of a diverse male student in a bright educational setting, smiling warmly. The lighting is soft and natural, emphasizing a modern corporate academic atmosphere with a clean and professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIj1kqFZgOimNbjtdVr12o_UyFA9-axbIfPhc38x9EFdNSbAXstmW9B3rO5u6MqJ0ZIzNNz0mTh1wnl66aF3z6_zJtNUo2qsJmPDvgEvr1CxQOYHE2wieZYREPDZtA1whUvRnu6mgvNUZnxXge4fVLg3VCb_NV89X4RWGyl65V21fRRiL-hBVMiZjGqvG_EhIAeHqM8lplRa2RNITmKP5HdLgB-hQluF6kCJvbuNNtmy_k1SxoMs_5p0SuM3cUNhZ8CULrV2vPYes"/>
-</div>
-<h1 class="font-headline-md-mobile text-headline-md-mobile font-bold text-primary">SIGA EDUCA</h1>
-</div>
-<button class="w-touch-target h-touch-target flex items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 rounded-full active:scale-95 transition-transform duration-150">
-<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
-</button>
-</header>
-<main class="pt-20 px-container-padding space-y-stack-gap-lg">
-<!-- Summary Dashboard Card -->
-<section class="bg-surface-container-lowest rounded-xl p-stack-gap-md shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-outline-variant/30">
-<h2 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface mb-4">Resumo Acadêmico</h2>
-<div class="grid grid-cols-3 gap-inline-gutter">
-<div class="flex flex-col items-center p-3 bg-error-container/30 rounded-lg">
-<span class="text-error font-headline-lg-mobile text-headline-lg-mobile">02</span>
-<span class="text-label-md-mobile font-label-md-mobile text-on-error-container uppercase">Graves</span>
-</div>
-<div class="flex flex-col items-center p-3 bg-surface-variant/50 rounded-lg border border-outline-variant/20">
-<span class="text-on-surface font-headline-lg-mobile text-headline-lg-mobile">04</span>
-<span class="text-label-md-mobile font-label-md-mobile text-on-surface-variant uppercase">Avisos</span>
-</div>
-<div class="flex flex-col items-center p-3 bg-primary-container/20 rounded-lg">
-<span class="text-primary font-headline-lg-mobile text-headline-lg-mobile">85%</span>
-<span class="text-label-md-mobile font-label-md-mobile text-on-primary-container uppercase">Conduta</span>
-</div>
-</div>
-</section>
-<!-- Main List Section -->
-<section class="space-y-stack-gap-md">
-<div class="flex justify-between items-center px-1">
-<h3 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">Histórico de Ocorrências</h3>
-<button class="text-primary font-label-md-mobile text-label-md-mobile hover:underline">FILTRAR</button>
-</div>
-<!-- List Content -->
-<div class="space-y-stack-gap-sm">
-<!-- Occurrence Item 1: Serious -->
-<div class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-l-4 border-error flex gap-4 animate-in slide-in-from-bottom duration-300">
-<div class="flex flex-col items-center min-w-[48px]">
-<span class="font-label-md-mobile text-on-surface-variant">OUT</span>
-<span class="font-headline-sm-mobile text-on-surface">24</span>
-</div>
-<div class="flex-1 space-y-1">
-<div class="flex justify-between items-start">
-<span class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">Indisciplina em Sala</span>
-<span class="bg-error-container text-on-error-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Pendente</span>
-</div>
-<p class="text-body-md text-on-surface-variant leading-tight">Uso indevido de aparelhos eletrônicos durante a avaliação trimestral de Matemática.</p>
-<div class="flex items-center gap-2 pt-2">
-<span class="material-symbols-outlined text-[16px] text-error" data-icon="warning">warning</span>
-<span class="text-label-sm font-label-sm text-error">Ocorrência de Nível 3</span>
-</div>
-</div>
-</div>
-<!-- Occurrence Item 2: Warning -->
-<div class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-l-4 border-yellow-500 flex gap-4">
-<div class="flex flex-col items-center min-w-[48px]">
-<span class="font-label-md-mobile text-on-surface-variant">OUT</span>
-<span class="font-headline-sm-mobile text-on-surface">18</span>
-</div>
-<div class="flex-1 space-y-1">
-<div class="flex justify-between items-start">
-<span class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">Atraso Recorrente</span>
-<span class="bg-tertiary-container/30 text-on-tertiary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Resolvido</span>
-</div>
-<p class="text-body-md text-on-surface-variant leading-tight">Chegada após o segundo sinal sem justificativa prévia do responsável.</p>
-<div class="flex items-center gap-2 pt-2 text-on-surface-variant/70">
-<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
-<span class="text-label-sm font-label-sm">Registrado às 07:45</span>
-</div>
-</div>
-</div>
-<!-- Occurrence Item 3: Warning -->
-<div class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-l-4 border-yellow-500 flex gap-4">
-<div class="flex flex-col items-center min-w-[48px]">
-<span class="font-label-md-mobile text-on-surface-variant">SET</span>
-<span class="font-headline-sm-mobile text-on-surface">30</span>
-</div>
-<div class="flex-1 space-y-1">
-<div class="flex justify-between items-start">
-<span class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface">Uniforme Incompleto</span>
-<span class="bg-tertiary-container/30 text-on-tertiary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Resolvido</span>
-</div>
-<p class="text-body-md text-on-surface-variant leading-tight">Estudante apresentou-se sem a camiseta oficial da instituição.</p>
-<div class="flex items-center gap-2 pt-2 text-on-surface-variant/70">
-<span class="material-symbols-outlined text-[16px]" data-icon="info">info</span>
-<span class="text-label-sm font-label-sm">Advertência verbal aplicada</span>
-</div>
-</div>
-</div>
-<!-- Empty State Example (Hidden by default, used for logic demonstration) -->
-<div class="hidden flex flex-col items-center justify-center py-16 space-y-4" id="empty-state">
-<div class="w-32 h-32 bg-surface-container rounded-full flex items-center justify-center">
-<span class="material-symbols-outlined text-primary text-[64px]" data-icon="verified">verified</span>
-</div>
-<div class="text-center space-y-2">
-<h4 class="font-headline-sm text-on-surface">Tudo em ordem!</h4>
-<p class="text-body-md text-on-surface-variant px-12">Nenhuma ocorrência registrada no período selecionado.</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Informational Footer -->
-<div class="p-4 bg-primary-container/10 rounded-xl border border-primary/20 flex gap-3">
-<span class="material-symbols-outlined text-primary" data-icon="help_outline">help_outline</span>
-<div class="space-y-1">
-<span class="font-label-md text-primary block">Regimento Escolar</span>
-<p class="text-label-sm text-on-primary-container opacity-80">As ocorrências influenciam na nota de comportamento trimestral. Clique em um item para ver detalhes ou contestar.</p>
-</div>
-</div>
-</main>
-<!-- BottomNavBar -->
-<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe bg-surface border-t border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
-<span class="font-label-md-mobile text-label-md-mobile">Dashboard</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="school">school</span>
-<span class="font-label-md-mobile text-label-md-mobile">Courses</span>
-</a>
-<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="grade">grade</span>
-<span class="font-label-md-mobile text-label-md-mobile">Grades</span>
-</a>
-<a class="flex flex-col items-center justify-center text-on-secondary-container px-4 py-1 active:scale-90 transition-all duration-200" href="#">
-<span class="material-symbols-outlined" data-icon="menu">menu</span>
-<span class="font-label-md-mobile text-label-md-mobile">Menu</span>
-</a>
-</nav>
-<!-- Interaction Script -->
 <script>
-        // Simple click interaction for the items
-        document.querySelectorAll('.bg-surface-container-lowest.rounded-xl').forEach(item => {
-            item.addEventListener('click', () => {
-                item.classList.add('scale-95', 'opacity-70');
-                setTimeout(() => {
-                    item.classList.remove('scale-95', 'opacity-70');
-                }, 150);
-            });
-        });
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        primary: "#006d37",
+        "on-primary": "#ffffff",
+        "primary-container": "#2eaf62",
+        "on-primary-container": "#003a1a",
+        background: "#f9f9ff",
+        surface: "#f9f9ff",
+        "surface-container-lowest": "#ffffff",
+        "surface-variant": "#dce2f3",
+        "on-surface": "#151c27",
+        "on-surface-variant": "#3e4a3f",
+        "on-background": "#151c27",
+        outline: "#6e7a6e",
+        "outline-variant": "#bdcabc",
+        error: "#ba1a1a",
+        "error-container": "#ffdad6",
+        "on-error-container": "#93000a"
+      },
+      spacing: {
+        "stack-gap-lg": "24px",
+        "stack-gap-md": "16px",
+        "inline-gutter": "12px",
+        "container-padding": "16px",
+        "touch-target": "48px",
+        "stack-gap-sm": "8px"
+      },
+      fontFamily: { sans: ["Inter"] },
+      fontSize: {
+        "headline-lg-mobile": ["24px", {"lineHeight": "30px", "fontWeight": "700"}],
+        "headline-md-mobile": ["20px", {"lineHeight": "26px", "fontWeight": "600"}],
+        "headline-sm-mobile": ["16px", {"lineHeight": "22px", "fontWeight": "600"}],
+        "label-md-mobile": ["11px", {"lineHeight": "14px", "fontWeight": "600"}]
+      }
+    }
+  }
+};
+</script>
+<style>
+body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; min-height: max(884px, 100dvh); }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-28">
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-container-padding max-w-lg mx-auto left-0 right-0">
+  <div class="flex items-center gap-3 min-w-0">
+    <a href="../portal-aluno.html" class="w-10 h-10 rounded-full flex items-center justify-center text-primary" title="Voltar">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30 bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
+      <img id="occ-aluno-avatar" class="w-full h-full object-cover hidden" alt=""/>
+      <span id="occ-aluno-avatar-fb">AL</span>
+    </div>
+    <div class="min-w-0">
+      <h1 class="font-headline-md-mobile text-headline-md-mobile font-bold text-primary truncate">Ocorrências</h1>
+      <p id="occ-aluno-nome" class="text-[11px] text-on-surface-variant truncate">Aluno</p>
+    </div>
+  </div>
+</header>
 
-        // Theme check logic (if needed in future expansions)
-        const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (isDarkMode) {
-            // document.documentElement.classList.add('dark');
-        }
-    </script>
-</body></html>
+<main class="pt-20 px-container-padding max-w-lg mx-auto space-y-stack-gap-md">
+  <section>
+    <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Histórico escolar</h2>
+    <p class="text-sm text-on-surface-variant mt-1">Registros do módulo Ocorrências do SIGA EDUCA (escola / responsáveis).</p>
+  </section>
+
+  <section class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30">
+    <h3 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface mb-3">Resumo</h3>
+    <div class="grid grid-cols-3 gap-inline-gutter">
+      <div class="flex flex-col items-center p-3 bg-error-container/40 rounded-lg">
+        <span id="occ-kpi-graves" class="text-error font-bold text-2xl">00</span>
+        <span class="text-[10px] font-bold uppercase text-on-error-container">Graves</span>
+      </div>
+      <div class="flex flex-col items-center p-3 bg-surface-variant/60 rounded-lg">
+        <span id="occ-kpi-avisos" class="text-on-surface font-bold text-2xl">00</span>
+        <span class="text-[10px] font-bold uppercase text-on-surface-variant">Avisos</span>
+      </div>
+      <div class="flex flex-col items-center p-3 bg-primary-container/25 rounded-lg">
+        <span id="occ-kpi-conduta" class="text-primary font-bold text-2xl">100%</span>
+        <span class="text-[10px] font-bold uppercase text-on-primary-container">Conduta</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-stack-gap-sm">
+    <h3 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface px-1">Histórico de ocorrências</h3>
+    <div id="occ-lista" class="space-y-2"></div>
+  </section>
+</main>
+
+<nav id="portal-aluno-bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-20 px-2 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-2xl max-w-lg mx-auto"></nav>
+
+<script src="../js/siga-config.js?v=20260724a"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/siga-supabase.js?v=20260724a"></script>
+<script src="../js/siga-security.js?v=20260724b"></script>
+<script src="../js/portal-aluno-app.js?v=20260724f"></script>
+<script src="../js/portal-ocorrencias.js?v=20260724f"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (!window.SigaPortalAluno) return;
+  window.SigaPortalAluno.boot("inicio").then(function (ctx) {
+    if (!ctx) return;
+    if (window.SigaPortalOcorrencias) window.SigaPortalOcorrencias.boot(ctx);
+  });
+});
+</script>
+</body>
+</html>
