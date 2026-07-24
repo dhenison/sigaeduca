@@ -268,12 +268,88 @@
     return !!(mark.status && mark.marked_at);
   }
 
+  function getSb() {
+    var a = global.SigaSupabase || global.SigaAuth;
+    return a && typeof a.getClient === "function" ? a.getClient() : null;
+  }
+
+  function isUuid(v) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      String(v || "").trim()
+    );
+  }
+
+  function markFromPortalPayload(mark) {
+    if (!mark) return null;
+    return {
+      status: mark.status || "P",
+      justification: mark.justification || "",
+      locked: !!mark.locked,
+      source: mark.source || "facial",
+      marked_at: mark.marked_at || null,
+      _hasMark: true,
+    };
+  }
+
+  /** Grava no cache local a marca do aluno (portal não tem sessão auth para RLS). */
+  function applyPortalMarksToLocal(dateIso, classCode, studentId, entradaMark, saidaMark) {
+    var code = String(classCode || "").trim();
+    if (!dateIso || !code || !studentId) return null;
+    var key = "siga_attendance_" + dateIso + "_" + code;
+    var rec = getLocalAttendance(dateIso, code) || {
+      entrada: { consolidado: false, records: {} },
+      saida: { consolidado: false, records: {} },
+    };
+    if (!rec.entrada) rec.entrada = { consolidado: false, records: {} };
+    if (!rec.saida) rec.saida = { consolidado: false, records: {} };
+    if (!rec.entrada.records) rec.entrada.records = {};
+    if (!rec.saida.records) rec.saida.records = {};
+    var sid = String(studentId);
+    if (entradaMark) rec.entrada.records[sid] = markFromPortalPayload(entradaMark);
+    if (saidaMark) rec.saida.records[sid] = markFromPortalPayload(saidaMark);
+    try {
+      localStorage.setItem(key, JSON.stringify(rec));
+    } catch (e) { /* ignore */ }
+    return rec;
+  }
+
   function readDayForStudent(dateIso, student, classCode) {
-    var rec = getLocalAttendance(dateIso, classCode);
-    var entMark = rec && rec.entrada ? markForStudent(rec.entrada, student) : null;
-    var saiMark = rec && rec.saida ? markForStudent(rec.saida, student) : null;
+    var codes = [];
+    var primary = String(classCode || (student && student.turma) || "").trim();
+    if (primary) codes.push(primary);
+    // Batidas faciais às vezes ficam na turma do cloud; tenta também o class_code do aluno
+    if (student && student.class_code) {
+      var alt = String(student.class_code).trim();
+      if (alt && codes.indexOf(alt) < 0) codes.push(alt);
+    }
+
+    var entMark = null;
+    var saiMark = null;
+    var rec = null;
+    var usedCode = primary;
+    codes.forEach(function (code) {
+      if (entMark && saiMark) return;
+      var r = getLocalAttendance(dateIso, code);
+      if (!r) return;
+      var e = r.entrada ? markForStudent(r.entrada, student) : null;
+      var s = r.saida ? markForStudent(r.saida, student) : null;
+      if (e && isConsolidatedMark(e)) {
+        entMark = e;
+        rec = r;
+        usedCode = code;
+      }
+      if (s && isConsolidatedMark(s)) {
+        saiMark = s;
+        rec = r || rec;
+        usedCode = code;
+      }
+    });
+
     var entOk = isConsolidatedMark(entMark) && entMark.status === "P";
     var saiOk = isConsolidatedMark(saiMark) && saiMark.status === "P";
+    // Mostra também F/FJ consolidados (não só P)
+    var entShow = isConsolidatedMark(entMark);
+    var saiShow = isConsolidatedMark(saiMark);
     var consolidado =
       entOk && saiOk
         ? consolidarStatusDia(entMark.status, saiMark.status)
@@ -283,14 +359,15 @@
 
     return {
       dateIso: dateIso,
-      entrada: entOk
+      classCode: usedCode,
+      entrada: entShow
         ? {
             at: entMark.marked_at || null,
             status: entMark.status,
             source: entMark.source || "manual",
           }
         : null,
-      saida: saiOk
+      saida: saiShow
         ? {
             at: saiMark.marked_at || null,
             status: saiMark.status,
@@ -303,7 +380,39 @@
     };
   }
 
-  function loadDayFromSupabase(dateIso, student, classCode) {
+  /** RPC SECURITY DEFINER — funciona com anon (login do portal sem auth.users). */
+  function loadDayViaPortalRpc(dateIso, student, classCode) {
+    var sb = getSb();
+    if (!sb || !student || !isUuid(student.id)) {
+      return Promise.resolve(null);
+    }
+    return sb
+      .rpc("student_portal_attendance_day", {
+        p_student_id: student.id,
+        p_day_date: dateIso,
+      })
+      .then(function (res) {
+        if (res.error || !res.data) return null;
+        var data = res.data;
+        var code = String(classCode || data.class_code || student.turma || "").trim();
+        applyPortalMarksToLocal(dateIso, code, student.id, data.entrada, data.saida);
+        if (data.class_code && data.class_code !== code) {
+          applyPortalMarksToLocal(
+            dateIso,
+            String(data.class_code),
+            student.id,
+            data.entrada,
+            data.saida
+          );
+        }
+        return readDayForStudent(dateIso, student, code);
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
+  function loadDayViaStaffCloud(dateIso, student, classCode) {
     var cloud = global.SigaFrequenciaCloud;
     if (!cloud || typeof cloud.loadDay !== "function") {
       return Promise.resolve(null);
@@ -322,6 +431,53 @@
       })
       .catch(function () {
         return null;
+      });
+  }
+
+  function loadDayFromSupabase(dateIso, student, classCode) {
+    return loadDayViaPortalRpc(dateIso, student, classCode).then(function (fromRpc) {
+      if (fromRpc && (fromRpc.entrada || fromRpc.saida)) return fromRpc;
+      return loadDayViaStaffCloud(dateIso, student, classCode).then(function (fromStaff) {
+        return fromStaff || fromRpc;
+      });
+    });
+  }
+
+  /** Hidrata cache local com todas as batidas do intervalo (histórico/resumo). */
+  function hydrateAttendanceRange(student, fromIso, toIso) {
+    var sb = getSb();
+    if (!sb || !student || !isUuid(student.id) || !fromIso || !toIso) {
+      return Promise.resolve({ ok: false });
+    }
+    return sb
+      .rpc("student_portal_attendance_range", {
+        p_student_id: student.id,
+        p_from: fromIso,
+        p_to: toIso,
+      })
+      .then(function (res) {
+        if (res.error || !res.data || !res.data.days) {
+          return { ok: false, message: (res.error && res.error.message) || "rpc" };
+        }
+        var daysMap = res.data.days || {};
+        var classCode = String(student.turma || res.data.class_code || "").trim();
+        Object.keys(daysMap).forEach(function (iso) {
+          var day = daysMap[iso] || {};
+          applyPortalMarksToLocal(iso, classCode, student.id, day.entrada, day.saida);
+          if (res.data.class_code && String(res.data.class_code) !== classCode) {
+            applyPortalMarksToLocal(
+              iso,
+              String(res.data.class_code),
+              student.id,
+              day.entrada,
+              day.saida
+            );
+          }
+        });
+        return { ok: true, count: Object.keys(daysMap).length };
+      })
+      .catch(function (err) {
+        return { ok: false, message: (err && err.message) || "erro" };
       });
   }
 
@@ -573,8 +729,8 @@
           emptyCal.classList.toggle("hidden", days.length > 0);
         }
 
-        // Tenta enriquecer o dia selecionado via Supabase
-        if (state.selectedIso && classCode && student.id) {
+        // Enriquece o dia selecionado via RPC do portal (anon) / fallback staff
+        if (state.selectedIso && student.id) {
           loadDayFromSupabase(state.selectedIso, student, classCode).then(function (cloudDay) {
             if (!cloudDay) return;
             renderDayDetail(cloudDay, state.selectedIso);
@@ -607,7 +763,7 @@
             ? readDayForStudent(state.selectedIso, student, classCode)
             : null;
           renderDayDetail(dayInfo, state.selectedIso);
-          if (state.selectedIso && classCode) {
+          if (state.selectedIso) {
             loadDayFromSupabase(state.selectedIso, student, classCode).then(function (cloudDay) {
               if (cloudDay) renderDayDetail(cloudDay, state.selectedIso);
             });
@@ -615,7 +771,21 @@
         });
       }
 
-      refresh();
+      // Prefetch de batidas faciais do período (RPC — sem login staff)
+      var allDays = listLetivoDays("ambos");
+      var fromIso = allDays.length ? allDays[0].iso : yearNow() + "-01-01";
+      var toIso = allDays.length ? allDays[allDays.length - 1].iso : yearNow() + "-12-31";
+      // Garante inclusão do dia de teste atual mesmo fora da lista filtrada
+      if (state.selectedIso && state.selectedIso < fromIso) fromIso = state.selectedIso;
+      if (state.selectedIso && state.selectedIso > toIso) toIso = state.selectedIso;
+
+      hydrateAttendanceRange(student, fromIso, toIso)
+        .catch(function () {
+          return { ok: false };
+        })
+        .then(function () {
+          refresh();
+        });
     }
 
     var hydrate =
@@ -633,5 +803,7 @@
   global.SigaPortalFrequencia = {
     boot: bootFrequencia,
     listLetivoDays: listLetivoDays,
+    loadDayFromSupabase: loadDayFromSupabase,
+    hydrateAttendanceRange: hydrateAttendanceRange,
   };
 })(typeof window !== "undefined" ? window : this);

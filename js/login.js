@@ -289,7 +289,8 @@
                 var local = {
                     id: payload.id,
                     nome: payload.nome || '',
-                    email: payload.email || email,
+                    // Portal sempre usa @aluno na sessão (mesmo se o cadastro veio com @escola)
+                    email: email,
                     turma: payload.turma || '',
                     serie: payload.serie || '',
                     turno: payload.turno || '',

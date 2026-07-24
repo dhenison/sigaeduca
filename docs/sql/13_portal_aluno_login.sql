@@ -24,11 +24,23 @@ BEGIN
     RETURN NULL;
   END IF;
 
+  -- Aceita cadastro com @aluno ou @escola no mesmo local-part (importações legadas)
   SELECT * INTO st
   FROM public.students
-  WHERE lower(email) = lower(btrim(p_email))
-    AND coalesce(status, 'Ativo') = 'Ativo'
-  ORDER BY updated_at DESC NULLS LAST
+  WHERE coalesce(status, 'Ativo') = 'Ativo'
+    AND (
+      lower(email) = lower(btrim(p_email))
+      OR (
+        lower(split_part(coalesce(email, ''), '@', 1)) = lower(split_part(btrim(p_email), '@', 1))
+        AND lower(split_part(coalesce(email, ''), '@', 2)) IN (
+          'aluno.seduc.pa.gov.br',
+          'escola.seduc.pa.gov.br'
+        )
+      )
+    )
+  ORDER BY
+    CASE WHEN lower(email) = lower(btrim(p_email)) THEN 0 ELSE 1 END,
+    updated_at DESC NULLS LAST
   LIMIT 1;
 
   IF NOT FOUND THEN
@@ -55,7 +67,7 @@ BEGIN
     'id', st.id,
     'school_id', st.school_id,
     'nome', st.full_name,
-    'email', st.email,
+    'email', lower(btrim(p_email)),
     'turma', st.class_code,
     'serie', st.serie,
     'turno', st.turno,
@@ -71,7 +83,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.student_login_by_hash(text, text) IS
-  'Login do Portal do Aluno: e-mail @aluno.seduc.pa.gov.br + password_hash (cliente). Não devolve o hash.';
+  'Login do Portal do Aluno: e-mail @aluno (+ alias @escola no mesmo local-part) + password_hash.';
 
 REVOKE ALL ON FUNCTION public.student_login_by_hash(text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.student_login_by_hash(text, text) TO anon, authenticated;
