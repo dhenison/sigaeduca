@@ -1168,8 +1168,12 @@ function renderAttendance() {
     filteredStudents.forEach(s => {
         const rec = currentRecord.entrada.records[s.id] || { status: 'P', justification: '', locked: false };
         if (markLocked(rec)) lockedEnt++;
+        // Mesma mensagem da Saída: aguarda consolidação facial — sem bloquear a edição da Entrada
+        const waitingEnt = !markLocked(rec)
+            ? 'Aguardando Entrada consolidada deste aluno (facial).'
+            : '';
         const row = document.createElement('div');
-        row.innerHTML = studentPhaseRow(s, 'entrada', rec, !!currentRecord.entrada.consolidado, '');
+        row.innerHTML = studentPhaseRow(s, 'entrada', rec, !!currentRecord.entrada.consolidado, waitingEnt);
         if (rec.status === 'FJ' && rec.justification) {
             const labelDiv = document.createElement('div');
             labelDiv.className = "text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium mt-1 ml-3";
