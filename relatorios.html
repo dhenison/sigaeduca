@@ -319,7 +319,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><script src="js/relatorios.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260724ab"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260724ab"></script><script src="js/siga-security.js?v=20260724ab"></script><script src="js/siga-school-data.js?v=20260724ab"></script><script src="js/siga-db.js?v=20260724ab"></script><script src="js/siga-frequencia-supabase.js?v=20260724ab"></script><script src="js/relatorios.js?v=20260724ab"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -755,7 +755,7 @@ Gerar Relatório
 </table>
 </div>
 </div>
-<p class="text-[11px] text-text-secondary">Legenda: <strong class="text-primary">P</strong> presença · <strong class="text-error">F</strong> falta · <span class="text-amber-700 font-semibold">FJ</span> falta justificada (conta como presença) · <span class="text-text-secondary">—</span> sem registro consolidado</p>
+<p class="text-[11px] text-text-secondary">Legenda: <strong class="text-primary">P</strong> presença · <strong class="text-error">F</strong> falta · <span class="text-amber-700 font-semibold">FJ</span> falta justificada (conta como presença) · <span class="text-text-secondary">—</span> sem registro consolidado (batida facial individual ou consolidação da turma). % Faltas conta apenas F explícitas.</p>
 </div>
 
 <div id="freq-empty-state" class="bg-white border border-dashed border-border-subtle rounded-2xl p-10 text-center text-text-secondary">

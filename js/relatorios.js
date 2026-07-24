@@ -175,13 +175,68 @@
         }
     }
 
+    function saveAttendanceRecord(dateIso, classCode, record) {
+        if (!dateIso || !classCode || !record) return;
+        try {
+            localStorage.setItem('siga_attendance_' + dateIso + '_' + classCode, JSON.stringify(record));
+        } catch (e) { /* ignore */ }
+    }
+
+    /** Marca válida: consolidação individual (facial/locked) OU chamada da turma consolidada. */
+    function markReadyForReport(phaseRec, studentId) {
+        if (!phaseRec) return null;
+        var sid = String(studentId);
+        var rec = (phaseRec.records && (phaseRec.records[sid] || phaseRec.records[studentId])) || null;
+        if (rec && (rec.locked || rec._hasMark)) return rec;
+        if (phaseRec.consolidado) {
+            return rec || { status: 'F', locked: true, source: 'manual' };
+        }
+        return null;
+    }
+
     function statusAlunoNoDia(studentId, dateIso, classCode) {
-        var rec = getAttendanceRecord(dateIso, classCode);
-        if (!rec || !rec.entrada || !rec.saida) return null;
-        if (!rec.entrada.consolidado || !rec.saida.consolidado) return null;
-        var ent = (rec.entrada.records && rec.entrada.records[studentId]) || {};
-        var sai = (rec.saida.records && rec.saida.records[studentId]) || {};
+        var pack = getAttendanceRecord(dateIso, classCode);
+        if (!pack) return null;
+        var ent = markReadyForReport(pack.entrada, studentId);
+        var sai = markReadyForReport(pack.saida, studentId);
+        // Precisa entrada + saída consolidadas do aluno (igual Frequência / portal)
+        if (!ent || !sai) return null;
         return consolidarStatusDia(ent.status, sai.status);
+    }
+
+    /**
+     * Carrega marcas do Supabase (inclui facial) para o período — staff autenticado.
+     */
+    function hydrateAttendanceForReport(turmaCode, dias, alunos) {
+        var cloud = window.SigaFrequenciaCloud;
+        if (!cloud || typeof cloud.loadDay !== 'function' || !dias.length) {
+            return Promise.resolve({ ok: false, hydrated: 0 });
+        }
+        var hydrated = 0;
+        // Paralelo com limite simples (evita saturar a API)
+        var queue = dias.slice();
+        var workers = Math.min(4, queue.length);
+
+        function next() {
+            if (!queue.length) return Promise.resolve();
+            var iso = queue.shift();
+            return cloud
+                .loadDay(turmaCode, iso, alunos)
+                .then(function (res) {
+                    if (res && res.ok && res.record) {
+                        saveAttendanceRecord(iso, turmaCode, res.record);
+                        hydrated++;
+                    }
+                })
+                .catch(function () { /* segue */ })
+                .then(next);
+        }
+
+        var jobs = [];
+        for (var i = 0; i < workers; i++) jobs.push(next());
+        return Promise.all(jobs).then(function () {
+            return { ok: true, hydrated: hydrated };
+        });
     }
 
     function studentsOfTurma(classCode) {
@@ -308,6 +363,40 @@
         if (campoBim) campoBim.classList.toggle('hidden', tipo !== 'bimestre');
     }
 
+    function computeFreqRows(turmaCode, dias, alunos) {
+        return alunos.map(function (aluno) {
+            var marks = {};
+            var presentes = 0;
+            var faltas = 0;
+            var semRegistro = 0;
+            dias.forEach(function (iso) {
+                var st = statusAlunoNoDia(String(aluno.id), iso, turmaCode);
+                if (st === 'P' || st === 'FJ') {
+                    marks[iso] = st;
+                    presentes++;
+                } else if (st === 'F') {
+                    marks[iso] = 'F';
+                    faltas++;
+                } else {
+                    marks[iso] = '—';
+                    semRegistro++;
+                    // Não conta "sem registro" como falta — só F explícita
+                }
+            });
+            var denom = dias.length || 1;
+            return {
+                id: aluno.id,
+                nome: aluno.nome || 'Aluno',
+                marks: marks,
+                presentes: presentes,
+                faltas: faltas,
+                semRegistro: semRegistro,
+                pctFreq: Math.round((presentes / denom) * 1000) / 10,
+                pctFalta: Math.round((faltas / denom) * 1000) / 10
+            };
+        });
+    }
+
     function buildReport() {
         var turmaCode = (document.getElementById('freq-turma') || {}).value;
         if (!turmaCode) {
@@ -329,51 +418,49 @@
             }
         }
 
-        var rows = alunos.map(function (aluno) {
-            var marks = {};
-            var presentes = 0;
-            var faltas = 0;
-            dias.forEach(function (iso) {
-                var st = statusAlunoNoDia(String(aluno.id), iso, turmaCode);
-                if (st === 'P' || st === 'FJ') {
-                    marks[iso] = st;
-                    presentes++;
-                } else if (st === 'F') {
-                    marks[iso] = 'F';
-                    faltas++;
-                } else {
-                    marks[iso] = '—';
-                    faltas++; // sem registro consolida como falta no cálculo %
-                }
-            });
-            var denom = dias.length || 1;
-            return {
-                id: aluno.id,
-                nome: aluno.nome || 'Aluno',
-                marks: marks,
-                presentes: presentes,
-                faltas: faltas,
-                pctFreq: Math.round((presentes / denom) * 1000) / 10,
-                pctFalta: Math.round((faltas / denom) * 1000) / 10
-            };
-        });
-
-        lastFreqReport = {
-            turmaCode: turmaCode,
-            turmaLabel: turmaLabel,
-            range: range,
-            dias: dias,
-            rows: rows
-        };
-
-        renderFreqTable(lastFreqReport);
-        var emptyState = document.getElementById('freq-empty-state');
-        var resultado = document.getElementById('freq-resultado');
-        if (emptyState) emptyState.classList.add('hidden');
-        if (resultado) resultado.classList.remove('hidden');
-        if (typeof showToast === 'function') {
-            showToast('Relatório gerado: ' + dias.length + ' dia(s) letivo(s).');
+        var gerarBtn = document.getElementById('btn-gerar-freq');
+        if (gerarBtn) {
+            gerarBtn.disabled = true;
+            gerarBtn.textContent = 'Carregando batidas…';
         }
+
+        function finish(rows) {
+            lastFreqReport = {
+                turmaCode: turmaCode,
+                turmaLabel: turmaLabel,
+                range: range,
+                dias: dias,
+                rows: rows
+            };
+            renderFreqTable(lastFreqReport);
+            var emptyState = document.getElementById('freq-empty-state');
+            var resultado = document.getElementById('freq-resultado');
+            if (emptyState) emptyState.classList.add('hidden');
+            if (resultado) resultado.classList.remove('hidden');
+            if (typeof showToast === 'function') {
+                showToast('Relatório gerado: ' + dias.length + ' dia(s) letivo(s).');
+            }
+            if (gerarBtn) {
+                gerarBtn.disabled = false;
+                gerarBtn.textContent = 'Gerar relatório';
+            }
+        }
+
+        var prep =
+            window.SigaSchoolData && typeof window.SigaSchoolData.hydrateStudents === 'function'
+                ? window.SigaSchoolData.hydrateStudents()
+                : Promise.resolve({ ok: true });
+
+        Promise.resolve(prep)
+            .catch(function () { return { ok: false }; })
+            .then(function () {
+                alunos = studentsOfTurma(turmaCode);
+                return hydrateAttendanceForReport(turmaCode, dias, alunos);
+            })
+            .catch(function () { return { ok: false }; })
+            .then(function () {
+                finish(computeFreqRows(turmaCode, dias, alunos));
+            });
     }
 
     function cellClass(mark) {
@@ -524,7 +611,7 @@
             (bodyRows || '<tr><td colspan="' + (report.dias.length + 3) + '">Sem alunos</td></tr>') +
             '</tbody></table>' +
             '<div class="foot">P = presença · F = falta · FJ = falta justificada (presença) · — = sem registro · ' +
-            'Base de cálculo: dias letivos do Calendário Letivo no período.</div>' +
+            'Inclui batidas faciais individuais. % Faltas = apenas F. Base: dias letivos do Calendário.</div>' +
             '<script>window.onload=function(){window.print();}</script>' +
             '</body></html>';
 
