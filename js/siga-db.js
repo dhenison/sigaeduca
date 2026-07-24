@@ -4935,6 +4935,9 @@ function getCalendarDays() {
                 days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
             } else if (dayOfWeek === 6) {
                 days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
+            } else if (dateStr === '2026-07-24') {
+                // Dia de teste / operação letiva em julho
+                days[dateStr] = { type: 'letivo', label: 'Dia Letivo' };
             } else {
                 days[dateStr] = { type: 'feriado_recesso', label: 'Férias Escolares' };
             }
@@ -4942,6 +4945,12 @@ function getCalendarDays() {
         
         localStorage.setItem('siga_calendar_days', JSON.stringify(days));
         try { localStorage.setItem(CALENDAR_WEEKEND_RULES_FLAG, '1'); } catch (e) { /* ignore */ }
+    }
+
+    // Garante 24/07/2026 letivo mesmo em caches locais antigos (férias)
+    if (days['2026-07-24'] && days['2026-07-24'].type !== 'letivo' && days['2026-07-24'].type !== 'evento' && days['2026-07-24'].type !== 'sabado') {
+        days['2026-07-24'] = { type: 'letivo', label: 'Dia Letivo' };
+        localStorage.setItem('siga_calendar_days', JSON.stringify(days));
     }
 
     let touched = lockAllSundaysInCalendar(days);
@@ -4958,7 +4967,8 @@ function getCalendarDays() {
     return days;
 }
 
-function saveCalendarDays(days) {
+function saveCalendarDays(days, options) {
+    options = options || {};
     const map = days || {};
     // Nunca permitir domingo letivo / editável
     Object.keys(map).forEach((dateStr) => {
@@ -4967,6 +4977,20 @@ function saveCalendarDays(days) {
         }
     });
     localStorage.setItem('siga_calendar_days', JSON.stringify(map));
+
+    // Espelha no calendário online (Supabase) quando a escola estiver ativa
+    if (window.SigaSchoolData && typeof window.SigaSchoolData.upsertCalendarDays === 'function') {
+        const payload = options.dates && options.dates.length
+            ? { dates: options.dates }
+            : {};
+        window.SigaSchoolData.upsertCalendarDays(map, payload).then((res) => {
+            if (res && res.ok === false && res.reason !== 'not_configured' && res.reason !== 'no_school') {
+                if (typeof showToast === 'function') {
+                    showToast('Calendário local ok; falha no online: ' + (res.message || 'erro'), 'error');
+                }
+            }
+        }).catch(() => { /* ignore */ });
+    }
 }
 
 window.getCalendarDays = getCalendarDays;

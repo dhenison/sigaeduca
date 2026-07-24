@@ -83,7 +83,7 @@ body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparen
 <main class="pt-20 px-container-padding max-w-lg mx-auto space-y-stack-gap-md">
   <section>
     <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Frequência Escolar</h2>
-    <p id="freq-subtitulo" class="font-body-md text-on-surface-variant mt-1">Acompanhamento do 3º e 4º Bimestres</p>
+    <p id="freq-subtitulo" class="font-body-md text-on-surface-variant mt-1">Acompanhamento do 2º, 3º e 4º Bimestres</p>
     <p class="mt-2 text-[12px] text-on-surface-variant">Para pais e responsáveis: confira se o aluno entrou e saiu da escola (reconhecimento facial consolidado no SIGA).</p>
   </section>
 
@@ -103,7 +103,8 @@ body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparen
 
   <!-- Filtro bimestre -->
   <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-    <button type="button" data-freq-bim="ambos" class="flex-shrink-0 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md">3º e 4º</button>
+    <button type="button" data-freq-bim="ambos" class="flex-shrink-0 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md">2º a 4º</button>
+    <button type="button" data-freq-bim="2" class="flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md">2º Bimestre</button>
     <button type="button" data-freq-bim="3" class="flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md">3º Bimestre</button>
     <button type="button" data-freq-bim="4" class="flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md">4º Bimestre</button>
   </div>
@@ -157,14 +158,15 @@ body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparen
 
 <nav id="portal-aluno-bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-20 px-2 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-2xl max-w-lg mx-auto"></nav>
 
-<script src="../js/siga-config.js?v=20260724a"></script>
+<script src="../js/siga-config.js?v=20260724z"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/siga-supabase.js?v=20260724a"></script>
-<script src="../js/siga-security.js?v=20260724b"></script>
-<script src="../js/siga-db.js?v=20260724a"></script>
-<script src="../js/siga-frequencia-supabase.js?v=20260724a"></script>
-<script src="../js/portal-aluno-app.js?v=20260724f"></script>
-<script src="../js/portal-frequencia.js?v=20260724f"></script>
+<script src="../js/siga-supabase.js?v=20260724z"></script>
+<script src="../js/siga-security.js?v=20260724z"></script>
+<script src="../js/siga-school-data.js?v=20260724z"></script>
+<script src="../js/siga-db.js?v=20260724z"></script>
+<script src="../js/siga-frequencia-supabase.js?v=20260724z"></script>
+<script src="../js/portal-aluno-app.js?v=20260724z"></script>
+<script src="../js/portal-frequencia.js?v=20260724z"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   if (!window.SigaPortalAluno) return;

@@ -139,24 +139,36 @@
 
   function defaultBimestreRanges(ano) {
     return {
+      // Inclui maio–julho para testes / 2º bimestre (ex.: 24/07/2026 letivo)
+      2: { start: ano + "-05-01", end: ano + "-07-31", label: "2º Bimestre" },
       3: { start: ano + "-08-01", end: ano + "-10-31", label: "3º Bimestre" },
       4: { start: ano + "-11-01", end: ano + "-12-31", label: "4º Bimestre" },
     };
   }
 
-  /** Usa marcas inicio_3b / inicio_4b do calendário quando existirem. */
+  /** Usa marcas inicio_2b / inicio_3b / inicio_4b do calendário quando existirem. */
   function resolveBimestreRanges(ano) {
     var days = getCalendarDays();
-    var starts = { 3: null, 4: null };
+    var starts = { 2: null, 3: null, 4: null };
     Object.keys(days || {}).forEach(function (iso) {
       var t = days[iso] && days[iso].type;
+      if (t === "inicio_2b") starts[2] = iso;
       if (t === "inicio_3b") starts[3] = iso;
       if (t === "inicio_4b") starts[4] = iso;
     });
     var fallback = defaultBimestreRanges(ano);
     var endYear = ano + "-12-31";
+    var r2start = starts[2] || fallback[2].start;
     var r3start = starts[3] || fallback[3].start;
     var r4start = starts[4] || fallback[4].start;
+    var r2end;
+    if (starts[3]) {
+      var d2 = parseIso(starts[3]);
+      d2.setDate(d2.getDate() - 1);
+      r2end = toIsoLocal(d2);
+    } else {
+      r2end = fallback[2].end;
+    }
     var r3end;
     if (starts[4]) {
       var d = parseIso(starts[4]);
@@ -166,6 +178,7 @@
       r3end = fallback[3].end;
     }
     return {
+      2: { start: r2start, end: r2end, label: "2º Bimestre" },
       3: { start: r3start, end: r3end, label: "3º Bimestre" },
       4: { start: r4start, end: endYear, label: "4º Bimestre" },
     };
@@ -173,6 +186,13 @@
 
   function inRange(iso, start, end) {
     return iso >= start && iso <= end;
+  }
+
+  function bimestreOfDay(iso, ranges) {
+    if (inRange(iso, ranges[2].start, ranges[2].end)) return 2;
+    if (inRange(iso, ranges[3].start, ranges[3].end)) return 3;
+    if (inRange(iso, ranges[4].start, ranges[4].end)) return 4;
+    return null;
   }
 
   function listLetivoDays(bimFilter) {
@@ -183,14 +203,15 @@
     var keys = Object.keys(days || {}).sort();
     keys.forEach(function (iso) {
       if (!isLetivoDay(days[iso])) return;
-      var b3 = inRange(iso, ranges[3].start, ranges[3].end);
-      var b4 = inRange(iso, ranges[4].start, ranges[4].end);
-      if (bimFilter === "3" && !b3) return;
-      if (bimFilter === "4" && !b4) return;
-      if (bimFilter === "ambos" && !b3 && !b4) return;
+      var bim = bimestreOfDay(iso, ranges);
+      if (!bim) return;
+      if (bimFilter === "2" && bim !== 2) return;
+      if (bimFilter === "3" && bim !== 3) return;
+      if (bimFilter === "4" && bim !== 4) return;
+      if (bimFilter === "ambos" && bim !== 2 && bim !== 3 && bim !== 4) return;
       out.push({
         iso: iso,
-        bimestre: b3 ? 3 : 4,
+        bimestre: bim,
         label: days[iso].label || "Dia letivo",
       });
     });
@@ -470,7 +491,7 @@
       .reverse();
     if (!recent.length) {
       host.innerHTML =
-        '<p class="text-sm text-on-surface-variant px-1">Cadastre os dias letivos do 3º e 4º bimestres no Calendário Letivo do SIGA EDUCA.</p>';
+        '<p class="text-sm text-on-surface-variant px-1">Cadastre os dias letivos do 2º, 3º e 4º bimestres no Calendário Letivo do SIGA EDUCA.</p>';
       return;
     }
     host.innerHTML = recent
@@ -523,77 +544,90 @@
     ctx = ctx || {};
     var student = ctx.student || {};
     var classCode = String(student.turma || "");
-    var state = { bim: "ambos", selectedIso: "" };
+    var state = { bim: "ambos", selectedIso: "2026-07-24" };
 
-    ensureBimestreCalendarSeed(yearNow());
+    function afterCalendarReady() {
+      ensureBimestreCalendarSeed(yearNow());
 
-    setText(
-      "freq-subtitulo",
-      "Acompanhamento do 3º e 4º Bimestres de " + yearNow()
-    );
-    setText("freq-aluno-nome", student.nome || "Aluno");
+      setText(
+        "freq-subtitulo",
+        "Acompanhamento do 2º, 3º e 4º Bimestres de " + yearNow()
+      );
+      setText("freq-aluno-nome", student.nome || "Aluno");
 
-    function refresh() {
-      var days = listLetivoDays(state.bim);
-      var stats = summarize(days, student, classCode);
-      setText("freq-aulas-totais", String(stats.aulas));
-      setText("freq-presencas", String(stats.presentes));
-      setRing(stats.pct);
-      state.selectedIso = fillDateFilter(days, state.selectedIso);
-      var dayInfo = state.selectedIso
-        ? readDayForStudent(state.selectedIso, student, classCode)
-        : null;
-      renderDayDetail(dayInfo, state.selectedIso);
-      renderRecentList(days, student, classCode, 14);
-
-      var emptyCal = document.getElementById("freq-calendario-aviso");
-      if (emptyCal) {
-        emptyCal.classList.toggle("hidden", days.length > 0);
-      }
-
-      // Tenta enriquecer o dia selecionado via Supabase
-      if (state.selectedIso && classCode && student.id) {
-        loadDayFromSupabase(state.selectedIso, student, classCode).then(function (cloudDay) {
-          if (!cloudDay) return;
-          renderDayDetail(cloudDay, state.selectedIso);
-          var st2 = summarize(listLetivoDays(state.bim), student, classCode);
-          setText("freq-presencas", String(st2.presentes));
-          setRing(st2.pct);
-          renderRecentList(listLetivoDays(state.bim), student, classCode, 14);
-        });
-      }
-    }
-
-    paintBimestreTabs(state.bim);
-    document.querySelectorAll("[data-freq-bim]").forEach(function (btn) {
-      if (btn._bound) return;
-      btn._bound = true;
-      btn.addEventListener("click", function () {
-        state.bim = btn.getAttribute("data-freq-bim") || "ambos";
-        paintBimestreTabs(state.bim);
-        state.selectedIso = "";
-        refresh();
-      });
-    });
-
-    var sel = document.getElementById("freq-filtro-data");
-    if (sel && !sel._bound) {
-      sel._bound = true;
-      sel.addEventListener("change", function () {
-        state.selectedIso = sel.value || "";
+      function refresh() {
+        var days = listLetivoDays(state.bim);
+        var stats = summarize(days, student, classCode);
+        setText("freq-aulas-totais", String(stats.aulas));
+        setText("freq-presencas", String(stats.presentes));
+        setRing(stats.pct);
+        state.selectedIso = fillDateFilter(days, state.selectedIso);
         var dayInfo = state.selectedIso
           ? readDayForStudent(state.selectedIso, student, classCode)
           : null;
         renderDayDetail(dayInfo, state.selectedIso);
-        if (state.selectedIso && classCode) {
+        renderRecentList(days, student, classCode, 14);
+
+        var emptyCal = document.getElementById("freq-calendario-aviso");
+        if (emptyCal) {
+          emptyCal.classList.toggle("hidden", days.length > 0);
+        }
+
+        // Tenta enriquecer o dia selecionado via Supabase
+        if (state.selectedIso && classCode && student.id) {
           loadDayFromSupabase(state.selectedIso, student, classCode).then(function (cloudDay) {
-            if (cloudDay) renderDayDetail(cloudDay, state.selectedIso);
+            if (!cloudDay) return;
+            renderDayDetail(cloudDay, state.selectedIso);
+            var st2 = summarize(listLetivoDays(state.bim), student, classCode);
+            setText("freq-presencas", String(st2.presentes));
+            setRing(st2.pct);
+            renderRecentList(listLetivoDays(state.bim), student, classCode, 14);
           });
         }
+      }
+
+      paintBimestreTabs(state.bim);
+      document.querySelectorAll("[data-freq-bim]").forEach(function (btn) {
+        if (btn._bound) return;
+        btn._bound = true;
+        btn.addEventListener("click", function () {
+          state.bim = btn.getAttribute("data-freq-bim") || "ambos";
+          paintBimestreTabs(state.bim);
+          state.selectedIso = "";
+          refresh();
+        });
       });
+
+      var sel = document.getElementById("freq-filtro-data");
+      if (sel && !sel._bound) {
+        sel._bound = true;
+        sel.addEventListener("change", function () {
+          state.selectedIso = sel.value || "";
+          var dayInfo = state.selectedIso
+            ? readDayForStudent(state.selectedIso, student, classCode)
+            : null;
+          renderDayDetail(dayInfo, state.selectedIso);
+          if (state.selectedIso && classCode) {
+            loadDayFromSupabase(state.selectedIso, student, classCode).then(function (cloudDay) {
+              if (cloudDay) renderDayDetail(cloudDay, state.selectedIso);
+            });
+          }
+        });
+      }
+
+      refresh();
     }
 
-    refresh();
+    var hydrate =
+      global.SigaSchoolData && typeof global.SigaSchoolData.hydrateCalendarDays === "function"
+        ? global.SigaSchoolData.hydrateCalendarDays()
+        : Promise.resolve({ ok: true, skipped: true });
+
+    Promise.resolve(hydrate)
+      .catch(function () {
+        return { ok: false };
+      })
+      .then(afterCalendarReady);
   }
 
   global.SigaPortalFrequencia = {

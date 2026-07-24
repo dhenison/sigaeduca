@@ -7,6 +7,7 @@
 
     var CLASSES_KEY = 'siga_classes';
     var STUDENTS_KEY = 'siga_students';
+    var CALENDAR_KEY = 'siga_calendar_days';
     var ACTIVE_SCHOOL_KEY = 'siga_active_school';
     var CHUNK = 80;
     /** Turmas de Atendimento Educacional Especializado (vínculo paralelo à turma regular) */
@@ -827,6 +828,139 @@
         });
     }
 
+    function rowToCalendarEntry(row) {
+        var type = String((row && row.day_type) || 'letivo');
+        var entry = {
+            type: type,
+            label: String((row && row.label) || 'Dia Letivo')
+        };
+        if (type === 'domingo') entry.locked = true;
+        return entry;
+    }
+
+    function calendarEntryToRow(schoolId, dateStr, info) {
+        var type = String((info && info.type) || 'letivo');
+        // Domingos nunca vão como letivo no cloud
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            var parts = dateStr.split('-');
+            var dow = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getDay();
+            if (dow === 0) {
+                type = 'domingo';
+                info = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
+            }
+        }
+        return {
+            school_id: schoolId,
+            day_date: dateStr,
+            day_type: type,
+            label: String((info && info.label) || (type === 'domingo' ? 'Domingo (Não Letivo)' : 'Dia Letivo'))
+        };
+    }
+
+    function fetchCalendarDays(schoolId) {
+        var ready = cloudReady();
+        if (!ready.ok) {
+            return Promise.resolve({
+                ok: false,
+                reason: ready.reason,
+                message: ready.message,
+                data: JSON.parse(localStorage.getItem(CALENDAR_KEY) || '{}') || {}
+            });
+        }
+        var sid = schoolId || ready.schoolId;
+        return fetchAllRows(function () {
+            return ready.sb.from('calendar_days')
+                .select('day_date, day_type, label')
+                .eq('school_id', sid)
+                .order('day_date', { ascending: true });
+        }).then(function (rows) {
+            var local = {};
+            try {
+                local = JSON.parse(localStorage.getItem(CALENDAR_KEY) || '{}') || {};
+            } catch (e) {
+                local = {};
+            }
+            (rows || []).forEach(function (row) {
+                var iso = String(row.day_date || '').slice(0, 10);
+                if (!iso) return;
+                local[iso] = rowToCalendarEntry(row);
+            });
+            localStorage.setItem(CALENDAR_KEY, JSON.stringify(local));
+            return { ok: true, data: local, count: (rows || []).length };
+        }).catch(function (err) {
+            return {
+                ok: false,
+                reason: 'query_error',
+                message: (err && err.message) || 'Falha ao carregar calendário.',
+                data: JSON.parse(localStorage.getItem(CALENDAR_KEY) || '{}') || {}
+            };
+        });
+    }
+
+    function upsertCalendarDays(localMap, options) {
+        options = options || {};
+        var ready = cloudReady();
+        if (!ready.ok) return Promise.resolve({ ok: false, reason: ready.reason, message: ready.message });
+
+        var map = localMap || {};
+        var keys = options.dates && options.dates.length
+            ? options.dates
+            : Object.keys(map);
+        var rows = keys
+            .filter(function (k) { return /^\d{4}-\d{2}-\d{2}$/.test(k); })
+            .map(function (k) { return calendarEntryToRow(ready.schoolId, k, map[k] || {}); })
+            .filter(function (r) { return r.day_date && r.day_type; });
+
+        if (!rows.length) {
+            return Promise.resolve({ ok: true, upserted: 0, message: 'Nenhum dia para sincronizar.' });
+        }
+
+        var chunks = chunkArray(rows, CHUNK);
+        var chain = Promise.resolve({ upserted: 0 });
+        chunks.forEach(function (part) {
+            chain = chain.then(function (acc) {
+                return ready.sb.from('calendar_days')
+                    .upsert(part, { onConflict: 'school_id,day_date' })
+                    .select('id')
+                    .then(function (res) {
+                        if (res.error) throw res.error;
+                        acc.upserted += (res.data || part).length;
+                        return acc;
+                    });
+            });
+        });
+
+        return chain
+            .then(function (acc) {
+                return {
+                    ok: true,
+                    upserted: acc.upserted,
+                    message: 'Calendário sincronizado (' + acc.upserted + ' dia(s)).'
+                };
+            })
+            .catch(function (err) {
+                return {
+                    ok: false,
+                    reason: 'upsert_error',
+                    message: (err && err.message) || 'Falha ao gravar calendário no Supabase.'
+                };
+            });
+    }
+
+    function hydrateCalendarDays() {
+        return fetchCalendarDays().then(function (res) {
+            if (!res.ok && (res.reason === 'not_configured' || res.reason === 'no_school')) {
+                return {
+                    ok: true,
+                    skipped: true,
+                    data: JSON.parse(localStorage.getItem(CALENDAR_KEY) || '{}') || {},
+                    message: res.message
+                };
+            }
+            return res;
+        });
+    }
+
     global.SigaSchoolData = {
         AEE_CLASS_CODES: AEE_CLASS_CODES,
         cloudReady: cloudReady,
@@ -845,6 +979,9 @@
         deleteStudent: deleteStudent,
         hydrateClasses: hydrateClasses,
         hydrateStudents: hydrateStudents,
+        fetchCalendarDays: fetchCalendarDays,
+        upsertCalendarDays: upsertCalendarDays,
+        hydrateCalendarDays: hydrateCalendarDays,
         classToRow: classToRow,
         studentToRow: studentToRow,
         syncAeeEnrollmentsForStudents: syncAeeEnrollmentsForStudents,
