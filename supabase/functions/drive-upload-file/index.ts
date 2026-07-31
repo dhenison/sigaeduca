@@ -22,6 +22,7 @@ const UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files";
 
 const FOLDER_SECRETARIA = "Documentos Secretaria";
 const FOLDER_SOLICITACOES = "SOLICITAÇÕES PEDAGÓGICAS";
+const FOLDER_PLANEJAMENTO = "PLANEJAMENTO PEDAGÓGICO";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -70,23 +71,38 @@ Deno.serve(async (req) => {
     if (!contentBase64) {
       return json({ error: "Arquivo vazio (contentBase64)." }, 400);
     }
-    if (moduleName !== "secretaria" && moduleName !== "solicitacoes") {
-      return json({ error: 'module deve ser "secretaria" ou "solicitacoes".' }, 400);
+    if (
+      moduleName !== "secretaria" &&
+      moduleName !== "solicitacoes" &&
+      moduleName !== "planejamento"
+    ) {
+      return json({
+        error: 'module deve ser "secretaria", "solicitacoes" ou "planejamento".',
+      }, 400);
     }
 
     const auth = await resolveDriveAuth();
     await assertRootFolderAccessible(auth.accessToken, rootFolderId, auth.label);
 
     // Pedagógicas: SIGAEDUCA / SOLICITAÇÕES PEDAGÓGICAS / {Professor} / {Tipo} / arquivo
+    // Planejamento: SIGAEDUCA / PLANEJAMENTO PEDAGÓGICO / {Professor} / PLANO DE AULA|PLANEJAMENTO BIMESTRAL / arquivo
     // Pastas são reutilizadas (busca por nome; cria só se ainda não existir).
-    const pathParts =
-      moduleName === "secretaria"
-        ? [FOLDER_SECRETARIA, sanitizeFolderName(tipo)]
-        : [
-          FOLDER_SOLICITACOES,
-          sanitizePersonFolderName(solicitanteNome),
-          sanitizeFolderName(tipo),
-        ];
+    let pathParts: string[];
+    if (moduleName === "secretaria") {
+      pathParts = [FOLDER_SECRETARIA, sanitizeFolderName(tipo)];
+    } else if (moduleName === "planejamento") {
+      pathParts = [
+        FOLDER_PLANEJAMENTO,
+        sanitizePersonFolderName(solicitanteNome),
+        sanitizeFolderName(tipo || "PLANO DE AULA"),
+      ];
+    } else {
+      pathParts = [
+        FOLDER_SOLICITACOES,
+        sanitizePersonFolderName(solicitanteNome),
+        sanitizeFolderName(tipo),
+      ];
+    }
 
     let folderId: string;
     try {

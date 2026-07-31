@@ -16,6 +16,7 @@
         { title: 'Boletins', href: 'boletins.html', keywords: 'notas desempenho' },
         { title: 'Conselho de Classe', href: 'conselho.html', keywords: 'conselho' },
         { title: 'Projeto Olímpico', href: 'topodosaber.html', keywords: 'olimpiada medalha' },
+        { title: 'Planejamento', href: 'planejamento.html', keywords: 'plano de aula planejamento bimestral prova pedagogico' },
         { title: 'Controle de Livros', href: 'controlelivros.html', keywords: 'biblioteca livro' },
         { title: 'Relatórios', href: 'relatorios.html', keywords: 'exportar pdf excel' },
         { title: 'Escola', href: 'escola.html', keywords: 'dados instituicao' },

@@ -8,6 +8,7 @@
   var ROOT_LABEL = 'SIGAEDUCA';
   var FOLDER_SECRETARIA = 'Documentos Secretaria';
   var FOLDER_SOLICITACOES = 'SOLICITAÇÕES PEDAGÓGICAS';
+  var FOLDER_PLANEJAMENTO = 'PLANEJAMENTO PEDAGÓGICO';
   var statusListeners = [];
 
   function getSupabase() {
@@ -153,6 +154,36 @@
   }
 
   /**
+   * Planejamento: SIGAEDUCA / PLANEJAMENTO PEDAGÓGICO / {Professor} / {PLANO DE AULA|PLANEJAMENTO BIMESTRAL} / arquivo
+   */
+  function uploadPlanejamentoFile(tipo, blob, fileName, mimeType, onProgress, professorNome) {
+    if (!blob) return Promise.reject(new Error('Arquivo inválido.'));
+    var nome = String(professorNome || '').trim();
+    if (!nome) {
+      nome = localStorage.getItem('siga_profile_name') ||
+        (function () {
+          try {
+            var s = JSON.parse(localStorage.getItem('siga_session') || 'null');
+            return (s && s.nome) || 'Professor';
+          } catch (e) {
+            return 'Professor';
+          }
+        })();
+    }
+    if (typeof onProgress === 'function') onProgress(5, 'Preparando planejamento…');
+    return blobToBase64(blob).then(function (b64) {
+      return invokeUpload({
+        module: 'planejamento',
+        tipo: tipo || 'PLANO DE AULA',
+        solicitanteNome: nome,
+        fileName: fileName || 'planejamento.html',
+        mimeType: mimeType || blob.type || 'text/html',
+        contentBase64: b64
+      }, onProgress);
+    });
+  }
+
+  /**
    * Secretaria: SIGAEDUCA / Documentos Secretaria / {tipo}
    */
   function uploadSecretariaFile(tipo, blob, fileName, mimeType, onProgress) {
@@ -210,11 +241,13 @@
     onStatusChange: onStatusChange,
     notifyStatus: notifyStatus,
     uploadSolicitacaoFile: uploadSolicitacaoFile,
+    uploadPlanejamentoFile: uploadPlanejamentoFile,
     uploadSecretariaFile: uploadSecretariaFile,
     openInDrive: openInDrive,
     openFolder: openFolder,
     ROOT_FOLDER: ROOT_LABEL,
     PED_FOLDER: FOLDER_SOLICITACOES,
+    PLAN_FOLDER: FOLDER_PLANEJAMENTO,
     SEC_FOLDER: FOLDER_SECRETARIA
   };
 
