@@ -21,6 +21,7 @@
         { group: 'Administrativo', id: 'usuarios', label: 'Usuários', icon: 'manage_accounts' },
         { group: 'Administrativo', id: 'lotacao', label: 'Lotação', icon: 'apartment' },
         { group: 'Gestão Escolar', id: 'documentosadministrativos', label: 'Documentos Administrativos', icon: 'folder_managed' },
+        { group: 'Gestão Escolar', id: 'informativos', label: 'Informativos', icon: 'campaign' },
         { group: 'Pedagógico', id: 'topodosaber', label: 'Projeto Olímpico', icon: 'emoji_events' },
         { group: 'Pedagógico', id: 'solicitacoespedagogicas', label: 'Solicitações Pedagógicas', icon: 'quiz' },
         { group: 'Pedagógico', id: 'planejamento', label: 'Planejamento', icon: 'edit_calendar' },
@@ -58,6 +59,7 @@
         usuarios: ['usuarios.html'],
         lotacao: ['lotacao.html', 'Gestão de Lotação/lotacao.html'],
         documentosadministrativos: ['documentosadministrativos.html'],
+        informativos: ['informativos.html'],
         topodosaber: ['topodosaber.html'],
         solicitacoespedagogicas: ['solicitacoespedagogicas.html'],
         planejamento: ['planejamento.html'],
@@ -177,9 +179,10 @@
                 || (/diretor/.test(r) && !/vice/.test(r))
                 || (/administrador/.test(r) && !/vice/.test(r));
             if (gestor) {
-                grant(['documentosadministrativos'], ACTIONS);
+                grant(['documentosadministrativos', 'informativos'], ACTIONS);
             } else {
                 map.documentosadministrativos = emptyActions(false);
+                map.informativos = emptyActions(false);
             }
         })();
 

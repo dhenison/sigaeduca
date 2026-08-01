@@ -39,7 +39,8 @@ tailwind.config = {
 <script src="js/siga-supabase.js?v=20260724x"></script>
 <script src="js/siga-security.js?v=20260724x"></script>
 <script src="js/siga-db.js?v=20260724x"></script>
-<script src="js/portal-aluno-app.js?v=20260724x"></script>
+<script src="js/portal-aluno-app.js?v=20260731inf"></script>
+<script src="js/portal-informativos.js?v=20260731inf"></script>
 <script src="js/olimpiadas.js?v=20260724f"></script>
 </head>
 <body class="bg-background text-on-surface font-sans min-h-screen pb-28">
@@ -69,7 +70,14 @@ tailwind.config = {
     </blockquote>
   </section>
 
+  <section id="portal-informativos-home" class="hidden space-y-0"></section>
+
   <section class="grid grid-cols-2 gap-3">
+    <a href="app/appinformativos.html" class="bento-card bg-surface border border-border-subtle rounded-2xl p-4 shadow-sm">
+      <span class="material-symbols-outlined text-primary text-[28px]">campaign</span>
+      <p class="font-semibold mt-2">Informativos</p>
+      <p class="text-[11px] text-text-secondary mt-1">Avisos da escola</p>
+    </a>
     <a href="app/appfrequencia.html" class="bento-card bg-surface border border-border-subtle rounded-2xl p-4 shadow-sm">
       <span class="material-symbols-outlined text-primary text-[28px]">fact_check</span>
       <p class="font-semibold mt-2">Frequência</p>
@@ -131,6 +139,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (sel && ctx.student) {
       sel.innerHTML = '<option value="' + ctx.student.id + '" selected></option>';
       sel.value = String(ctx.student.id);
+    }
+    if (window.SigaPortalInformativos) {
+      try { window.SigaPortalInformativos.bootHome(ctx); } catch (e) { console.warn(e); }
     }
     if (typeof window.initPortalAlunoPage === 'function') {
       try { window.initPortalAlunoPage(); } catch (e) { console.warn(e); }

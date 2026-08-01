@@ -13,6 +13,7 @@
         { title: 'Ocorrências', href: 'ocorrencias.html', keywords: 'disciplina evasao' },
         { title: 'Documentos Secretaria', href: 'documentossecretaria.html', keywords: 'declaracao protocolo' },
         { title: 'Documentos Administrativos', href: 'documentosadministrativos.html', keywords: 'gestao escolar oficio memorando ata paf ponto' },
+        { title: 'Informativos', href: 'informativos.html', keywords: 'aviso mensagem portal aluno comunicado informativo' },
         { title: 'Boletins', href: 'boletins.html', keywords: 'notas desempenho' },
         { title: 'Conselho de Classe', href: 'conselho.html', keywords: 'conselho' },
         { title: 'Projeto Olímpico', href: 'topodosaber.html', keywords: 'olimpiada medalha' },
