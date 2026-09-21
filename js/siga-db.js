@@ -4960,7 +4960,130 @@ function initTurmaDetalhePage() {
     }
 }
 
-function renderTurmaDetalhe(classCode) {
+function classFreqCollectLocal(student, classCode) {
+    const days = {};
+    const id = String(student && student.id || '');
+    const wanted = String(classCode || '');
+    if (!id) return days;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i) || '';
+        if (!key.startsWith('siga_attendance_')) continue;
+        const rest = key.slice('siga_attendance_'.length);
+        const iso = rest.slice(0, 10);
+        const code = rest.slice(11);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+        if (wanted && code !== wanted) continue;
+        let rec = null;
+        try { rec = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { rec = null; }
+        if (!rec) continue;
+        const ent = fichaFreqRealMark(rec.entrada && rec.entrada.records ? rec.entrada.records[id] : null);
+        const sai = fichaFreqRealMark(rec.saida && rec.saida.records ? rec.saida.records[id] : null);
+        if (!ent && !sai) continue;
+        days[iso] = { entrada: ent, saida: sai };
+    }
+    return days;
+}
+
+function classFreqPctFromDays(days) {
+    const summary = fichaFreqSummarize(days || {});
+    if (summary.pct == null || !summary.total) return 0;
+    return Math.max(0, Math.min(100, Math.round(summary.pct)));
+}
+
+function classFreqMap(students, classCode, cloudDaysByStudent) {
+    const map = {};
+    (students || []).forEach(function (student) {
+        const id = String(student && student.id || '');
+        const days = classFreqCollectLocal(student, classCode);
+        const extra = cloudDaysByStudent && cloudDaysByStudent[id];
+        if (extra) {
+            Object.keys(extra).forEach(function (iso) {
+                days[iso] = Object.assign({}, days[iso] || {}, extra[iso]);
+            });
+        }
+        map[id] = classFreqPctFromDays(days);
+    });
+    return map;
+}
+
+let classFreqCache = {};
+
+function classFreqLabel(student, classCode) {
+    const id = String(student && student.id || '');
+    if (Object.prototype.hasOwnProperty.call(classFreqCache, id)) return classFreqCache[id];
+    return classFreqPctFromDays(classFreqCollectLocal(student, classCode));
+}
+
+function classFreqSchoolId() {
+    try {
+        const active = localStorage.getItem('siga_active_school');
+        if (active) return active;
+        const session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+        return (session && session.schoolId) || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function loadClassFreqCloud(classCode, students) {
+    const api = window.SigaSupabase;
+    const sb = api && typeof api.getClient === 'function' && typeof api.isConfigured === 'function' && api.isConfigured()
+        ? api.getClient()
+        : null;
+    const schoolId = classFreqSchoolId();
+    if (!sb || !schoolId || !classCode) return Promise.resolve(null);
+    return sb.from('attendance_calls')
+        .select('id,day_date')
+        .eq('school_id', schoolId)
+        .eq('class_code', classCode)
+        .then(function (calls) {
+            if (calls.error || !calls.data || !calls.data.length) return classFreqMap(students, classCode);
+            const dates = {};
+            const ids = [];
+            calls.data.forEach(function (call) {
+                const iso = fichaFreqIso(call.day_date);
+                if (!call.id || !iso) return;
+                dates[call.id] = iso;
+                ids.push(call.id);
+            });
+            if (!ids.length) return classFreqMap(students, classCode);
+            const extra = {};
+            function absorbMarks(rows) {
+                (rows || []).forEach(function (row) {
+                    const iso = dates[row.call_id];
+                    const sid = String(row.student_id || '');
+                    const phase = row.phase === 'saida' ? 'saida' : 'entrada';
+                    const mark = fichaFreqRealMark({ status: row.status, marked_at: row.marked_at, locked: true, _hasMark: true });
+                    if (!iso || !sid || !mark) return;
+                    if (!extra[sid]) extra[sid] = {};
+                    if (!extra[sid][iso]) extra[sid][iso] = {};
+                    extra[sid][iso][phase] = mark;
+                });
+            }
+            function fetchMarkPage(callIds, from) {
+                return sb.from('attendance_marks')
+                    .select('id,call_id,student_id,phase,status,marked_at')
+                    .in('call_id', callIds)
+                    .order('id', { ascending: true })
+                    .range(from, from + 999)
+                    .then(function (marks) {
+                        if (marks.error || !marks.data) return;
+                        absorbMarks(marks.data);
+                        if (marks.data.length < 1000) return;
+                        return fetchMarkPage(callIds, from + 1000);
+                    });
+            }
+            let chain = Promise.resolve();
+            for (let i = 0; i < ids.length; i += 40) {
+                const part = ids.slice(i, i + 40);
+                chain = chain.then(function () { return fetchMarkPage(part, 0); });
+            }
+            return chain.then(function () { return classFreqMap(students, classCode, extra); });
+        })
+        .catch(function () { return null; });
+}
+
+function renderTurmaDetalhe(classCode, freqMap) {
     const tbody = document.getElementById('class-students-tbody');
     const emptyState = document.getElementById('class-students-empty');
     if (!tbody) return;
@@ -4981,11 +5104,14 @@ function renderTurmaDetalhe(classCode) {
 
     if (emptyState) emptyState.classList.add('hidden');
 
+    const freqByStudent = freqMap || classFreqMap(classStudents, classCode);
+    classFreqCache = freqByStudent;
+
     let html = '';
     classStudents.forEach(s => {
         let freqColor = "bg-primary-container";
         let freqTextColor = "text-primary";
-        const freqVal = parseInt(s.frequencia) || 0;
+        const freqVal = freqByStudent[String(s.id)] != null ? freqByStudent[String(s.id)] : 0;
         if (freqVal < 75) {
             freqColor = "bg-error";
             freqTextColor = "text-error";
@@ -5036,6 +5162,11 @@ function renderTurmaDetalhe(classCode) {
     });
 
     tbody.innerHTML = html;
+    if (!freqMap) {
+        loadClassFreqCloud(classCode, classStudents).then(function (cloudMap) {
+            if (cloudMap) renderTurmaDetalhe(classCode, cloudMap);
+        });
+    }
 }
 
 window.downloadClassList = function() {
@@ -5062,7 +5193,7 @@ window.downloadClassList = function() {
         const num = (idx + 1).toString().padEnd(3);
         const nome = s.nome.padEnd(30).substring(0, 30);
         const idade = (s.idade + " anos").padEnd(6);
-        const freq = (s.frequencia + "%").padEnd(5);
+        const freq = (classFreqLabel(s, classCode) + "%").padEnd(5);
         const status = s.status.padEnd(9);
         content += `${num} | ${nome} | ${idade} | ${freq} | ${status}\n`;
     });
@@ -5101,7 +5232,7 @@ window.printClassList = function() {
         const num = (idx + 1).toString().padEnd(3);
         const nome = s.nome.padEnd(30).substring(0, 30);
         const idade = (s.idade + " anos").padEnd(6);
-        const freq = (s.frequencia + "%").padEnd(5);
+        const freq = (classFreqLabel(s, classCode) + "%").padEnd(5);
         const status = s.status.padEnd(9);
         content += `${num} | ${nome} | ${idade} | ${freq} | ${status}\r\n`;
     });
