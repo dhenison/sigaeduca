@@ -7,34 +7,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<script>
-  tailwind.config = {
-    darkMode: "class",
-    theme: {
-      extend: {
-        colors: {
-          "inverse-surface": "#27313f",
-          "surface-container-highest": "#d9e3f6",
-          "secondary": "#0058be",
-          "primary-fixed": "#81fba5",
-          "primary": "#006d37",
-          "primary-light": "#7EDC8A",
-          "primary-container": "#2eaf62",
-          "error": "#ba1a1a",
-          "background-surface": "#FFFFFF",
-          "text-secondary": "#6B7280",
-          "on-surface": "#121c2a",
-          "border-subtle": "#E5E7EB",
-          "secondary-fixed": "#d8e2ff",
-        },
-        fontFamily: {
-          sans: ["Inter", "sans-serif"],
-          mono: ["JetBrains Mono", "monospace"],
-        }
-      }
-    }
-  }
-</script>
+<script src="../static/js/siga-theme.js"></script>
 <style>
   body { font-family: Inter, sans-serif; }
   .material-symbols-outlined {
@@ -48,14 +21,14 @@
   .scan-line {
     height: 2px;
     width: 100%;
-    background: linear-gradient(to right, transparent, #2eaf62, transparent);
-    box-shadow: 0 0 15px #2eaf62;
+    background: linear-gradient(to right, transparent, #1e3a8a, transparent);
+    box-shadow: 0 0 15px #1e3a8a;
     animation: scan 3s ease-in-out infinite;
   }
   .scanner-corner {
     width: 40px;
     height: 40px;
-    border-color: #2eaf62;
+    border-color: #1e3a8a;
     position: absolute;
   }
   @keyframes face-guide-pulse {

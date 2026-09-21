@@ -141,7 +141,7 @@
     const y = box.top * height;
     const w = (box.right - box.left) * width;
     const h = (box.bottom - box.top) * height;
-    ctx.strokeStyle = ready ? "#2eaf62" : "#f59e0b";
+    ctx.strokeStyle = ready ? "#1e3a8a" : "#f59e0b";
     ctx.lineWidth = 2;
     ctx.setLineDash([6, 4]);
     ctx.strokeRect(x, y, w, h);

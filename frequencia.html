@@ -5,109 +5,15 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Siga Educa - Controle de Frequência</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script id="tailwind-config">tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "inverse-primary": "#64de8b",
-                        "on-surface": "#121c2a",
-                        "on-error-container": "#93000a",
-                        "surface-variant": "#d9e3f6",
-                        "surface-container-high": "#dee9fc",
-                        "on-primary-container": "#003a1a",
-                        "on-secondary-fixed": "#001a42",
-                        "surface-container": "#e6eeff",
-                        "background": "#f8f9ff",
-                        "on-secondary": "#ffffff",
-                        "primary": "#006d37",
-                        "on-error": "#ffffff",
-                        "tertiary": "#795900",
-                        "tertiary-fixed": "#ffdf9f",
-                        "on-tertiary-fixed-variant": "#5c4300",
-                        "on-tertiary-fixed": "#261a00",
-                        "secondary-container": "#2170e4",
-                        "secondary-fixed-dim": "#adc6ff",
-                        "surface-container-low": "#eff4ff",
-                        "on-secondary-fixed-variant": "#004395",
-                        "outline": "#6e7a6e",
-                        "tertiary-container": "#c39200",
-                        "tertiary-fixed-dim": "#f9bd22",
-                        "secondary-fixed": "#d8e2ff",
-                        "text-secondary": "#6B7280",
-                        "on-surface-variant": "#3e4a3f",
-                        "inverse-on-surface": "#eaf1ff",
-                        "surface-bright": "#f8f9ff",
-                        "on-background": "#121c2a",
-                        "on-tertiary-container": "#412f00",
-                        "secondary": "#0058be",
-                        "on-primary-fixed-variant": "#005228",
-                        "error-container": "#ffdad6",
-                        "primary-fixed": "#81fba5",
-                        "primary-container": "#2eaf62",
-                        "surface-container-highest": "#d9e3f6",
-                        "on-tertiary": "#ffffff",
-                        "surface-tint": "#006d37",
-                        "outline-variant": "#bdcabc",
-                        "inverse-surface": "#27313f",
-                        "surface-container-lowest": "#ffffff",
-                        "primary-light": "#7EDC8A",
-                        "border-subtle": "#E5E7EB",
-                        "background-surface": "#FFFFFF",
-                        "on-secondary-container": "#fefcff",
-                        "surface": "#f8f9ff",
-                        "error": "#ba1a1a",
-                        "on-primary": "#ffffff",
-                        "primary-fixed-dim": "#64de8b",
-                        "on-primary-fixed": "#00210c",
-                        "surface-dim": "#d0dbed",
-                        "background-page": "#F7FAF8"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    "spacing": {
-                        "card-padding": "24px",
-                        "gutter": "16px",
-                        "section-gap": "32px",
-                        "container-margin": "24px",
-                        "base": "4px"
-                    },
-                    "fontFamily": {
-                        "sans": ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
-                        "headline-md": ["Inter"],
-                        "headline-lg-mobile": ["Inter"],
-                        "body-lg": ["Inter"],
-                        "label-sm": ["Inter"],
-                        "body-md": ["Inter"],
-                        "headline-sm": ["Inter"],
-                        "headline-lg": ["Inter"],
-                        "label-md": ["Inter"]
-                    },
-                    "fontSize": {
-                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
-                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
-                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
-                        "label-sm": ["11px", {"lineHeight": "1.4", "fontWeight": "600"}],
-                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
-                        "headline-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "600"}],
-                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                        "label-md": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
-                    }
-                },
-            },
-        }</script>
+<script src="js/siga-theme.js"></script>
 <style>
         html, html, html, body {
             overflow-x: hidden;
         }
         body {
-            background-color: #F7FAF8;
+            background-color: #F8FAFC;
             font-family: 'Inter', sans-serif;
-            color: #121C2A;
+            color: #0b1c30;
         }
         aside#sidebar .text-label-md {
             font-size: 12px !important;
@@ -117,9 +23,9 @@
             overflow-x: hidden;
         }
         body {
-            background-color: #F7FAF8;
+            background-color: #F8FAFC;
             font-family: 'Inter', sans-serif;
-            color: #121C2A;
+            color: #0b1c30;
         }
         aside#sidebar .text-label-md {
             font-size: 12px !important;
@@ -133,9 +39,9 @@
             overflow-x: hidden;
         }
         body {
-            background-color: #F7FAF8;
+            background-color: #F8FAFC;
             font-family: 'Inter', sans-serif;
-            color: #121C2A;
+            color: #0b1c30;
         }
         aside#sidebar .text-label-md {
             font-size: 12px !important;
@@ -145,9 +51,9 @@
             overflow-x: hidden;
         }
         body {
-            background-color: #F7FAF8;
+            background-color: #F8FAFC;
             font-family: 'Inter', sans-serif;
-            color: #121C2A;
+            color: #0b1c30;
         }
         aside#sidebar .text-label-md {
             font-size: 12px !important;
@@ -171,7 +77,7 @@
 <style id="sidebar-styles">
         /* Collapsible Sidebar Styles */
         :root {
-            --sidebar-width: 260px;
+            --sidebar-width: 240px;
         }
         body.sidebar-collapsed {
             --sidebar-width: 72px;
@@ -258,7 +164,7 @@
             display: none;
             padding-left: 8px;
             margin-top: 4px;
-            border-left: 1px solid rgba(0, 109, 55, 0.15); /* primary brand tint */
+            border-left: 1px solid rgba(30, 58, 138, 0.15); /* primary brand tint */
         }
         .nav-dropdown.open .nav-dropdown-menu {
             display: block !important;
@@ -275,7 +181,7 @@
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            background-color: #5c56e0; /* Blue/Indigo from screenshot */
+            background-color: #1e3a8a; /* Blue/Indigo from screenshot */
             color: #ffffff;
             border: 2px solid #ffffff;
             display: flex;
@@ -288,7 +194,7 @@
         }
         .sidebar-toggle-btn:hover {
             transform: scale(1.1);
-            background-color: #4943c7;
+            background-color: #172554;
         }
         .sidebar-toggle-btn span {
             font-size: 18px !important;

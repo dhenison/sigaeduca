@@ -18,109 +18,14 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "on-error-container": "#93000a",
-                        "on-secondary-fixed": "#001a42",
-                        "on-background": "#121c2a",
-                        "secondary": "#0058be",
-                        "surface-container": "#e6eeff",
-                        "tertiary": "#795900",
-                        "on-secondary": "#ffffff",
-                        "background-page": "#F7FAF8",
-                        "primary-fixed-dim": "#64de8b",
-                        "surface": "#f8f9ff",
-                        "surface-tint": "#006d37",
-                        "tertiary-fixed": "#ffdf9f",
-                        "on-tertiary-fixed": "#261a00",
-                        "secondary-fixed-dim": "#adc6ff",
-                        "background": "#f8f9ff",
-                        "outline": "#6e7a6e",
-                        "on-secondary-fixed-variant": "#004395",
-                        "on-primary-fixed-variant": "#005228",
-                        "surface-variant": "#d9e3f6",
-                        "on-error": "#ffffff",
-                        "primary-light": "#7EDC8A",
-                        "primary": "#006d37",
-                        "secondary-container": "#2170e4",
-                        "inverse-primary": "#64de8b",
-                        "on-surface": "#121c2a",
-                        "tertiary-container": "#c39200",
-                        "inverse-surface": "#27313f",
-                        "primary-fixed": "#81fba5",
-                        "on-tertiary": "#ffffff",
-                        "surface-container-low": "#eff4ff",
-                        "secondary-fixed": "#d8e2ff",
-                        "inverse-on-surface": "#eaf1ff",
-                        "on-tertiary-fixed-variant": "#5c4300",
-                        "border-subtle": "#E5E7EB",
-                        "on-tertiary-container": "#412f00",
-                        "on-primary-container": "#003a1a",
-                        "surface-container-high": "#dee9fc",
-                        "primary-container": "#2eaf62",
-                        "surface-bright": "#f8f9ff",
-                        "on-primary-fixed": "#00210c",
-                        "surface-dim": "#d0dbed",
-                        "background-surface": "#FFFFFF",
-                        "on-secondary-container": "#fefcff",
-                        "error": "#ba1a1a",
-                        "surface-container-lowest": "#ffffff",
-                        "error-container": "#ffdad6",
-                        "tertiary-fixed-dim": "#f9bd22",
-                        "outline-variant": "#bdcabc",
-                        "surface-container-highest": "#d9e3f6",
-                        "text-secondary": "#6B7280",
-                        "on-primary": "#ffffff",
-                        "on-surface-variant": "#3e4a3f"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    "spacing": {
-                        "gutter": "16px",
-                        "base": "4px",
-                        "container-margin": "24px",
-                        "card-padding": "24px",
-                        "section-gap": "32px"
-                    },
-                    "fontFamily": {
-                        "body-lg": ["Inter"],
-                        "headline-sm": ["Inter"],
-                        "label-md": ["Inter"],
-                        "headline-lg-mobile": ["Inter"],
-                        "label-sm": ["Inter"],
-                        "headline-lg": ["Inter"],
-                        "body-md": ["Inter"],
-                        "headline-md": ["Inter"]
-                    },
-                    "fontSize": {
-                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
-                        "headline-sm": ["16px", {"lineHeight": "1.5", "fontWeight": "600"}],
-                        "label-md": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
-                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
-                        "label-sm": ["11px", {"lineHeight": "1.4", "fontWeight": "600"}],
-                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
-                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}]
-                    }
-                }
-            }
-        }
-    </script>
+<script src="js/siga-theme.js"></script>
 <style>
         .glass-card {
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.55);
-            box-shadow: 0 12px 48px -12px rgba(0, 109, 55, 0.18);
+            box-shadow: 0 12px 48px -12px rgba(30, 58, 138, 0.18);
         }
         
         .material-symbols-outlined {
@@ -133,7 +38,7 @@
         }
 
         body.siga-auth-page {
-            background-color: #52B788;
+            background-color: #00236f;
             min-height: 100dvh;
             height: 100dvh;
             max-height: 100dvh;
@@ -146,7 +51,7 @@
         }
         
         .bg-login {
-            background-color: #52B788;
+            background-color: #00236f;
             background-image: none;
         }
 

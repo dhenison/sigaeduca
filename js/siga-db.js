@@ -398,7 +398,7 @@ function showToast(message, type = 'success') {
     
     const toast = document.createElement('div');
     toast.style.cssText = `
-        background-color: ${type === 'success' ? '#006d37' : '#ba1a1a'};
+        background-color: ${type === 'success' ? '#1e3a8a' : '#ba1a1a'};
         color: white;
         padding: 12px 24px;
         border-radius: 12px;
@@ -1328,7 +1328,7 @@ function initAgendaPage() {
             case 'Provas & Testes':
                 return { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary' };
             case 'Entrega de Trabalho':
-                return { bg: 'bg-primary-light/30', text: 'text-on-primary-container', border: 'border-primary-light' };
+                return { bg: 'bg-primary-light/30', text: 'text-primary', border: 'border-primary-light' };
             case 'Reunião de Pais':
                 return { bg: 'bg-secondary/10', text: 'text-secondary', border: 'border-secondary' };
             case 'Evento Escolar':
@@ -1559,7 +1559,7 @@ function renderOccurrences() {
         if (occ.type === "Elogio") typeStyle = "bg-primary/10 text-primary";
         
         let statusStyle = "bg-surface-container-highest text-on-surface";
-        if (occ.status === "Resolvida") statusStyle = "bg-primary-light/20 text-on-primary-container";
+        if (occ.status === "Resolvida") statusStyle = "bg-primary-light/20 text-primary";
         
         let displayDate = occ.date;
         if (occ.date.includes('-')) {

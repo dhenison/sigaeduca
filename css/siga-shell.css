@@ -1,9 +1,48 @@
-/* SIGA EDUCA — Shell responsivo (sidebar desktop + drawer mobile/tablet) */
+/* SIGA EDUCA — Academic Core + shell responsivo */
 
 :root {
-  --sidebar-width: 260px;
+  --sidebar-width: 240px;
   --siga-header-h: 64px;
   --siga-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --siga-primary: #00236f;
+  --siga-primary-container: #1e3a8a;
+  --siga-primary-hover: #1d4ed8;
+  --siga-primary-active: #172554;
+  --siga-secondary: #bb0112;
+  --siga-tertiary: #f59e0b;
+  --siga-canvas: #F8FAFC;
+  --siga-card: #FFFFFF;
+  --siga-border: #E2E8F0;
+  --siga-divider: #F1F5F9;
+  --siga-text: #0F172A;
+  --siga-text-body: #475569;
+  --siga-text-muted: #94A3B8;
+  --siga-overlay: rgba(15, 23, 42, 0.45);
+  --siga-focus-ring: 0 0 0 3px rgba(30, 58, 138, 0.12);
+  --siga-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --siga-shadow-hover: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+}
+
+html {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+body:not(.siga-auth-page) {
+  background-color: var(--siga-canvas);
+  color: var(--siga-text);
+}
+
+.font-display,
+.font-headline-lg,
+.font-headline-md,
+.font-headline-sm {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+}
+
+.tabular-nums,
+[data-siga-kpi],
+.stat-value {
+  font-variant-numeric: tabular-nums;
 }
 
 body.sidebar-collapsed {
@@ -44,6 +83,11 @@ body.siga-auth-page main.w-full {
   body:not(.siga-auth-page) main {
     padding-left: var(--sidebar-width) !important;
     transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  aside#sidebar {
+    border-right: 1px solid var(--siga-border);
+    background: var(--siga-card);
   }
 
   #nav-drawer-overlay {
@@ -157,7 +201,7 @@ body.siga-auth-page main.w-full {
 #nav-drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(18, 28, 42, 0.45);
+  background: var(--siga-overlay);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   z-index: 110;
@@ -179,14 +223,14 @@ body.drawer-open #nav-drawer-overlay {
   height: 44px;
   min-width: 44px;
   border-radius: 9999px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--siga-border);
   background: #fff;
-  color: #121c2a;
+  color: var(--siga-text);
   flex-shrink: 0;
 }
 
 #btn-mobile-nav:hover {
-  background: #eff4ff;
+  background: #F1F5F9;
 }
 
 @media (min-width: 1024px) {
@@ -405,5 +449,51 @@ footer.mt-auto {
   }
   #attendance-columns-container > #col-consolidado {
     grid-column: auto;
+  }
+}
+
+/* ---------- Academic Core: tables, inputs, elevation ---------- */
+main table thead {
+  background: var(--siga-canvas);
+}
+
+main table thead th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748B;
+  border-bottom: 1px solid var(--siga-border);
+}
+
+main table tbody tr {
+  border-bottom: 1px solid var(--siga-divider);
+}
+
+main table tbody tr:hover {
+  background: var(--siga-canvas);
+}
+
+main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+main select:focus,
+main textarea:focus {
+  border-color: var(--siga-primary-container) !important;
+  box-shadow: var(--siga-focus-ring);
+  outline: none;
+}
+
+.sidebar-toggle-btn {
+  background: var(--siga-primary-container) !important;
+  border-color: #ffffff !important;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--siga-primary-hover) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

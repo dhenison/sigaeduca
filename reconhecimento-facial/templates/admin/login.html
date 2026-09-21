@@ -6,16 +6,7 @@
   <title>Login administrativo — Siga Educa</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { primary: "#006d37", "primary-light": "#7EDC8A", "background-page": "#F7FAF8" },
-          fontFamily: { sans: ["Inter", "sans-serif"] },
-        },
-      },
-    };
-  </script>
+  <script src="../../static/js/siga-theme.js"></script>
 </head>
 <body class="min-h-screen bg-background-page font-sans text-slate-900 flex items-center justify-center p-6">
   <noscript>
@@ -61,11 +52,11 @@
       if (location.protocol !== "file:") return;
       document.body.innerHTML =
         '<main style="max-width:28rem;margin:3rem auto;padding:1.5rem;background:#fff;border:1px solid #e2e8f0;border-radius:1rem;font-family:system-ui,sans-serif">' +
-        '<p style="color:#006d37;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.75rem">Siga Educa</p>' +
+        '<p style="color:#1e3a8a;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:.75rem">Siga Educa</p>' +
         "<h1 style=\"font-size:1.4rem;margin:.5rem 0 1rem\">Abra pelo servidor local</h1>" +
         "<p style=\"color:#475569;line-height:1.5\">Esta tela não pode ser aberta pelo Explorer / Live Server. " +
         "Inicie o reconhecimento facial (<code>iniciar.bat</code>) e use:</p>" +
-        '<p style="margin-top:1rem"><a href="http://127.0.0.1:5001/admin/login" style="color:#006d37;font-weight:700">http://127.0.0.1:5001/admin/login</a></p>' +
+        '<p style="margin-top:1rem"><a href="http://127.0.0.1:5001/admin/login" style="color:#1e3a8a;font-weight:700">http://127.0.0.1:5001/admin/login</a></p>' +
         "</main>";
     })();
   </script>

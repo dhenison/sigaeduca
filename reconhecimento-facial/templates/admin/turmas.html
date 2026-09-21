@@ -7,29 +7,7 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "#006d37",
-            "primary-light": "#7EDC8A",
-            secondary: "#0058be",
-            error: "#ba1a1a",
-            "error-container": "#ffdad6",
-            "background-page": "#F7FAF8",
-            "background-surface": "#FFFFFF",
-            "border-subtle": "#E5E7EB",
-            "text-secondary": "#6B7280",
-            "on-surface": "#121c2a",
-            "surface-container-low": "#eff4ff",
-            "surface-container": "#e6eeff",
-          },
-          fontFamily: { sans: ["Inter", "sans-serif"] },
-        },
-      },
-    };
-  </script>
+  <script src="../../static/js/siga-theme.js"></script>
   <style>
     body { font-family: Inter, sans-serif; }
     .material-symbols-outlined { vertical-align: middle; }
@@ -38,7 +16,7 @@
   </style>
 </head>
 <body class="bg-background-page text-on-surface">
-<aside class="fixed left-0 top-0 h-screen w-[260px] overflow-y-auto bg-background-surface border-r border-border-subtle shadow-sm flex flex-col py-8 custom-scrollbar z-50">
+<aside class="fixed left-0 top-0 h-screen w-[240px] overflow-y-auto bg-background-surface border-r border-border-subtle shadow-sm flex flex-col py-8 custom-scrollbar z-50">
   <div class="px-6 mb-8">
     <h1 class="text-xl font-bold text-primary">SIGA EDUCA</h1>
     <p class="text-xs text-text-secondary">Reconhecimento Facial</p>
@@ -72,7 +50,7 @@
   </div>
 </aside>
 
-<header class="fixed top-0 right-0 left-[260px] h-16 z-40 bg-background-surface/80 backdrop-blur-md border-b border-border-subtle flex justify-between items-center px-6">
+<header class="fixed top-0 right-0 left-[240px] h-16 z-40 bg-background-surface/80 backdrop-blur-md border-b border-border-subtle flex justify-between items-center px-6">
   <div>
     <h2 class="text-sm font-bold text-on-surface">Turmas do SIGA EDUCA</h2>
     <p class="text-[11px] text-text-secondary" id="turmasDayLabel">Entrada e saída via reconhecimento facial</p>
@@ -85,7 +63,7 @@
   </div>
 </header>
 
-<main class="ml-[260px] pt-24 p-8 max-w-[1440px] mx-auto min-h-screen">
+<main class="ml-[240px] pt-24 p-8 max-w-[1440px] mx-auto min-h-screen">
   <div id="turmasConfigWarn" class="hidden mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"></div>
 
   <div class="grid grid-cols-12 gap-6">

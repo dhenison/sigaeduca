@@ -7,36 +7,7 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "#006d37",
-            "primary-container": "#2eaf62",
-            "primary-light": "#7EDC8A",
-            "primary-fixed": "#81fba5",
-            secondary: "#0058be",
-            "secondary-container": "#2170e4",
-            tertiary: "#795900",
-            "tertiary-fixed": "#ffdf9f",
-            error: "#ba1a1a",
-            "error-container": "#ffdad6",
-            "background-page": "#F7FAF8",
-            "background-surface": "#FFFFFF",
-            "border-subtle": "#E5E7EB",
-            "text-secondary": "#6B7280",
-            "on-surface": "#121c2a",
-            "surface-container-low": "#eff4ff",
-            "surface-container": "#e6eeff",
-            "surface-container-highest": "#d9e3f6",
-            "surface-container-lowest": "#ffffff",
-          },
-          fontFamily: { sans: ["Inter", "sans-serif"] },
-        },
-      },
-    };
-  </script>
+  <script src="../../static/js/siga-theme.js"></script>
   <style>
     body { font-family: "Inter", sans-serif; }
     .material-symbols-outlined {
@@ -45,10 +16,10 @@
     }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    #guideChecklist li.is-ok { color: #006d37; font-weight: 600; }
-    #guideChecklist li.is-ok .guide-dot { color: #006d37; }
+    #guideChecklist li.is-ok { color: #1e3a8a; font-weight: 600; }
+    #guideChecklist li.is-ok .guide-dot { color: #1e3a8a; }
     #enrollmentOval.is-ready {
-      border-color: #2eaf62;
+      border-color: #1e3a8a;
       box-shadow: 0 0 0 999px rgba(2, 6, 23, 0.35), 0 0 0 3px rgba(46, 175, 98, 0.35);
     }
     #enrollmentOval.is-warn {
@@ -60,7 +31,7 @@
   </style>
 </head>
 <body class="bg-background-page text-on-surface">
-<aside class="fixed left-0 top-0 h-screen w-[260px] overflow-y-auto bg-background-surface border-r border-border-subtle shadow-sm flex flex-col py-8 custom-scrollbar z-50">
+<aside class="fixed left-0 top-0 h-screen w-[240px] overflow-y-auto bg-background-surface border-r border-border-subtle shadow-sm flex flex-col py-8 custom-scrollbar z-50">
   <div class="px-6 mb-8">
     <h1 class="text-xl font-bold text-primary">EduManager Pro</h1>
     <p class="text-xs text-text-secondary">Administração Central</p>
@@ -98,7 +69,7 @@
   </div>
 </aside>
 
-<header class="fixed top-0 right-0 left-[260px] h-16 z-40 bg-background-surface/80 backdrop-blur-md border-b border-border-subtle flex justify-between items-center px-4">
+<header class="fixed top-0 right-0 left-[240px] h-16 z-40 bg-background-surface/80 backdrop-blur-md border-b border-border-subtle flex justify-between items-center px-4">
   <div class="relative w-full max-w-md">
     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
     <input id="searchUsers" class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-border-subtle rounded-full text-sm outline-none focus:ring-2 focus:ring-primary" placeholder="Buscar por nome ou matrícula..." type="search"/>
@@ -112,7 +83,7 @@
   </div>
 </header>
 
-<main class="ml-[260px] pt-24 p-8 max-w-[1440px] mx-auto min-h-screen">
+<main class="ml-[240px] pt-24 p-8 max-w-[1440px] mx-auto min-h-screen">
   <div class="grid grid-cols-12 gap-4 mb-8">
     <div class="col-span-12 md:col-span-8">
       <h2 class="text-3xl font-bold text-on-surface mb-2">Controle de Reconhecimento Facial</h2>

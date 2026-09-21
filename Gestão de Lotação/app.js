@@ -919,7 +919,7 @@ function renderDashboardCharts() {
             labels: ['Horas Loteadas', 'Horas Sem Professor'],
             datasets: [{
                 data: [chAlocada, chPendente],
-                backgroundColor: ['#006d37', '#ba1a1a'],
+                backgroundColor: ['#1e3a8a', '#ba1a1a'],
                 borderWidth: 0
             }]
         },
@@ -2027,7 +2027,7 @@ function imprimirRelatorioDocente() {
                 .badge { border: 1px solid #ccc; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
                 .badge-success { background-color: #d1fae5; color: #065f46; font-weight: bold; }
                 .badge-secondary { background-color: #f1f5f9; color: #334155; }
-                .badge-info { background-color: #e6f7ed; color: #006d37; }
+                .badge-info { background-color: #e6f7ed; color: #1e3a8a; }
             </style>
         </head>
         <body>

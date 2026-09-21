@@ -789,7 +789,7 @@
       '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/>' +
       '<title>' + escapeHtml(title) + '</title>' +
       '<style>body{font-family:Georgia,\'Times New Roman\',serif;color:#121c2a;margin:32px;}' +
-      'h1{font-size:22px;margin:0 0 4px;color:#006d37;}h2{font-size:14px;font-weight:normal;color:#556;margin:0 0 16px;}' +
+      'h1{font-size:22px;margin:0 0 4px;color:#1e3a8a;}h2{font-size:14px;font-weight:normal;color:#556;margin:0 0 16px;}' +
       'p.meta{font-size:14px;margin:0 0 20px;}table{width:100%;border-collapse:collapse;}' +
       '@media print{body{margin:12mm;}}</style></head><body>' +
       '<h1>' + escapeHtml(title) + '</h1>' +

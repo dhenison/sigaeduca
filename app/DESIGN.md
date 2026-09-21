@@ -1,107 +1,114 @@
 ---
-name: Siga Educa Design System
+name: SIGA EDUCA — Academic Core
 colors:
   surface: '#f8f9ff'
-  surface-dim: '#d0dbed'
+  surface-dim: '#cbdbf5'
   surface-bright: '#f8f9ff'
   surface-container-lowest: '#ffffff'
   surface-container-low: '#eff4ff'
-  surface-container: '#e6eeff'
-  surface-container-high: '#dee9fc'
-  surface-container-highest: '#d9e3f6'
-  on-surface: '#121c2a'
-  on-surface-variant: '#3e4a3f'
-  inverse-surface: '#27313f'
+  surface-container: '#e5eeff'
+  surface-container-high: '#dce9ff'
+  surface-container-highest: '#d3e4fe'
+  on-surface: '#0b1c30'
+  on-surface-variant: '#444651'
+  inverse-surface: '#213145'
   inverse-on-surface: '#eaf1ff'
-  outline: '#6e7a6e'
-  outline-variant: '#bdcabc'
-  surface-tint: '#795900'
-  primary: '#795900'
+  outline: '#757682'
+  outline-variant: '#c5c5d3'
+  surface-tint: '#4059aa'
+  primary: '#00236f'
   on-primary: '#ffffff'
-  primary-container: '#c39200'
-  on-primary-container: '#412f00'
-  inverse-primary: '#f9bd22'
-  secondary: '#0058be'
+  primary-container: '#1e3a8a'
+  on-primary-container: '#90a8ff'
+  inverse-primary: '#b6c4ff'
+  secondary: '#bb0112'
   on-secondary: '#ffffff'
-  secondary-container: '#2170e4'
-  on-secondary-container: '#fefcff'
-  tertiary: '#006d37'
+  secondary-container: '#e02928'
+  on-secondary-container: '#fffbff'
+  tertiary: '#3e2400'
   on-tertiary: '#ffffff'
-  tertiary-container: '#2eaf62'
-  on-tertiary-container: '#003a1a'
+  tertiary-container: '#5c3800'
+  on-tertiary-container: '#ef9900'
   error: '#ba1a1a'
   on-error: '#ffffff'
   error-container: '#ffdad6'
   on-error-container: '#93000a'
-  primary-fixed: '#ffdf9f'
-  primary-fixed-dim: '#f9bd22'
-  on-primary-fixed: '#261a00'
-  on-primary-fixed-variant: '#5c4300'
-  secondary-fixed: '#d8e2ff'
-  secondary-fixed-dim: '#adc6ff'
-  on-secondary-fixed: '#001a42'
-  on-secondary-fixed-variant: '#004395'
-  tertiary-fixed: '#81fba5'
-  tertiary-fixed-dim: '#64de8b'
-  on-tertiary-fixed: '#00210c'
-  on-tertiary-fixed-variant: '#005228'
+  primary-fixed: '#dce1ff'
+  primary-fixed-dim: '#b6c4ff'
+  on-primary-fixed: '#00164e'
+  on-primary-fixed-variant: '#264191'
+  secondary-fixed: '#ffdad6'
+  secondary-fixed-dim: '#ffb4ab'
+  on-secondary-fixed: '#410002'
+  on-secondary-fixed-variant: '#93000b'
+  tertiary-fixed: '#ffddb8'
+  tertiary-fixed-dim: '#ffb95f'
+  on-tertiary-fixed: '#2a1700'
+  on-tertiary-fixed-variant: '#653e00'
   background: '#f8f9ff'
-  on-background: '#121c2a'
-  surface-variant: '#d9e3f6'
+  on-background: '#0b1c30'
+  surface-variant: '#d3e4fe'
 typography:
   display-lg:
-    fontFamily: Space Grotesk
-    fontSize: 48px
+    fontFamily: Inter
+    fontSize: 36px
     fontWeight: '700'
-    lineHeight: 56px
-    letterSpacing: -0.02em
+    lineHeight: 44px
+  headline-xl:
+    fontFamily: Inter
+    fontSize: 28px
+    fontWeight: '700'
+    lineHeight: 36px
   headline-lg:
-    fontFamily: Space Grotesk
-    fontSize: 32px
+    fontFamily: Inter
+    fontSize: 22px
     fontWeight: '600'
-    lineHeight: 40px
-    letterSpacing: -0.01em
+    lineHeight: 28px
   headline-lg-mobile:
-    fontFamily: Space Grotesk
-    fontSize: 24px
-    fontWeight: '600'
-    lineHeight: 32px
-  headline-md:
-    fontFamily: Space Grotesk
-    fontSize: 24px
-    fontWeight: '600'
-    lineHeight: 32px
-  headline-sm:
-    fontFamily: Space Grotesk
+    fontFamily: Inter
     fontSize: 20px
     fontWeight: '600'
-    lineHeight: 28px
-  body-lg:
+    lineHeight: 26px
+  headline-md:
     fontFamily: Inter
     fontSize: 18px
-    fontWeight: '400'
-    lineHeight: 28px
-  body-md:
+    fontWeight: '600'
+    lineHeight: 24px
+  title-sm:
+    fontFamily: Inter
+    fontSize: 15px
+    fontWeight: '600'
+    lineHeight: 20px
+  body-lg:
     fontFamily: Inter
     fontSize: 16px
     fontWeight: '400'
     lineHeight: 24px
-  body-sm:
+  body-md:
     fontFamily: Inter
     fontSize: 14px
     fontWeight: '400'
     lineHeight: 20px
-  label-md:
-    fontFamily: JetBrains Mono
+  body-sm:
+    fontFamily: Inter
+    fontSize: 13px
+    fontWeight: '400'
+    lineHeight: 18px
+  label-lg:
+    fontFamily: Inter
     fontSize: 14px
     fontWeight: '500'
-    lineHeight: 16px
-    letterSpacing: 0.02em
-  label-sm:
+    lineHeight: 20px
+  label-md:
     fontFamily: Inter
     fontSize: 12px
-    fontWeight: '600'
+    fontWeight: '500'
     lineHeight: 16px
+  label-sm:
+    fontFamily: Inter
+    fontSize: 11px
+    fontWeight: '600'
+    lineHeight: 14px
 rounded:
   sm: 0.25rem
   DEFAULT: 0.5rem
@@ -110,66 +117,88 @@ rounded:
   xl: 1.5rem
   full: 9999px
 spacing:
-  base: 8px
-  container-max: 1440px
-  gutter: 24px
-  margin-mobile: 16px
-  margin-desktop: 32px
-  sidebar-width: 260px
+  gutter: 1.25rem
+  gutter-mobile: 0.75rem
+  margin: 1.5rem
+  margin-mobile: 1rem
+  space-xs: 0.25rem
+  space-sm: 0.5rem
+  space-md: 1rem
+  space-lg: 1.5rem
+  space-xl: 2rem
 ---
 
 ## Brand & Style
-The design system is engineered for an educational SaaS environment that balances administrative rigor with an approachable, modern feel. Drawing inspiration from high-performance productivity tools like Linear and Notion, the style is **Corporate / Modern** with a focus on high-efficiency workflows. 
+This design system serves academic institutions, municipal school districts, teachers, secretaries, and school principals who require reliability, precision, and clarity under high-density data workloads. The visual language conveys institutional trust, modern administrative efficiency, and academic dignity.
 
-The brand personality is professional, organized, and optimistic. The aesthetic relies on a "Soft Minimalism" approach: generous whitespace, a structured grid, and subtle depth through tonal layering rather than aggressive borders. The goal is to reduce cognitive load for educators and administrators, providing a calm, focused environment for data management and pedagogical tracking.
+The design movement is **Corporate / Modern** optimized for dense institutional dashboards, merging clean SaaS ergonomics with institutional rigor. Interfaces prioritize scannability, crisp hierarchical separation between administrative tiers (academic records, enrollments, grading, pedagogical metrics), and low visual fatigue during extended daily operation.
 
 ## Colors
-The palette is centered around a warm and energetic "Institutional Gold" that signals value and achievement. The primary yellow (`#FBBF24`) is used for core brand actions and primary buttons, while its lighter counterpart provides soft backgrounds for active states and subtle highlights.
+The palette is built around an authoritative deep navy blue (`#1E3A8A`) as the anchor of the visual architecture, representing institutional legitimacy, safety, and operational focus.
 
-Secondary blue and tertiary green are reserved for functional differentiation—blue (`#3B82F6`) for informative data or administrative tasks, and green (`#2EAF62`) for success states and growth tracking. The neutral palette is deliberately clean to reduce screen glare during long work sessions, while pure white is reserved for high-priority card surfaces to create a clear "layering" effect.
+- **Primary (`#1E3A8A` / `#1D4ED8`)**: Used for persistent primary navigation, header badges, primary buttons, active state sidebars, and critical school structure indicators.
+- **Secondary (`#DC2626` / `#B91C1C`)**: The institutional signal color for urgent pedagogical occurrences, student absence thresholds, administrative sanctions, cancellation flows, and destructive action controls.
+- **Tertiary (`#F59E0B` / `#FBBF24`)**: Used selectively for academic warnings, pending documentation, pending report card approval, merit badges, and medium-level pedagogical alerts.
+- **Neutrals & Surfaces**: Main canvas background resides on `#F8FAFC`, cards and elevated panels on `#FFFFFF`, with structural dividers, table stripes, and card frames utilizing `#F1F5F9` and `#E2E8F0`. Text hierarchy ranges from `#0F172A` (headings) to `#475569` (body text) and `#94A3B8` (subtle captions).
 
 ## Typography
-The typographic system uses a tiered approach for maximum clarity. **Space Grotesk** is used for headlines, providing a technical yet friendly geometric character that feels modern and precise. 
+The system uses **Inter** across all typographic applications. Inter delivers superior legibility for tabular numbers, student matriculation codes, timestamps, and multi-level data grids.
 
-For the vast majority of interface text, **Inter** is the workhorse font, chosen for its exceptional legibility in SaaS data tables and long-form pedagogical reports. **JetBrains Mono** is introduced sparingly for specialized labels, ID numbers, or data-dense indicators to provide a functional, "instrument-panel" aesthetic that differentiates static labels from dynamic content.
+- **Headlines & Titles**: Weighted between Semibold (600) and Bold (700) with compact line-heights to maintain space efficiency in portal headers and statistical summaries.
+- **Body Text**: Rendered at Regular (400) and Medium (500) weights, optimized for fast parsing of student logs, grade sheets, and system notifications.
+- **Tabular Numerals**: Numeric metrics within KPI cards, gradebooks, and attendance rates must activate OpenType `tnum` (tabular lining figures) to ensure vertical alignment across dense rows.
 
 ## Layout & Spacing
-The design system employs a **Fluid Grid** model with fixed sidebar constraints. 
+The layout follows a persistent multi-tier admin dashboard structure: a fixed or collapsible left navigation rail (240px expanded, 72px collapsed), an institutional top bar (64px height) with search and notification anchors, and a fluid main content canvas.
 
-1.  **Sidebar:** A fixed 260px width on desktop. On mobile, the sidebar transitions to a bottom navigation bar or a hidden drawer.
-2.  **Dashboard Layout:** Content resides in a fluid container with a 1440px max-width to prevent line lengths from becoming unreadable on ultra-wide monitors.
-3.  **Spacing Rhythm:** An 8px base unit (4px for micro-adjustments) ensures vertical rhythm. Metric cards should utilize 24px internal padding (3 units) to feel airy and premium.
-4.  **Responsive Tiers:** On tablet, gutters reduce to 16px. On mobile, the grid collapses to a single column with cards spanning the full width minus a 16px outer margin.
+Content grids conform to a 12-column responsive layout:
+- **Desktop (>= 1280px)**: 12 columns with 1.25rem (20px) gutters and 1.5rem (24px) outer margins. KPI metrics distribute across 4 or 5 equal metric tiles.
+- **Tablet (768px - 1279px)**: 8 columns with 1rem gutters, collapsing multi-metric rows into 2x2 grids and converting dual-column chart grids to single-column blocks.
+- **Mobile (< 768px)**: 4 columns with 0.75rem gutters and 1rem canvas margin. The sidebar collapses into a slide-over off-canvas drawer.
 
 ## Elevation & Depth
-Depth in this system is achieved through **Tonal Layers** supplemented by **Ambient Shadows**. 
+Elevation is maintained using low-contrast outlines paired with micro ambient drop shadows to maintain a clean, administrative aesthetic without muddying data density:
 
--   **Layer 0 (Background):** A clean, neutral-tinted canvas.
--   **Layer 1 (Cards/Sidebar):** `#FFFFFF` — Use a soft, 12% opacity shadow with a 16px blur and a 4px vertical offset to create a "lifted" effect.
--   **Layer 2 (Popovers/Modals):** High-elevation surfaces use a 20% opacity shadow and a 1px subtle border (`#E5E7EB`) to define the perimeter against white cards.
-
-Avoid heavy dark borders. Instead, use thin, 1px lines in `#E5E7EB` to separate layout sections where tonal contrast is insufficient.
+- **Level 0 (Base Canvas)**: Neutral surface (`#F8FAFC`) with no elevation.
+- **Level 1 (Card & Module Surfaces)**: Pure white background (`#FFFFFF`) framed by a subtle 1px border (`#E2E8F0`) and a diffused shadow `0 1px 3px rgba(15, 23, 42, 0.05)`.
+- **Level 2 (Hovered Cards & Interactive Controls)**: Elevated slightly with `0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04)`.
+- **Level 3 (Dropdowns, Floating Filters & Tooltips)**: Elevated with `0 10px 15px -3px rgba(15, 23, 42, 0.10)`.
+- **Level 4 (Modals & Confirmation Sheets)**: Backed by an institutional backdrop overlay `rgba(15, 23, 42, 0.45)` with a modal shadow of `0 20px 25px -5px rgba(15, 23, 42, 0.15)`.
 
 ## Shapes
-A core identifier of the system is the **16px (1rem)** border radius used for all primary containers and cards. This large radius softens the technical nature of educational data, making the software feel more human and modern.
+A balanced roundedness level of `2` (0.5rem / 8px for standard elements) provides a modern yet authoritative interface. 
 
-Smaller components like buttons, input fields, and tags should follow a `rounded-md` (8px) rule to maintain a consistent geometric language while ensuring they don't look overly "circular" compared to the larger structural cards.
+- **Form controls, badges, and small buttons**: 0.5rem (8px).
+- **Cards, dashboard panels, and data tables**: 0.75rem to 1rem (12px to 16px).
+- **Metric icon pills & status tags**: Pill-rounded (9999px) or soft squircle (8px) for categorical identification.
+- **Structural frames & container dividers**: Consistent 1px crisp lines with `#E2E8F0`.
 
 ## Components
 
-### Side Menu
-The navigation uses a white background with a clean vertical list. Icons are rendered in the secondary blue (`#3B82F6`). Active states are marked with a subtle pill-shaped background in the primary gold (at 20-30% opacity) and a high-weight font label.
-
-### Metric Cards
-Large dashboard cards should feature a `headline-sm` title, a `display-lg` numeric value, and a small Sparkline or percentage indicator for trends. Internal padding must be a consistent 24px.
-
 ### Buttons
-- **Primary:** Filled `#FBBF24` with high-contrast text. 8px corner radius.
-- **Secondary:** Outlined with `#E5E7EB` and secondary blue text.
-- **Ghost:** No background, used for low-priority actions in tables.
+- **Primary**: Background `#1E3A8A`, text `#FFFFFF`, rounded 8px, font-weight 500. Hover transitions to `#1D4ED8`. Active state deepens to `#172554`. Focus ring: 2px `#93C5FD` with 2px offset.
+- **Destructive**: Background `#DC2626`, text `#FFFFFF`. Hover transitions to `#B91C1C`.
+- **Secondary / Outline**: 1px solid border `#CBD5E1`, background `#FFFFFF`, text `#1E293B`. Hover state `#F8FAFC`.
+- **Ghost / Action Icon**: Padding 8px, border-radius 8px, transparent background, text `#64748B`, hover background `#F1F5F9`.
 
-### Input Fields
-Inputs should use a 1px border (`#E5E7EB`), turning to Secondary Blue on focus. Labels should use the `label-sm` style, positioned above the field to maximize horizontal space for data entry.
+### Metric & KPI Cards
+- Base surface `#FFFFFF`, 1px border `#E2E8F0`, rounded 12px, padding 20px.
+- Left-aligned icon badge contained in a 40x40px rounded container tinted at 10% opacity of the category color (e.g., Primary Blue for students, Yellow for attendance, Red for alerts/occurrences).
+- Bold numeric value (24px, 700 weight) with clear textual labels and footer trend pill indicator showing status or percentage.
 
-### Data Visualizations
-Charts (Pie, Bar, Line) must exclusively use the primary, secondary, and tertiary palette: Gold (`#FBBF24`), Blue (`#3B82F6`), and Green (`#2EAF62`). Always use rounded bar caps and soft line tension to match the system's shape language.
+### Input Fields & Selects
+- 1px border `#CBD5E1`, background `#FFFFFF`, text `#0F172A`, placeholder text `#94A3B8`.
+- Height: 40px for standard inputs; 32px for compact table filters.
+- Focus state: Border color transitions to `#1E3A8A` with a subtle box-shadow ring `0 0 0 3px rgba(30, 58, 138, 0.12)`.
+
+### Badges & Status Chips
+- **Success / Normal**: Background `#ECFDF5`, text `#065F46`, border `#A7F3D0`.
+- **Alert / Occurrence**: Background `#FEF2F2`, text `#991B1B`, border `#FECACA`.
+- **Attention / Pending**: Background `#FFFBEB`, text `#92400E`, border `#FDE68A`.
+- **Informational / Class**: Background `#EFF6FF`, text `#1E40AF`, border `#BFDBFE`.
+- Geometry: Height 22px, padding 2px 8px, rounded 9999px, text size 11px uppercase or 12px capitalized.
+
+### Data Tables & Student Rosters
+- Header: Background `#F8FAFC`, uppercase font-size 11px, tracking 0.05em, text `#64748B`, border bottom 1px solid `#E2E8F0`.
+- Row: Alternating subtle hover `#F8FAFC`, height 48px, horizontal borders `#F1F5F9`.
+- Cells: Text 13px/14px `#334155`. Numeric columns aligned right; status chips centered or left-aligned with icon bullets.

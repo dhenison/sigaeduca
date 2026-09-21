@@ -1,65 +1,40 @@
-# DESIGN.md --- SIGA EDUCA
+# DESIGN.md — SIGA EDUCA (Academic Core)
 
-## Identidade Visual
+Fonte canônica: [`app/DESIGN.md`](./app/DESIGN.md)  
+Tokens Tailwind: [`js/siga-theme.js`](./js/siga-theme.js)
 
-O SIGA EDUCA deve transmitir modernidade, confiança, acessibilidade e
-organização.
+## Marca
 
-### Estilo
+Dashboard institucional corporativo. Confiança, precisão e densidade de dados. âncora visual: azul-marinho `#1E3A8A` / `#00236F`.
 
--   SaaS moderno
--   Interface limpa
--   Cards com cantos arredondados (16px)
--   Sombras suaves
--   Layout responsivo (Desktop, Tablet e Mobile)
+| Papel | Hex | Uso |
+|---|---|---|
+| Primary | `#00236F` / `#1E3A8A` | Nav, botões primários, estados ativos |
+| Secondary | `#BB0112` / `#DC2626` | Ocorrências, faltas, ações destrutivas |
+| Tertiary | `#F59E0B` | Pendências, avisos, mérito |
+| Canvas | `#F8FAFC` | Fundo da área de trabalho |
+| Card | `#FFFFFF` | Painéis, tabelas |
+| Borda | `#E2E8F0` | Frames e divisores |
+| Texto | `#0F172A` / `#475569` / `#94A3B8` | Título / corpo / caption |
 
-## Paleta de Cores
+## Tipografia
 
-### Primária
+**Inter** em todos os níveis. Numerais tabulares (`tnum`) em KPIs e grades. Sem Space Grotesk nem JetBrains Mono.
 
--   Verde Principal: `#2EAF62`
--   Verde Claro: `#7EDC8A`
+## Layout
 
-### Secundárias
+- Sidebar: **240px** expandida, **72px** recolhida
+- Top bar: **64px**
+- Desktop ≥1280: 12 colunas, gutter 1.25rem
+- Tablet: 8 colunas
+- Mobile: drawer off-canvas, gutter 0.75rem
 
--   Azul: `#3B82F6`
--   Amarelo: `#FBBF24`
+## Formas
 
-### Neutras
+- Controles e botões: 8px (`rounded-lg`)
+- Cards e tabelas: 12–16px (`rounded-xl` / `rounded-2xl`)
+- Chips de status: pill
 
--   Fundo: `#F7FAF8`
--   Cards: `#FFFFFF`
--   Texto Principal: `#1F2937`
--   Texto Secundário: `#6B7280`
--   Bordas: `#E5E7EB`
+## Elevação
 
-## Componentes
-
-### Menu Lateral
-
--   Fundo branco
--   Ícones verdes
--   Item ativo com fundo verde claro
-
-### Dashboard
-
-Cards grandes com indicadores: - Alunos - Turmas - Frequência -
-Ocorrências - Relatórios
-
-Gráficos utilizando: - Verde - Azul - Amarelo
-
-## UX
-
--   Navegação simples
--   Poucos cliques
--   Alta legibilidade
--   Ícones consistentes
--   Responsivo
-
-## Referências
-
--   Notion
--   Linear
--   ClickUp
--   Google Workspace
--   Monday.com
+Card: `0 1px 3px rgba(15, 23, 42, 0.05)` + borda 1px `#E2E8F0`.

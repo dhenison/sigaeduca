@@ -356,7 +356,7 @@
     return Object.assign(
       {
         darkMode: false,
-        accent: "#006d37",
+        accent: "#1e3a8a",
         bio: "",
       },
       all[id] || {}
@@ -454,7 +454,7 @@
   }
 
   function applyAccent(color) {
-    color = String(color || "#006d37");
+    color = String(color || "#1e3a8a");
     var root = document.documentElement;
     root.style.setProperty("--primary-color", color);
     root.style.setProperty("--color-primary", color);
@@ -508,7 +508,7 @@
       document.body.classList.toggle("dark", dark);
       document.body.dataset.theme = dark ? "dark" : "light";
     }
-    applyAccent(prefs.accent || "#006d37");
+    applyAccent(prefs.accent || "#1e3a8a");
     // Atualiza o interruptor se estiver na tela
     syncThemeToggleUi(dark);
   }
@@ -722,13 +722,13 @@
         dot.classList.toggle("border-transparent", !on);
       });
     }
-    paintDots(prefs.accent || "#006d37");
-    applyAccent(prefs.accent || "#006d37");
+    paintDots(prefs.accent || "#1e3a8a");
+    applyAccent(prefs.accent || "#1e3a8a");
     dots.forEach(function (dot) {
       if (dot._bound) return;
       dot._bound = true;
       dot.addEventListener("click", function () {
-        var color = dot.getAttribute("data-accent") || "#006d37";
+        var color = dot.getAttribute("data-accent") || "#1e3a8a";
         prefs = savePrefs(student.id, { accent: color });
         applyAccent(color);
         paintDots(color);

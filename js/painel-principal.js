@@ -206,7 +206,7 @@
       c.setAttribute('cy', p.y);
       c.setAttribute('r', '4');
       c.setAttribute('fill', 'white');
-      c.setAttribute('stroke', '#2EAF62');
+      c.setAttribute('stroke', '#1E3A8A');
       c.setAttribute('stroke-width', '2');
       svg.appendChild(c);
     });
@@ -328,7 +328,7 @@
     }
 
     var palette = [
-      { key: 'Ensino Médio', color: '#2EAF62', dot: 'bg-primary-container' },
+      { key: 'Ensino Médio', color: '#1E3A8A', dot: 'bg-primary-container' },
       { key: 'EJA', color: '#2170E4', dot: 'bg-secondary-container' },
       { key: 'Fluxo', color: '#C39200', dot: 'bg-tertiary-container' },
       { key: 'Educação Especial', color: '#64DE8B', dot: 'bg-primary-fixed-dim' }
