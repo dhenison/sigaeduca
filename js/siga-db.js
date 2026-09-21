@@ -1792,6 +1792,21 @@ function normalizeCpfValue(raw) {
     return String(raw || '').trim();
 }
 
+function sheetCellText(cell) {
+    if (!cell) return '';
+    if (cell.w != null && String(cell.w).trim()) return String(cell.w).replace(/\u00a0/g, ' ').trim();
+    if (typeof cell.v === 'number' && Number.isFinite(cell.v) && Math.abs(cell.v) >= 1e10) {
+        return String(Math.round(cell.v));
+    }
+    return String(cell.v == null ? '' : cell.v).replace(/\u00a0/g, ' ').trim();
+}
+
+function spreadsheetAccessPassword(raw) {
+    const value = String(raw || '').replace(/\u00a0/g, ' ').trim();
+    if (!value || value.toUpperCase() === 'DEFINIR_SENHA') return '';
+    return value;
+}
+
 function loadSheetJsLib() {
     return new Promise((resolve, reject) => {
         if (window.XLSX) return resolve(window.XLSX);
@@ -1815,16 +1830,19 @@ async function readAlunosSpreadsheetRows(file) {
     if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
         const XLSX = await loadSheetJsLib();
         const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, { type: 'array', cellDates: false, raw: false });
+        const wb = XLSX.read(buf, { type: 'array', cellDates: false, cellText: true });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
-        return rows.map(r => (Array.isArray(r) ? r.map(c => {
-            // Evita 1.24e+11 em codigoInep (Excel); formata inteiros grandes como texto.
-            if (typeof c === 'number' && Number.isFinite(c) && Math.abs(c) >= 1e10) {
-                return String(Math.round(c));
+        if (!sheet || !sheet['!ref']) return [];
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+        const rows = [];
+        for (let r = range.s.r; r <= range.e.r; r++) {
+            const row = [];
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                row.push(sheetCellText(sheet[XLSX.utils.encode_cell({ r: r, c: c })]));
             }
-            return String(c == null ? '' : c).trim();
-        }) : []));
+            rows.push(row);
+        }
+        return rows;
     }
 
     const text = await new Promise((resolve, reject) => {
@@ -1865,7 +1883,7 @@ async function importAlunosFromFile(file) {
             dataNascimento: idx(['datanascimento', 'nascimento', 'datadenascimento']),
             idade: idx(['idade']),
             email: idx(['emailinstitucional', 'email', 'emaileducacional']),
-            senha: idx(['senha', 'password']),
+            senha: idx(['senha', 'password', 'senhadeacesso', 'senhadoaluno', 'senhapadrao', 'senhainstitucional', 'senhalogin']),
             responsavel: idx(['responsavel']),
             contato: idx(['contato', 'telefone', 'celular'])
         };
@@ -1890,6 +1908,7 @@ async function importAlunosFromFile(file) {
         let added = 0;
         let updated = 0;
         let skipped = 0;
+        let senhasAcesso = 0;
         const sd = window.SigaSchoolData || null;
         const isAee = (code) => {
             if (sd && typeof sd.isAeeClassCode === 'function') return sd.isAeeClassCode(code);
@@ -1945,6 +1964,8 @@ async function importAlunosFromFile(file) {
             const cpf = normalizeCpfValue(get('cpf'));
             const codigoInep = normalizeInepValue(get('codigoInep'));
             const email = get('email');
+            const senhaAcesso = spreadsheetAccessPassword(get('senha'));
+            if (senhaAcesso) senhasAcesso++;
             const aeeTurmas = isAee(turma) ? [String(turma).toUpperCase()] : [];
             const payload = {
                 codigoInep,
@@ -1957,12 +1978,8 @@ async function importAlunosFromFile(file) {
                 dataNascimento,
                 idade,
                 email,
-                senha: (function () {
-                    const raw = get('senha');
-                    if (raw && raw !== 'DEFINIR_SENHA') return raw;
-                    return '';
-                })(),
-                precisaDefinirSenha: !(get('senha') && get('senha') !== 'DEFINIR_SENHA'),
+                senha: senhaAcesso,
+                precisaDefinirSenha: !senhaAcesso,
                 responsavel: get('responsavel'),
                 contato: get('contato'),
                 rotaEscolar: '',
@@ -2010,7 +2027,10 @@ async function importAlunosFromFile(file) {
         renderAlunos();
 
         const mode = replace ? 'substituição' : 'mescla';
-        const localMsg = `Importação local (${mode}): ${students.length} alunos (${added} novos, ${updated} atualizados${skipped ? ', ' + skipped + ' ignorados' : ''}).`;
+        const senhaMsg = map.senha < 0
+            ? ' A planilha não tem a coluna Senha, então o acesso dos alunos não foi alterado.'
+            : ` ${senhasAcesso} senha(s) da planilha definida(s) como acesso ao portal.`;
+        const localMsg = `Importação local (${mode}): ${students.length} alunos (${added} novos, ${updated} atualizados${skipped ? ', ' + skipped + ' ignorados' : ''}).${senhaMsg}`;
 
         if (window.SigaSchoolData && typeof window.SigaSchoolData.upsertStudents === 'function') {
             showToast('Sincronizando alunos com o banco…');
@@ -2516,8 +2536,16 @@ function openEditStudentModal(studentId) {
                     </div>
                 </div>
                 <div>
-                    <label class="block text-label-md font-bold text-on-surface mb-1">Senha ${hasPwd ? '(deixe em branco para manter)' : ''}</label>
-                    <input type="password" id="std-senha" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" value="" placeholder="${hasPwd ? '••••••••' : 'Defina uma senha'}" autocomplete="new-password" ${hasPwd ? '' : 'required'}>
+                    <label class="block text-label-md font-bold text-on-surface mb-1">Senha de acesso</label>
+                    <div id="std-senha-locked" class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                        <input type="password" id="std-senha" class="w-full border border-border-subtle bg-surface-container-low rounded-lg px-4 py-2 text-body-md outline-none cursor-not-allowed text-text-secondary" value="" placeholder="${hasPwd ? 'Senha definida' : 'Sem senha de acesso'}" autocomplete="off" disabled readonly>
+                        <button type="button" id="std-redefinir-senha" class="shrink-0 px-4 py-2 rounded-lg border border-primary text-primary text-label-md font-bold hover:bg-primary/10 transition-colors">${hasPwd ? 'Redefinir senha' : 'Definir senha'}</button>
+                    </div>
+                    <div id="std-senha-reset" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <input type="password" id="std-senha-nova" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" placeholder="Nova senha (mínimo 6)" autocomplete="new-password">
+                        <input type="password" id="std-senha-confirma" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" placeholder="Confirmar nova senha" autocomplete="new-password">
+                    </div>
+                    <p class="mt-1 text-[11px] text-text-secondary">A senha fica bloqueada. Ela só muda quando você redefine o acesso do aluno.</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2543,6 +2571,17 @@ function openEditStudentModal(studentId) {
     `;
     document.body.appendChild(modal);
     bindAgeCalculator();
+    const resetBtn = modal.querySelector('#std-redefinir-senha');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            const box = modal.querySelector('#std-senha-reset');
+            const locked = modal.querySelector('#std-senha-locked');
+            if (box) box.classList.remove('hidden');
+            if (locked) locked.classList.add('hidden');
+            const nova = modal.querySelector('#std-senha-nova');
+            if (nova) nova.focus();
+        });
+    }
 
     modal.querySelector('form').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -2558,7 +2597,20 @@ function openEditStudentModal(studentId) {
         const idade = document.getElementById('std-idade').value;
         const rotaEscolar = (document.getElementById('std-rota-escolar') || {}).value || '';
         const email = document.getElementById('std-email-institucional').value;
-        const senha = (document.getElementById('std-senha') || {}).value || '';
+        const resetBox = document.getElementById('std-senha-reset');
+        const redefinindo = resetBox && !resetBox.classList.contains('hidden');
+        const senhaNova = String((document.getElementById('std-senha-nova') || {}).value || '');
+        const senhaConfirma = String((document.getElementById('std-senha-confirma') || {}).value || '');
+        if (redefinindo) {
+            if (senhaNova.length < 6) {
+                showToast('A nova senha deve ter pelo menos 6 caracteres.', 'error');
+                return;
+            }
+            if (senhaNova !== senhaConfirma) {
+                showToast('As senhas não coincidem.', 'error');
+                return;
+            }
+        }
 
         const persist = async () => {
             const currentStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
@@ -2567,10 +2619,10 @@ function openEditStudentModal(studentId) {
             if (index !== -1) {
                 let nextSenha = currentStudents[index].senha || '';
                 let precisa = currentStudents[index].precisaDefinirSenha;
-                if (senha) {
+                if (redefinindo) {
                     nextSenha = window.SigaSecurity
-                        ? await window.SigaSecurity.hashPassword(senha)
-                        : senha;
+                        ? await window.SigaSecurity.hashPassword(senhaNova)
+                        : senhaNova;
                     precisa = false;
                 }
                 currentStudents[index] = {

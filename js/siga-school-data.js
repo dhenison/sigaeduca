@@ -229,7 +229,7 @@
             idade: row.age != null ? String(row.age) : '',
             email: row.email || '',
             senha: row.password_hash || '',
-            precisaDefinirSenha: row.needs_password_set !== false,
+            precisaDefinirSenha: !row.password_hash && row.needs_password_set !== false,
             responsavel: row.guardian_name || '',
             contato: row.guardian_contact || '',
             rotaEscolar: row.school_route || '',
