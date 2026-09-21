@@ -1,0 +1,26 @@
+{
+  "name": "SIGA EDUCA — Portal do Aluno",
+  "short_name": "SIGA Aluno",
+  "description": "Portal do Aluno do SIGA EDUCA",
+  "start_url": "/portal-aluno.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8FAFC",
+  "theme_color": "#1E3A8A",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/portal/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/portal/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

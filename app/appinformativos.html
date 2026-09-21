@@ -1,67 +1,10 @@
 <!DOCTYPE html>
-<html class="light" lang="pt-BR">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
-<title>Informativos — Portal do Aluno</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script src="../js/siga-theme.js"></script>
-<style>
-.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-</style>
-<script src="../js/siga-config.js?v=20260731inf"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/siga-supabase.js?v=20260731inf"></script>
-<script src="../js/siga-security.js?v=20260731inf"></script>
-<script src="../js/siga-db.js?v=20260731inf"></script>
-<script src="../js/portal-aluno-app.js?v=20260731inf"></script>
-<script src="../js/portal-informativos.js?v=20260731inf"></script>
+<meta http-equiv="refresh" content="0;url=/portal/#/notices"/>
+<title>Portal do Aluno</title>
+<script>location.replace("/portal/#/notices");</script>
 </head>
-<body class="bg-background text-on-surface font-sans min-h-screen pb-28">
-<header class="fixed top-0 w-full z-50 bg-surface border-b border-border-subtle shadow-sm">
-  <div class="max-w-lg mx-auto px-4 h-16 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-3 min-w-0">
-      <div id="portal-aluno-avatar" class="w-10 h-10 rounded-full bg-primary/15 text-primary font-bold text-sm flex items-center justify-center overflow-hidden shrink-0">AS</div>
-      <div class="min-w-0">
-        <p class="text-[11px] font-bold uppercase tracking-wide text-primary">Portal do Aluno</p>
-        <p class="font-display font-bold text-on-surface truncate">Informativos</p>
-      </div>
-    </div>
-    <button id="portal-aluno-logout" type="button" class="p-2 rounded-full hover:bg-surface-container text-text-secondary" title="Sair">
-      <span class="material-symbols-outlined">logout</span>
-    </button>
-  </div>
-</header>
-
-<main class="max-w-lg mx-auto px-4 pt-20 space-y-4">
-  <a href="../portal-aluno.html" class="inline-flex items-center gap-1 text-sm font-semibold text-text-secondary hover:text-primary">
-    <span class="material-symbols-outlined text-[18px]">arrow_back</span>Início
-  </a>
-  <div>
-    <h1 class="font-display text-2xl font-bold">Informativos</h1>
-    <p class="text-sm text-text-secondary mt-1">Avisos publicados pela escola. Somente leitura.</p>
-  </div>
-  <div id="portal-informativos-list" class="space-y-4"></div>
-  <div id="portal-informativos-empty" class="hidden text-center py-14 bg-surface border border-dashed border-border-subtle rounded-2xl">
-    <span class="material-symbols-outlined text-4xl text-text-secondary mb-2">campaign</span>
-    <p class="text-sm text-text-secondary">Nenhum informativo no momento.</p>
-  </div>
-</main>
-
-<nav id="portal-aluno-bottom-nav" class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface border-t border-border-subtle shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-2xl max-w-lg mx-auto right-0"></nav>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  if (!window.SigaPortalAluno) return;
-  window.SigaPortalAluno.boot('inicio').then(function (ctx) {
-    if (!ctx) return;
-    if (window.SigaPortalInformativos) {
-      window.SigaPortalInformativos.bootPage(ctx);
-    }
-  });
-});
-</script>
-</body>
+<body><p><a href="/portal/#/notices">Abrir Portal do Aluno</a></p></body>
 </html>

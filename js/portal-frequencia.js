@@ -5,8 +5,6 @@
 (function (global) {
   "use strict";
 
-  var CIRC = 2 * Math.PI * 80; // r=80 → ~502.65
-
   function yearNow() {
     return new Date().getFullYear();
   }
@@ -346,16 +344,17 @@
     });
 
     var entOk = isConsolidatedMark(entMark) && entMark.status === "P";
-    var saiOk = isConsolidatedMark(saiMark) && saiMark.status === "P";
     // Mostra também F/FJ consolidados (não só P)
     var entShow = isConsolidatedMark(entMark);
     var saiShow = isConsolidatedMark(saiMark);
-    var consolidado =
-      entOk && saiOk
-        ? consolidarStatusDia(entMark.status, saiMark.status)
-        : entOk
-          ? "entrada"
-          : null;
+    var consolidado = null;
+    if (entShow && saiShow) {
+      consolidado = consolidarStatusDia(entMark.status, saiMark.status);
+    } else if (entOk) {
+      consolidado = "entrada";
+    } else if (entShow && (entMark.status === "F" || entMark.status === "FJ")) {
+      consolidado = entMark.status;
+    }
 
     return {
       dateIso: dateIso,
@@ -485,13 +484,24 @@
     var aulas = letivoDays.length;
     var presentes = 0;
     var comEntrada = 0;
+    var faltas = 0;
+    var justificadas = 0;
     letivoDays.forEach(function (day) {
       var info = readDayForStudent(day.iso, student, classCode);
       if (info.entrada) comEntrada++;
       if (info.consolidado === "P") presentes++;
+      if (info.consolidado === "F") faltas++;
+      if (info.consolidado === "FJ") justificadas++;
     });
     var pct = aulas > 0 ? Math.round((presentes / aulas) * 100) : 0;
-    return { aulas: aulas, presentes: presentes, comEntrada: comEntrada, pct: pct };
+    return {
+      aulas: aulas,
+      presentes: presentes,
+      comEntrada: comEntrada,
+      pct: pct,
+      faltas: faltas,
+      justificadas: justificadas
+    };
   }
 
   function setText(id, text) {
@@ -499,15 +509,83 @@
     if (el) el.textContent = text;
   }
 
-  function setRing(pct) {
-    var ring = document.getElementById("freq-ring");
-    var pctEl = document.getElementById("freq-pct-geral");
-    var p = Math.max(0, Math.min(100, Number(pct) || 0));
-    if (pctEl) pctEl.textContent = p + "%";
-    if (ring) {
-      ring.style.strokeDasharray = String(CIRC);
-      ring.style.strokeDashoffset = String(CIRC - (p / 100) * CIRC);
+  function polar(cx, cy, r, angleDeg) {
+    var a = ((angleDeg - 90) * Math.PI) / 180;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+  }
+
+  function piePath(cx, cy, r, startPct, endPct, color) {
+    var start = startPct * 360;
+    var end = endPct * 360;
+    if (end - start <= 0.01) return "";
+    if (end - start >= 359.99) {
+      return (
+        '<circle cx="' +
+        cx +
+        '" cy="' +
+        cy +
+        '" r="' +
+        r +
+        '" fill="' +
+        color +
+        '"></circle>'
+      );
     }
+    var large = end - start > 180 ? 1 : 0;
+    var s = polar(cx, cy, r, start);
+    var e = polar(cx, cy, r, end);
+    return (
+      '<path d="M ' +
+      cx +
+      " " +
+      cy +
+      " L " +
+      s.x.toFixed(2) +
+      " " +
+      s.y.toFixed(2) +
+      " A " +
+      r +
+      " " +
+      r +
+      " 0 " +
+      large +
+      " 1 " +
+      e.x.toFixed(2) +
+      " " +
+      e.y.toFixed(2) +
+      ' Z" fill="' +
+      color +
+      '"></path>'
+    );
+  }
+
+  function setPie(stats) {
+    var svg = document.getElementById("freq-pie");
+    var pctEl = document.getElementById("freq-pct-geral");
+    var p = Number(stats && stats.presentes) || 0;
+    var f = Number(stats && stats.faltas) || 0;
+    var j = Number(stats && stats.justificadas) || 0;
+    var aulas = Number(stats && stats.aulas) || 0;
+    var pct = aulas > 0 ? Math.round((p / aulas) * 100) : 0;
+    if (pctEl) pctEl.textContent = pct + "%";
+    setText("freq-legenda-p", String(p));
+    setText("freq-legenda-f", String(f));
+    setText("freq-legenda-fj", String(j));
+    if (!svg) return;
+
+    var marked = p + f + j;
+    var html = '<circle cx="96" cy="96" r="80" fill="#E2E8F0"></circle>';
+    if (marked > 0) {
+      var a1 = p / marked;
+      var a2 = a1 + f / marked;
+      html = [
+        piePath(96, 96, 80, 0, a1, "#16A34A"),
+        piePath(96, 96, 80, a1, a2, "#DC2626"),
+        piePath(96, 96, 80, a2, 1, "#F59E0B")
+      ].join("");
+    }
+    html += '<circle cx="96" cy="96" r="48" fill="#FFFFFF"></circle>';
+    svg.innerHTML = html;
   }
 
   function statusBadgeHtml(dayInfo) {
@@ -612,27 +690,26 @@
       sel.innerHTML = '<option value="">Nenhum dia letivo no calendário</option>';
       return "";
     }
-    var today = toIsoLocal(new Date());
-    var pick = selectedIso;
-    if (!pick || !days.some(function (d) { return d.iso === pick; })) {
-      var past = days.filter(function (d) { return d.iso <= today; });
-      pick = (past.length ? past[past.length - 1] : days[0]).iso;
-    }
-    sel.innerHTML = days
-      .map(function (d) {
-        return (
-          '<option value="' +
-          d.iso +
-          '">' +
-          weekdayLabel(d.iso) +
-          " · " +
-          formatBrDate(d.iso) +
-          " · " +
-          d.bimestre +
-          "º bim</option>"
-        );
-      })
-      .join("");
+    var pick = selectedIso && days.some(function (d) { return d.iso === selectedIso; })
+      ? selectedIso
+      : "";
+    sel.innerHTML =
+      '<option value="">Todas as datas</option>' +
+      days
+        .map(function (d) {
+          return (
+            '<option value="' +
+            d.iso +
+            '">' +
+            weekdayLabel(d.iso) +
+            " · " +
+            formatBrDate(d.iso) +
+            " · " +
+            d.bimestre +
+            "º bim</option>"
+          );
+        })
+        .join("");
     sel.value = pick;
     return pick;
   }
@@ -687,87 +764,88 @@
     });
   }
 
-  function paintBimestreTabs(active) {
-    document.querySelectorAll("[data-freq-bim]").forEach(function (btn) {
-      var on = btn.getAttribute("data-freq-bim") === active;
-      btn.className = on
-        ? "flex-shrink-0 px-4 py-2 bg-primary text-on-primary rounded-full font-label-md transition-all active:scale-95"
-        : "flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-label-md transition-all hover:bg-surface-variant";
-    });
-  }
-
   function bootFrequencia(ctx) {
     ctx = ctx || {};
     var student = ctx.student || {};
     var classCode = String(student.turma || "");
-    var state = { bim: "ambos", selectedIso: "2026-07-24" };
+    var state = { bim: "ambos", selectedIso: "" };
 
     function afterCalendarReady() {
       ensureBimestreCalendarSeed(yearNow());
 
-      setText(
-        "freq-subtitulo",
-        "Acompanhamento do 2º, 3º e 4º Bimestres de " + yearNow()
-      );
+      function periodLabel() {
+        if (state.selectedIso) {
+          return "Frequência do dia " + formatBrDate(state.selectedIso);
+        }
+        return "Acompanhe presenças, faltas e faltas justificadas";
+      }
+
       setText("freq-aluno-nome", student.nome || "Aluno");
 
-      function refresh() {
-        var days = listLetivoDays(state.bim);
+      function daysForView() {
+        var days = listLetivoDays("ambos");
+        if (state.selectedIso) {
+          return days.filter(function (d) { return d.iso === state.selectedIso; });
+        }
+        return days;
+      }
+
+      function applyStats(days) {
         var stats = summarize(days, student, classCode);
         setText("freq-aulas-totais", String(stats.aulas));
         setText("freq-presencas", String(stats.presentes));
-        setRing(stats.pct);
-        state.selectedIso = fillDateFilter(days, state.selectedIso);
+        setText("freq-faltas", String(stats.faltas));
+        setText("freq-justificadas", String(stats.justificadas));
+        setPie(stats);
+        setText("freq-subtitulo", periodLabel());
+      }
+
+      function toggleFilterSections() {
+        var on = !!state.selectedIso;
+        var hist = document.getElementById("freq-historico-wrap");
+        var dia = document.getElementById("freq-dia-wrap");
+        if (hist) hist.classList.toggle("hidden", !on);
+        if (dia) dia.classList.toggle("hidden", !on);
+      }
+
+      function refresh() {
+        var periodDays = listLetivoDays("ambos");
+        state.selectedIso = fillDateFilter(periodDays, state.selectedIso);
+        var days = daysForView();
+        applyStats(days);
+        toggleFilterSections();
         var dayInfo = state.selectedIso
           ? readDayForStudent(state.selectedIso, student, classCode)
           : null;
         renderDayDetail(dayInfo, state.selectedIso);
-        renderRecentList(days, student, classCode, 14);
+        if (state.selectedIso) {
+          renderRecentList(days, student, classCode, days.length || 1);
+        } else {
+          var host = document.getElementById("freq-lista-dias");
+          if (host) host.innerHTML = "";
+        }
 
         var emptyCal = document.getElementById("freq-calendario-aviso");
         if (emptyCal) {
-          emptyCal.classList.toggle("hidden", days.length > 0);
+          emptyCal.classList.toggle("hidden", periodDays.length > 0);
         }
 
-        // Enriquece o dia selecionado via RPC do portal (anon) / fallback staff
         if (state.selectedIso && student.id) {
           loadDayFromSupabase(state.selectedIso, student, classCode).then(function (cloudDay) {
             if (!cloudDay) return;
             renderDayDetail(cloudDay, state.selectedIso);
-            var st2 = summarize(listLetivoDays(state.bim), student, classCode);
-            setText("freq-presencas", String(st2.presentes));
-            setRing(st2.pct);
-            renderRecentList(listLetivoDays(state.bim), student, classCode, 14);
+            applyStats(daysForView());
+            renderRecentList(daysForView(), student, classCode, 1);
           });
         }
       }
-
-      paintBimestreTabs(state.bim);
-      document.querySelectorAll("[data-freq-bim]").forEach(function (btn) {
-        if (btn._bound) return;
-        btn._bound = true;
-        btn.addEventListener("click", function () {
-          state.bim = btn.getAttribute("data-freq-bim") || "ambos";
-          paintBimestreTabs(state.bim);
-          state.selectedIso = "";
-          refresh();
-        });
-      });
 
       var sel = document.getElementById("freq-filtro-data");
       if (sel && !sel._bound) {
         sel._bound = true;
         sel.addEventListener("change", function () {
           state.selectedIso = sel.value || "";
-          var dayInfo = state.selectedIso
-            ? readDayForStudent(state.selectedIso, student, classCode)
-            : null;
-          renderDayDetail(dayInfo, state.selectedIso);
-          if (state.selectedIso) {
-            loadDayFromSupabase(state.selectedIso, student, classCode).then(function (cloudDay) {
-              if (cloudDay) renderDayDetail(cloudDay, state.selectedIso);
-            });
-          }
+          refresh();
         });
       }
 

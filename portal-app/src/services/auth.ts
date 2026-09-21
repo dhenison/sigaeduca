@@ -1,0 +1,4 @@
+import {createClient} from '@supabase/supabase-js';
+const env=import.meta.env;
+export const supabase=env.VITE_SUPABASE_URL&&env.VITE_SUPABASE_ANON_KEY?createClient(env.VITE_SUPABASE_URL,env.VITE_SUPABASE_ANON_KEY):null;
+export const authService={async signIn(email:string,password:string){if(!supabase)throw new Error('O acesso institucional ainda não está conectado. Use a demonstração para conhecer o portal.');const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;throw new Error('Autenticação confirmada. A conexão dos dados acadêmicos depende do contrato de integração do SIGA EDUCA.');},async reset(email:string){if(!supabase)throw new Error('A recuperação de senha será disponibilizada após a conexão com a SEDUC.');const {error}=await supabase.auth.resetPasswordForEmail(email);if(error)throw error;},async signOut(){if(supabase)await supabase.auth.signOut();sessionStorage.removeItem('siga-demo');}};

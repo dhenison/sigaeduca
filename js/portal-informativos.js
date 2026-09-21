@@ -99,9 +99,37 @@
     );
   }
 
+  function updateHomePreview(list) {
+    var preview = document.getElementById('portal-informes-preview');
+    var count = document.getElementById('portal-informes-count');
+    var notif = document.getElementById('portal-notif-badge');
+    var n = list && list.length ? list.length : 0;
+    if (preview) {
+      preview.textContent = n
+        ? (list[0].title || 'Novo informativo')
+        : 'Fique por dentro das novidades, comunicados e avisos da escola.';
+    }
+    if (count) {
+      count.hidden = !n;
+      count.style.display = n ? 'inline-flex' : 'none';
+      count.textContent = n ? String(n) : '';
+    }
+    if (notif) {
+      notif.hidden = !n;
+      notif.style.display = n ? 'inline-flex' : 'none';
+      notif.textContent = n ? String(n) : '';
+    }
+  }
+
   function renderHome(list) {
+    updateHomePreview(list);
     var host = document.getElementById('portal-informativos-home');
     if (!host) return;
+    if (document.getElementById('portal-informes-preview')) {
+      host.classList.add('hidden');
+      host.innerHTML = '';
+      return;
+    }
     if (!list.length) {
       host.classList.add('hidden');
       host.innerHTML = '';

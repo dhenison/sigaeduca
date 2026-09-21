@@ -276,7 +276,7 @@
                     try { localStorage.setItem('siga_portal_aluno_id', String(aluno.id)); } catch (eP) { /* ignore */ }
                     toast('Bem-vindo(a), ' + (aluno.nome || 'aluno') + '!');
                     setTimeout(function () {
-                        window.location.href = 'portal-aluno.html';
+                        window.location.href = '/portal/';
                     }, 400);
                 });
             }
@@ -329,7 +329,7 @@
                 try { localStorage.setItem('siga_portal_aluno_id', String(local.id)); } catch (e3) { /* ignore */ }
                 toast('Bem-vindo(a), ' + (local.nome || 'aluno') + '!');
                 setTimeout(function () {
-                    window.location.href = 'portal-aluno.html';
+                    window.location.href = '/portal/';
                 }, 400);
             }
 

@@ -227,6 +227,13 @@
 
   function navItems(active) {
     var p = rootPrefix();
+    var maisActive =
+      active === "mais" ||
+      active === "perfil" ||
+      active === "horarios" ||
+      active === "agenda" ||
+      active === "informativos" ||
+      active === "olimpiadas";
     return [
       {
         id: "inicio",
@@ -235,25 +242,32 @@
         label: "Início",
       },
       {
+        id: "calendario",
+        href: p + "app/appcalendario.html",
+        icon: "calendar_month",
+        label: "Calendário",
+      },
+      {
         id: "frequencia",
         href: p + "app/appfrequencia.html",
-        icon: "fact_check",
+        icon: "bar_chart",
         label: "Frequência",
       },
       {
-        id: "horarios",
-        href: p + "app/apphorarios.html",
-        icon: "calendar_month",
-        label: "Horários",
+        id: "boletim",
+        href: p + "app/appboletim.html",
+        icon: "description",
+        label: "Boletim",
       },
       {
-        id: "perfil",
-        href: p + "app/appperfil.html",
-        icon: "person",
-        label: "Perfil",
+        id: "mais",
+        href: p + "app/appmais.html",
+        icon: "more_horiz",
+        label: "Mais",
+        action: "mais",
       },
     ].map(function (item) {
-      item.active = item.id === active;
+      item.active = item.id === active || (item.id === "mais" && maisActive && active !== "inicio" && active !== "calendario" && active !== "frequencia" && active !== "boletim");
       return item;
     });
   }
@@ -261,30 +275,20 @@
   function renderBottomNav(active) {
     var host = document.getElementById("portal-aluno-bottom-nav");
     if (!host) return;
+    host.classList.add("portal-bottom-nav");
     var items = navItems(active);
     host.innerHTML = items
       .map(function (item) {
-        if (item.active) {
-          return (
-            '<a class="flex flex-col items-center justify-center bg-primary text-white rounded-full px-5 py-2 active:scale-90 transition-all duration-200" href="' +
-            item.href +
-            '">' +
-            '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1">' +
-            item.icon +
-            "</span>" +
-            '<span class="text-[11px] font-semibold">' +
-            item.label +
-            "</span></a>"
-          );
-        }
+        var cls = "portal-nav-item" + (item.active ? " is-active" : "");
         return (
-          '<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1 hover:bg-slate-100 active:scale-90 transition-all duration-200 rounded-xl" href="' +
+          '<a class="' +
+          cls +
+          '" href="' +
           item.href +
           '">' +
           '<span class="material-symbols-outlined">' +
           item.icon +
-          "</span>" +
-          '<span class="text-[11px] font-medium">' +
+          "</span><span>" +
           item.label +
           "</span></a>"
         );
@@ -339,7 +343,83 @@
     }
     var quote = quoteOfTheDay();
     if (textoEl) textoEl.textContent = quote.text;
-    if (autorEl) autorEl.textContent = "— " + quote.author;
+    if (autorEl) autorEl.textContent = "SIGA EDUCA";
+    var quoteAuthor = document.getElementById("portal-hero-frase-autor-full");
+    if (quoteAuthor) quoteAuthor.textContent = quote.author || "";
+  }
+
+  function getSchoolName() {
+    try {
+      var n = String(localStorage.getItem("siga_school_name") || "").trim();
+      return n;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function setElText(id, text, hideIfEmpty) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var v = String(text || "").trim();
+    if (!v && hideIfEmpty) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.textContent = v;
+  }
+
+  function fillHomeProfile(session, student) {
+    student = student || {};
+    session = session || {};
+    var nome = student.nome || session.nome || "";
+    setElText("home-aluno-nome", nome || "Aluno");
+    var nomeEl = document.getElementById("home-aluno-nome");
+    if (nomeEl) nomeEl.classList.remove("portal-skeleton");
+    var linha = [student.serie, student.turma, student.turno]
+      .filter(function (x) { return String(x || "").trim(); })
+      .join(" · ");
+    setElText("home-aluno-meta", linha, true);
+    var escola = getSchoolName();
+    var escolaEl = document.getElementById("home-aluno-escola");
+    if (escolaEl) {
+      if (escola) {
+        escolaEl.hidden = false;
+        escolaEl.style.display = "flex";
+        var lab = escolaEl.querySelector("[data-school-name]");
+        if (lab) lab.textContent = escola;
+        else escolaEl.textContent = escola;
+      } else {
+        escolaEl.hidden = true;
+        escolaEl.style.display = "none";
+      }
+    }
+
+    var avatar = document.getElementById("home-aluno-avatar");
+    if (avatar) {
+      if (student.avatar) {
+        avatar.innerHTML =
+          '<img src="' +
+          String(student.avatar).replace(/"/g, "") +
+          '" alt="">';
+      } else {
+        avatar.textContent = initials(nome || "A");
+      }
+    }
+
+    var freqEl = document.getElementById("home-freq-pct");
+    if (freqEl) {
+      var pct = student.frequencia;
+      if (pct != null && !isNaN(Number(pct))) {
+        freqEl.classList.remove("portal-skeleton");
+        freqEl.textContent = Math.round(Number(pct)) + "%";
+        freqEl.hidden = false;
+      } else {
+        freqEl.classList.remove("portal-skeleton");
+        freqEl.textContent = "";
+        freqEl.hidden = true;
+      }
+    }
   }
 
   function loadAllPrefs() {
@@ -582,7 +662,163 @@
     global.location.href = rootPrefix() + "login.html";
   }
 
+  function closeMaisSheet() {
+    var sheet = document.getElementById("portal-mais-sheet");
+    var backdrop = document.getElementById("portal-mais-backdrop");
+    if (sheet) {
+      sheet.classList.remove("is-open");
+      if (sheet.parentNode) sheet.parentNode.removeChild(sheet);
+    }
+    if (backdrop) {
+      backdrop.classList.remove("is-open");
+      if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    }
+  }
+
+  function openMaisSheet() {
+    ensureMaisSheet();
+    var sheet = document.getElementById("portal-mais-sheet");
+    var backdrop = document.getElementById("portal-mais-backdrop");
+    if (sheet) sheet.classList.add("is-open");
+    if (backdrop) backdrop.classList.add("is-open");
+  }
+
+  function maisItemsHtml() {
+    var p = rootPrefix();
+    var rows = [
+      { href: p + "app/appperfil.html", icon: "person", label: "Perfil" },
+      { href: p + "app/apphorarios.html", icon: "schedule", label: "Horários" },
+      { href: p + "app/appagenda.html", icon: "event", label: "Agenda" },
+      { href: p + "app/appinformativos.html", icon: "campaign", label: "Informativos" },
+      { href: p + "app/topodosaber.html", icon: "emoji_events", label: "Topo do Saber" },
+      { href: p + "app/appperfil.html", icon: "settings", label: "Configurações" },
+    ];
+    return (
+      rows
+        .map(function (r) {
+          return (
+            '<a class="portal-sheet-item" href="' +
+            r.href +
+            '"><span class="material-symbols-outlined">' +
+            r.icon +
+            "</span>" +
+            r.label +
+            "</a>"
+          );
+        })
+        .join("") +
+      '<button type="button" class="portal-sheet-item is-danger" data-portal-sair>' +
+      '<span class="material-symbols-outlined">logout</span>Sair</button>'
+    );
+  }
+
+  function ensureMaisSheet() {
+    if (document.getElementById("portal-mais-sheet")) return;
+    var backdrop = document.createElement("div");
+    backdrop.id = "portal-mais-backdrop";
+    backdrop.className = "portal-sheet-backdrop";
+    backdrop.addEventListener("click", closeMaisSheet);
+    var sheet = document.createElement("div");
+    sheet.id = "portal-mais-sheet";
+    sheet.className = "portal-sheet";
+    sheet.innerHTML =
+      '<div class="portal-sheet-handle"></div><h2>Mais</h2><div id="portal-mais-list">' +
+      maisItemsHtml() +
+      "</div>";
+    var host = document.querySelector(".portal-phone") || document.body;
+    host.appendChild(backdrop);
+    host.appendChild(sheet);
+    sheet.addEventListener("click", function (e) {
+      if (e.target.closest("[data-portal-sair]")) {
+        e.preventDefault();
+        logout();
+      }
+    });
+  }
+
+  function ensurePortalAssets() {
+    var p = rootPrefix();
+    if (!document.getElementById("portal-aluno-css")) {
+      var link = document.createElement("link");
+      link.id = "portal-aluno-css";
+      link.rel = "stylesheet";
+      link.href = p + "css/portal-aluno.css?v=20260921p3";
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('link[rel="manifest"]')) {
+      var man = document.createElement("link");
+      man.rel = "manifest";
+      man.href = p + "portal-aluno.webmanifest";
+      document.head.appendChild(man);
+    }
+    if (!document.querySelector('meta[name="theme-color"]')) {
+      var meta = document.createElement("meta");
+      meta.name = "theme-color";
+      meta.content = "#1E3A8A";
+      document.head.appendChild(meta);
+    }
+    if (!document.querySelector('link[rel="apple-touch-icon"]')) {
+      var apple = document.createElement("link");
+      apple.rel = "apple-touch-icon";
+      apple.href = p + "portal/icon-192.png";
+      document.head.appendChild(apple);
+    }
+    document.documentElement.classList.add("portal-html");
+    if (document.body) document.body.classList.add("portal-app");
+  }
+
+  function fillPortalHeader(activeNav) {
+    var host = document.querySelector("[data-portal-header]");
+    if (!host) return;
+    var p = rootPrefix();
+    var isHome = host.getAttribute("data-portal-home") === "1";
+    var title = host.getAttribute("data-portal-title") || "SIGA EDUCA";
+    var back = host.getAttribute("data-portal-back") || p + "portal-aluno.html";
+    var left = isHome
+      ? '<a class="portal-header-btn" href="' +
+        p +
+        'app/appmais.html" aria-label="Menu"><span class="material-symbols-outlined">menu</span></a>'
+      : '<a class="portal-header-btn" href="' +
+        back +
+        '" aria-label="Voltar"><span class="material-symbols-outlined">arrow_back</span></a>';
+    var brand = isHome
+      ? '<div class="portal-header-brand"><strong>SIGA EDUCA</strong><span>Portal do Aluno</span></div>'
+      : '<div class="portal-header-title">' + title + "</div>";
+    host.classList.add("portal-header");
+    host.innerHTML =
+      left +
+      brand +
+      '<div class="portal-header-actions">' +
+      '<a class="portal-header-btn" href="' +
+      p +
+      'app/appinformativos.html" aria-label="Notificações">' +
+      '<span class="material-symbols-outlined">notifications</span>' +
+      '<span id="portal-notif-badge" class="portal-badge" hidden></span></a>' +
+      '<a class="portal-header-btn" href="' +
+      p +
+      'app/appperfil.html" aria-label="Perfil">' +
+      '<span class="material-symbols-outlined">account_circle</span></a></div>';
+  }
+
+  function registerPortalPwa() {
+    if (!("serviceWorker" in navigator)) return;
+    var swUrl = rootPrefix() + "portal-aluno-sw.js";
+    navigator.serviceWorker.register(swUrl).catch(function () { /* ignore */ });
+  }
+
+  function ensurePhoneShell() {
+    if (document.querySelector(".portal-phone")) return;
+    var wrap = document.createElement("div");
+    wrap.className = "portal-phone";
+    while (document.body.firstChild) wrap.appendChild(document.body.firstChild);
+    document.body.appendChild(wrap);
+  }
+
   function boot(activeNav) {
+    ensurePortalAssets();
+    ensurePhoneShell();
+    closeMaisSheet();
+    fillPortalHeader(activeNav);
     return requireAlunoSession().then(function (pack) {
       if (!pack || !pack.session) return null;
       var session = pack.session;
@@ -590,6 +826,8 @@
       var prefs = getPrefs(student && student.id);
       applyTheme(prefs);
       fillHeader(session, student);
+      fillHomeProfile(session, student);
+      fillHeroBanner(session, student);
       renderBottomNav(activeNav || "inicio");
       try {
         if (student && student.id) {
@@ -598,12 +836,18 @@
       } catch (e) { /* ignore */ }
       var logoutBtn = document.getElementById("portal-aluno-logout");
       if (logoutBtn) logoutBtn.addEventListener("click", logout);
+      document.querySelectorAll("[data-portal-sair]").forEach(function (btn) {
+        if (btn._bound) return;
+        btn._bound = true;
+        btn.addEventListener("click", logout);
+      });
+      registerPortalPwa();
       return { session: session, student: student, prefs: prefs };
     });
   }
 
   function bootPerfil() {
-    return boot("perfil").then(function (ctx) {
+    return boot("mais").then(function (ctx) {
       if (!ctx) return null;
       initPerfilPage(ctx);
       return ctx;
@@ -755,7 +999,11 @@
     refreshStudentFromCloud: refreshStudentFromCloud,
     renderBottomNav: renderBottomNav,
     fillHeader: fillHeader,
+    fillHomeProfile: fillHomeProfile,
     fillHeroBanner: fillHeroBanner,
+    openMaisSheet: openMaisSheet,
+    closeMaisSheet: closeMaisSheet,
+    getSchoolName: getSchoolName,
     greetingByHour: greetingByHour,
     quoteOfTheDay: quoteOfTheDay,
     getPrefs: getPrefs,

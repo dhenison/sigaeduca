@@ -1,81 +1,10 @@
 <!DOCTYPE html>
-<html class="light" lang="pt-BR">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
-<title>Ocorrências — Portal do Aluno</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script src="../js/siga-theme.js"></script>
-<style>
-body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; min-height: max(884px, 100dvh); }
-.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-</style>
+<meta http-equiv="refresh" content="0;url=/portal/#/occurrences"/>
+<title>Portal do Aluno</title>
+<script>location.replace("/portal/#/occurrences");</script>
 </head>
-<body class="bg-background text-on-background min-h-screen pb-28">
-<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-container-padding max-w-lg mx-auto left-0 right-0">
-  <div class="flex items-center gap-3 min-w-0">
-    <a href="../portal-aluno.html" class="w-10 h-10 rounded-full flex items-center justify-center text-primary" title="Voltar">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </a>
-    <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30 bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-      <img id="occ-aluno-avatar" class="w-full h-full object-cover hidden" alt=""/>
-      <span id="occ-aluno-avatar-fb">AL</span>
-    </div>
-    <div class="min-w-0">
-      <h1 class="font-headline-md-mobile text-headline-md-mobile font-bold text-primary truncate">Ocorrências</h1>
-      <p id="occ-aluno-nome" class="text-[11px] text-on-surface-variant truncate">Aluno</p>
-    </div>
-  </div>
-</header>
-
-<main class="pt-20 px-container-padding max-w-lg mx-auto space-y-stack-gap-md">
-  <section>
-    <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Histórico escolar</h2>
-    <p class="text-sm text-on-surface-variant mt-1">Registros do módulo Ocorrências do SIGA EDUCA (escola / responsáveis).</p>
-  </section>
-
-  <section class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30">
-    <h3 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface mb-3">Resumo</h3>
-    <div class="grid grid-cols-3 gap-inline-gutter">
-      <div class="flex flex-col items-center p-3 bg-error-container/40 rounded-lg">
-        <span id="occ-kpi-graves" class="text-error font-bold text-2xl">00</span>
-        <span class="text-[10px] font-bold uppercase text-on-error-container">Graves</span>
-      </div>
-      <div class="flex flex-col items-center p-3 bg-surface-variant/60 rounded-lg">
-        <span id="occ-kpi-avisos" class="text-on-surface font-bold text-2xl">00</span>
-        <span class="text-[10px] font-bold uppercase text-on-surface-variant">Avisos</span>
-      </div>
-      <div class="flex flex-col items-center p-3 bg-primary-container/25 rounded-lg">
-        <span id="occ-kpi-conduta" class="text-primary font-bold text-2xl">100%</span>
-        <span class="text-[10px] font-bold uppercase text-on-primary-container">Conduta</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="space-y-stack-gap-sm">
-    <h3 class="font-headline-sm-mobile text-headline-sm-mobile text-on-surface px-1">Histórico de ocorrências</h3>
-    <div id="occ-lista" class="space-y-2"></div>
-  </section>
-</main>
-
-<nav id="portal-aluno-bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-20 px-2 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] rounded-t-2xl max-w-lg mx-auto"></nav>
-
-<script src="../js/siga-config.js?v=20260724a"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/siga-supabase.js?v=20260724a"></script>
-<script src="../js/siga-security.js?v=20260724b"></script>
-<script src="../js/portal-aluno-app.js?v=20260724f"></script>
-<script src="../js/portal-ocorrencias.js?v=20260724f"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  if (!window.SigaPortalAluno) return;
-  window.SigaPortalAluno.boot("inicio").then(function (ctx) {
-    if (!ctx) return;
-    if (window.SigaPortalOcorrencias) window.SigaPortalOcorrencias.boot(ctx);
-  });
-});
-</script>
-</body>
+<body><p><a href="/portal/#/occurrences">Abrir Portal do Aluno</a></p></body>
 </html>
