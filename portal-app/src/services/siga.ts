@@ -41,6 +41,7 @@ export interface MonthStat {
 export interface AttendancePhase {
   code: string | null;
   label: string;
+  time: string | null;
 }
 export interface AttendanceDayView {
   date: string;
@@ -157,21 +158,29 @@ function isLetivo(type: string) {
   return type === 'letivo' || type === 'evento' || type === 'sabado' || type.startsWith('inicio_');
 }
 
-function phaseView(status?: string | null): AttendancePhase {
-  if (status === 'P') return {code: 'P', label: 'Presença'};
-  if (status === 'F') return {code: 'F', label: 'Falta'};
-  if (status === 'FJ') return {code: 'FJ', label: 'Falta justificada'};
-  return {code: null, label: 'Sem registro'};
+function clock(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+}
+
+function phaseView(status?: string | null, markedAt?: string | null): AttendancePhase {
+  const time = clock(markedAt);
+  if (status === 'P') return {code: 'P', label: 'Presença', time};
+  if (status === 'F') return {code: 'F', label: 'Falta', time};
+  if (status === 'FJ') return {code: 'FJ', label: 'Falta justificada', time};
+  return {code: null, label: 'Sem registro', time: null};
 }
 
 function consolidatedView(ent?: string | null, sai?: string | null): AttendancePhase {
-  if (!ent || !sai) return {code: null, label: 'Pendente'};
-  if (ent === 'P' && sai === 'P') return {code: 'P', label: 'Presença'};
-  if (ent === 'FJ' && (sai === 'P' || sai === 'FJ')) return {code: 'P', label: 'Presença'};
-  if (ent === 'P' && sai === 'FJ') return {code: 'P', label: 'Presença'};
-  if (ent === 'P' && sai === 'F') return {code: 'F', label: 'Falta'};
-  if (ent === 'F' || sai === 'F') return {code: 'F', label: 'Falta'};
-  return {code: 'F', label: 'Falta'};
+  if (!ent || !sai) return {code: null, label: 'Pendente', time: null};
+  if (ent === 'P' && sai === 'P') return {code: 'P', label: 'Presença', time: null};
+  if (ent === 'FJ' && (sai === 'P' || sai === 'FJ')) return {code: 'P', label: 'Presença', time: null};
+  if (ent === 'P' && sai === 'FJ') return {code: 'P', label: 'Presença', time: null};
+  if (ent === 'P' && sai === 'F') return {code: 'F', label: 'Falta', time: null};
+  if (ent === 'F' || sai === 'F') return {code: 'F', label: 'Falta', time: null};
+  return {code: 'F', label: 'Falta', time: null};
 }
 
 function dayStatus(day?: DayMarks | null) {
@@ -356,8 +365,8 @@ function summarize(year: number, days: Record<string, {type?: string}>, marks: R
       const saida = marks[iso]?.saida?.status || null;
       return {
         date: iso,
-        entrada: phaseView(entrada),
-        saida: phaseView(saida),
+        entrada: phaseView(entrada, marks[iso]?.entrada?.marked_at),
+        saida: phaseView(saida, marks[iso]?.saida?.marked_at),
         consolidado: consolidatedView(entrada, saida),
       };
     });

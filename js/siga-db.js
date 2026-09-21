@@ -2716,6 +2716,164 @@ function formatDateBrFicha(iso) {
     return s;
 }
 
+function fichaFreqIso(value) {
+    const match = String(value || '').match(/\d{4}-\d{2}-\d{2}/);
+    return match ? match[0] : '';
+}
+
+function fichaFreqRealMark(mark) {
+    if (!mark) return null;
+    if (mark._hasMark === false && !mark.locked && !mark.marked_at) return null;
+    if (mark.status !== 'P' && mark.status !== 'F' && mark.status !== 'FJ') return null;
+    return mark;
+}
+
+function fichaFreqConsolidado(ent, sai) {
+    const entrada = ent && ent.status;
+    const saida = sai && sai.status;
+    if (!entrada || !saida) return null;
+    if (entrada === 'P' && saida === 'P') return 'P';
+    if (entrada === 'FJ' && (saida === 'P' || saida === 'FJ')) return 'P';
+    if (entrada === 'P' && saida === 'FJ') return 'P';
+    if (entrada === 'F' || saida === 'F') return 'F';
+    return 'F';
+}
+
+function fichaFreqCollectLocal(student) {
+    const days = {};
+    const id = String(student && student.id || '');
+    const turma = String(student && student.turma || '');
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i) || '';
+        if (!key.startsWith('siga_attendance_')) continue;
+        const rest = key.slice('siga_attendance_'.length);
+        const iso = rest.slice(0, 10);
+        const code = rest.slice(11);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+        if (turma && code && code !== turma) continue;
+        let rec = null;
+        try { rec = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { rec = null; }
+        if (!rec) continue;
+        const ent = fichaFreqRealMark(rec.entrada && rec.entrada.records ? rec.entrada.records[id] : null);
+        const sai = fichaFreqRealMark(rec.saida && rec.saida.records ? rec.saida.records[id] : null);
+        if (!ent && !sai) continue;
+        days[iso] = { entrada: ent, saida: sai };
+    }
+    return days;
+}
+
+function fichaFreqSummarize(days) {
+    const closed = [];
+    Object.keys(days).sort().forEach(function (iso) {
+        const code = fichaFreqConsolidado(days[iso].entrada, days[iso].saida);
+        if (code) closed.push({ iso: iso, code: code });
+    });
+    const present = closed.filter(function (day) { return day.code === 'P'; }).length;
+    const pct = closed.length ? Math.round((present / closed.length) * 1000) / 10 : null;
+    function monthPct(year, month) {
+        const prefix = year + '-' + String(month).padStart(2, '0');
+        const slice = closed.filter(function (day) { return day.iso.indexOf(prefix) === 0; });
+        if (!slice.length) return null;
+        const hits = slice.filter(function (day) { return day.code === 'P'; }).length;
+        return Math.round((hits / slice.length) * 1000) / 10;
+    }
+    const now = new Date();
+    const current = monthPct(now.getFullYear(), now.getMonth() + 1);
+    const previousDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previous = monthPct(previousDate.getFullYear(), previousDate.getMonth() + 1);
+    const trend = current == null || previous == null ? null : Math.round((current - previous) * 10) / 10;
+    return {
+        pct: pct,
+        total: closed.length,
+        trend: trend,
+        absences: closed.filter(function (day) { return day.code === 'F' || day.code === 'FJ'; }).reverse().slice(0, 8)
+    };
+}
+
+function fichaFreqFormatPct(value) {
+    const rounded = Math.round(value * 10) / 10;
+    const text = Number.isInteger(rounded) ? String(rounded) : String(rounded).replace('.', ',');
+    return text + '%';
+}
+
+function fichaFreqPaint(summary) {
+    const pctEl = document.getElementById('ficha-freq-pct');
+    const barEl = document.getElementById('ficha-freq-bar');
+    const trendEl = document.getElementById('ficha-freq-trend');
+    const listEl = document.getElementById('ficha-freq-ausencias');
+    if (!pctEl || !listEl) return;
+    if (summary.pct == null) {
+        pctEl.textContent = '—';
+        if (barEl) barEl.style.width = '0%';
+    } else {
+        pctEl.textContent = fichaFreqFormatPct(summary.pct);
+        if (barEl) barEl.style.width = Math.max(0, Math.min(100, summary.pct)) + '%';
+    }
+    if (trendEl) {
+        if (summary.trend == null) {
+            trendEl.classList.add('hidden');
+            trendEl.textContent = '';
+        } else {
+            const up = summary.trend >= 0;
+            const amount = fichaFreqFormatPct(Math.abs(summary.trend));
+            trendEl.className = 'flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm mb-1 ' + (up ? 'text-primary bg-primary/10' : 'text-error bg-error/10');
+            trendEl.innerHTML = '<span class="material-symbols-outlined text-[14px]">' + (up ? 'trending_up' : 'trending_down') + '</span> ' + (up ? '+' : '−') + amount;
+        }
+    }
+    if (!summary.absences.length) {
+        listEl.textContent = summary.total
+            ? 'Nenhuma ausência nas chamadas consolidadas.'
+            : 'Nenhuma chamada consolidada para este aluno.';
+        return;
+    }
+    listEl.innerHTML = summary.absences.map(function (item) {
+        const parts = item.iso.split('-');
+        const label = parts[2] + '/' + parts[1] + '/' + parts[0];
+        const justified = item.code === 'FJ';
+        return '<div class="flex justify-between items-center py-1"><span class="text-body-md">' + label + ' - ' + (justified ? 'Justificada' : 'Falta') + '</span><span class="material-symbols-outlined ' + (justified ? 'text-primary' : 'text-error') + ' text-[18px]">' + (justified ? 'check_circle' : 'cancel') + '</span></div>';
+    }).join('');
+}
+
+function renderFichaFrequencia(student) {
+    const localDays = fichaFreqCollectLocal(student);
+    fichaFreqPaint(fichaFreqSummarize(localDays));
+    const id = String(student && student.id || '');
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
+    const api = window.SigaSupabase;
+    const sb = api && typeof api.getClient === 'function' ? api.getClient() : null;
+    if (!sb) return;
+    sb.from('attendance_marks')
+        .select('call_id,phase,status,marked_at')
+        .eq('student_id', id)
+        .then(function (res) {
+            if (res.error || !res.data || !res.data.length) return;
+            const ids = [];
+            res.data.forEach(function (row) {
+                if (row.call_id && ids.indexOf(row.call_id) < 0) ids.push(row.call_id);
+            });
+            return sb.from('attendance_calls').select('id,day_date').in('id', ids).then(function (calls) {
+                if (calls.error || !calls.data) return;
+                const dates = {};
+                calls.data.forEach(function (call) {
+                    const iso = fichaFreqIso(call.day_date);
+                    if (iso) dates[call.id] = iso;
+                });
+                const merged = {};
+                Object.keys(localDays).forEach(function (iso) { merged[iso] = localDays[iso]; });
+                res.data.forEach(function (row) {
+                    const iso = dates[row.call_id];
+                    const phase = row.phase === 'saida' ? 'saida' : 'entrada';
+                    const mark = fichaFreqRealMark({ status: row.status, marked_at: row.marked_at, locked: true, _hasMark: true });
+                    if (!iso || !mark) return;
+                    if (!merged[iso]) merged[iso] = {};
+                    merged[iso][phase] = mark;
+                });
+                fichaFreqPaint(fichaFreqSummarize(merged));
+            });
+        })
+        .catch(function () { /* mantém a chamada local */ });
+}
+
 function initFichaPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const studentId = urlParams.get('id') || '';
@@ -2842,12 +3000,8 @@ function initFichaPage() {
         `;
     }
 
-    // 8. Update Frequency Widget
-    const freqValEl = document.querySelector('.text-\\[44px\\].font-bold');
-    if (freqValEl) freqValEl.textContent = (student.frequencia != null ? student.frequencia : 0) + '%';
-
-    const freqBarEl = document.querySelector('.w-full.bg-surface-container-low.h-3.rounded-full div');
-    if (freqBarEl) freqBarEl.style.width = (student.frequencia != null ? student.frequencia : 0) + '%';
+    // 8. Frequência da chamada (entrada, saída e dia consolidado)
+    renderFichaFrequencia(student);
 
     // 9. Bind "Editar Cadastro" button
     const editBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Editar Cadastro'));

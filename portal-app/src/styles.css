@@ -15,3 +15,6 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .call-phase{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
 .call-phase span{font-size:14px;color:var(--ink)}
 .badge.amber{background:#fdecc8;color:#8a5a00}
+.date-filter{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:16px 0}
+.date-filter span{font-size:14px;font-weight:600}
+.date-filter input{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--page);color:var(--ink)}

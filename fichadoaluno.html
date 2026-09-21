@@ -229,7 +229,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260724x"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260724x"></script><script src="js/siga-security.js?v=20260724x"></script><script src="js/siga-school-data.js?v=20260724x"></script><script src="js/siga-db.js?v=20260724x"></script><script src="js/boletins.js?v=20260713j"></script><script src="js/documentos-secretaria.js?v=20260713j"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260724x"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260724x"></script><script src="js/siga-security.js?v=20260724x"></script><script src="js/siga-school-data.js?v=20260724x"></script><script src="js/siga-db.js?v=20260921b"></script><script src="js/boletins.js?v=20260713j"></script><script src="js/documentos-secretaria.js?v=20260713j"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -522,31 +522,21 @@
 </div>
 </div>
 <!-- Frequência -->
-<div class="bg-surface-container-lowest rounded-xl border border-border-subtle card-shadow p-card-padding">
+<div id="ficha-frequencia" class="bg-surface-container-lowest rounded-xl border border-border-subtle card-shadow p-card-padding">
 <h3 class="font-headline-sm text-headline-sm flex items-center gap-2 mb-4">
 <span class="material-symbols-outlined text-primary">event_available</span>
                             Frequência Escolar
                         </h3>
 <div class="flex items-end gap-4 mb-6">
-<div class="text-[44px] font-bold leading-none text-primary">96.5%</div>
-<div class="flex items-center gap-1 text-primary-fixed-dim bg-primary/10 px-2 py-0.5 rounded text-label-sm font-label-sm mb-1">
-<span class="material-symbols-outlined text-[14px]">trending_up</span> +2.1%
-                            </div>
+<div id="ficha-freq-pct" class="text-[44px] font-bold leading-none text-primary">—</div>
+<div id="ficha-freq-trend" class="hidden items-center gap-1 bg-primary/10 px-2 py-0.5 rounded text-label-sm font-label-sm mb-1" title="Variação em relação ao mês anterior"></div>
 </div>
 <div class="w-full bg-surface-container-low h-3 rounded-full overflow-hidden mb-6">
-<div class="bg-primary h-full transition-all duration-1000" style="width: 96.5%;"></div>
+<div id="ficha-freq-bar" class="bg-primary h-full transition-all duration-1000" style="width: 0%;"></div>
 </div>
 <div class="space-y-3">
 <p class="text-label-md font-label-md text-text-secondary uppercase tracking-wider border-b border-border-subtle pb-1">Ausências Recentes</p>
-<div class="flex justify-between items-center py-1">
-<span class="text-body-md">12/05/2024 - Justificada</span>
-<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
-</div>
-<div class="flex justify-between items-center py-1">
-<span class="text-body-md">05/04/2024 - Falta</span>
-<span class="material-symbols-outlined text-error text-[18px]">cancel</span>
-</div>
-</div>
+<div id="ficha-freq-ausencias" class="text-body-md text-text-secondary">Carregando a chamada...</div>
 </div>
 </div>
 <!-- Right Column: Academic & Disciplinary -->
