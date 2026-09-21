@@ -477,16 +477,20 @@
         </div>
         
         <!-- Student List -->
-        <div class="p-6 flex-1 overflow-y-auto max-            <p id="hint-entrada-facial" class="text-[11px] text-text-secondary leading-relaxed">
+        <div class="p-6 flex-1 overflow-y-auto max-h-[600px] space-y-4" id="list-entrada-students">
+            <!-- Student rows with radio buttons -->
+        </div>
+
+        <!-- Footer / Action -->
+        <div class="p-6 border-t border-border-subtle bg-surface-container-low/30 flex flex-col gap-3">
+            <div class="flex justify-between text-label-md text-text-secondary font-medium" id="stats-entrada">
+                <span>Presentes: 0</span>
+                <span>Faltas: 0</span>
+            </div>
+            <p id="hint-entrada-facial" class="text-[11px] text-text-secondary leading-relaxed">
                 Marque P, F ou FJ e consolide a entrada da turma. Quem já bateu o ponto no reconhecimento facial permanece fechado.
             </p>
             <button type="button" id="btn-consolidar-entrada" onclick="consolidarEntrada()" class="hidden w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl hover:bg-opacity-90 transition-all">
-                Consolidar Entrada
-            </button>         </div>
-            <p id="hint-entrada-facial" class="text-[11px] text-text-secondary leading-relaxed">
-                Com reconhecimento facial, cada Entrada consolida o aluno automaticamente (P fechado). A Saída daquele aluno fica liberada em seguida.
-            </p>
-            <button type="button" id="btn-consolidar-entrada" class="hidden w-full py-3 bg-primary text-white font-bold text-label-md rounded-xl">
                 Consolidar Entrada
             </button>
             <button onclick="solicitarDesbloqueio('entrada')" id="btn-desbloquear-entrada" class="w-full py-3 border border-border-subtle text-on-surface font-bold text-label-md rounded-xl hover:bg-surface-container transition-all flex items-center justify-center gap-2 hidden">
