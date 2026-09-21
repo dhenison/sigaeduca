@@ -219,7 +219,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-security.js"></script><script src="js/siga-db.js"></script><script src="js/boletins.js"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260921i"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260921i"></script><script src="js/siga-security.js?v=20260921i"></script><script src="js/siga-db.js?v=20260921i"></script><script src="js/boletins.js?v=20260921i"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -453,13 +453,8 @@
 </select>
 </div>
 <div>
-<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Período / Bimestre</label>
-<select id="boletim-filter-bimestre" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl bg-white">
-<option selected>1º Bimestre</option>
-<option>2º Bimestre</option>
-<option>3º Bimestre</option>
-<option>4º Bimestre</option>
-</select>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Boletim</label>
+<input id="boletim-filter-bimestre" value="Boletim" readonly class="w-full px-3 py-2.5 border border-border-subtle rounded-xl bg-surface-container-low cursor-not-allowed text-on-surface"/>
 </div>
 <div class="text-right">
 <p id="boletim-status-count" class="text-sm font-bold text-on-surface">0 de 0 Publicados</p>
@@ -504,13 +499,8 @@
 </select>
 </div>
 <div>
-<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Período / Bimestre</label>
-<select id="boletim-upload-bimestre" class="w-full px-3 py-2.5 border border-border-subtle rounded-xl bg-white">
-<option selected>1º Bimestre</option>
-<option>2º Bimestre</option>
-<option>3º Bimestre</option>
-<option>4º Bimestre</option>
-</select>
+<label class="block text-[11px] font-bold text-text-secondary uppercase mb-1.5">Boletim</label>
+<input id="boletim-upload-bimestre" value="Boletim" readonly class="w-full px-3 py-2.5 border border-border-subtle rounded-xl bg-surface-container-low cursor-not-allowed text-on-surface"/>
 </div>
 </div>
 <div class="mb-5">
@@ -539,7 +529,7 @@
 <ul class="list-disc pl-5 text-sm text-text-secondary space-y-2">
 <li>O PDF precisa ter a linha <strong>ALUNO: Código INEP - Nome</strong> (boletim SEDUC). O INEP do aluno deve estar cadastrado no sistema.</li>
 <li>Alunos devem estar cadastrados na turma de destino.</li>
-<li>Arquivos ficam no navegador (IndexedDB) — adequados para uso local.</li>
+<li>O PDF da ficha também fica disponível no aplicativo do aluno.</li>
 </ul>
 </div>
 </section>

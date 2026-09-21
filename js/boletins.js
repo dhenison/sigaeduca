@@ -10,6 +10,7 @@
   var META_KEY = 'siga_boletim_meta';
   var DB_NAME = 'siga_boletins_db';
   var STORE = 'pdfs';
+  var BOLETIM_TERM = 'Boletim';
 
   function escapeHtml(str) {
     return String(str == null ? '' : str)
@@ -152,6 +153,74 @@
         req.onerror = function () { reject(req.error); };
       });
     });
+  }
+
+  function boletimFileName(student, term) {
+    if (term === BOLETIM_TERM) return 'Boletim - ' + (student.nome || 'Aluno') + '.pdf';
+    return 'Boletim ' + term + ' - ' + (student.nome || 'Aluno') + '.pdf';
+  }
+
+  function bytesToBase64(bytes) {
+    var bin = '';
+    var chunk = 0x8000;
+    var view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    for (var i = 0; i < view.length; i += chunk) {
+      bin += String.fromCharCode.apply(null, view.subarray(i, i + chunk));
+    }
+    return btoa(bin);
+  }
+
+  function activeSchoolId() {
+    try {
+      var active = localStorage.getItem('siga_active_school');
+      if (active) return active;
+      var session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+      return (session && session.schoolId) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function publishReportCardCloud(student, turmaCode, ano, term, bytes, fileName) {
+    var api = window.SigaSupabase;
+    var sb = api && typeof api.getClient === 'function' && api.isConfigured && api.isConfigured() ? api.getClient() : null;
+    var schoolId = activeSchoolId();
+    var studentId = String(student && student.id || '');
+    if (!sb || !schoolId || !/^[0-9a-f-]{36}$/i.test(studentId)) {
+      return Promise.resolve({ ok: false, skipped: true });
+    }
+    var row = {
+      school_id: schoolId,
+      student_id: studentId,
+      student_name: student.nome || 'Aluno',
+      student_inep: student.codigoInep || null,
+      class_code: turmaCode,
+      year_label: String(ano),
+      term_label: term,
+      file_name: fileName,
+      file_base64: bytesToBase64(bytes),
+      file_size_bytes: bytes.length || bytes.byteLength || 0,
+      mime_type: 'application/pdf'
+    };
+    return sb.from('report_cards')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('student_id', studentId)
+      .eq('year_label', String(ano))
+      .eq('term_label', term)
+      .limit(1)
+      .then(function (existing) {
+        if (existing.error) return { ok: false, message: existing.error.message };
+        if (existing.data && existing.data.length) {
+          return sb.from('report_cards').update(row).eq('id', existing.data[0].id).then(function (res) {
+            return res.error ? { ok: false, message: res.error.message } : { ok: true };
+          });
+        }
+        return sb.from('report_cards').insert(row).then(function (res) {
+          return res.error ? { ok: false, message: res.error.message } : { ok: true };
+        });
+      })
+      .catch(function () { return { ok: false }; });
   }
 
   function boletimToast(msg, type) {
@@ -320,6 +389,8 @@
     await idbDeleteByTurma(turmaCode, ano, bimestre);
 
     var saved = 0;
+    var cloudSaved = 0;
+    var cloudFailed = 0;
     for (var k = 0; k < ids.length; k++) {
       var pack = byAluno[ids[k]];
       showProgress(true, 'Processando: ' + pack.student.nome, k + 1, ids.length);
@@ -328,6 +399,7 @@
       copied.forEach(function (pg) { newDoc.addPage(pg); });
       var outBytes = await newDoc.save();
       var id = boletimId(pack.student.id, ano, bimestre);
+      var fileName = boletimFileName(pack.student, bimestre);
       await idbPut({
         id: id,
         alunoId: pack.student.id,
@@ -335,10 +407,13 @@
         turma: turmaCode,
         ano: ano,
         bimestre: bimestre,
-        fileName: 'Boletim ' + bimestre + ' - ' + pack.student.nome + '.pdf',
+        fileName: fileName,
         blob: outBytes,
         updatedAt: new Date().toISOString()
       });
+      var cloud = await publishReportCardCloud(pack.student, turmaCode, ano, bimestre, outBytes, fileName);
+      if (cloud && cloud.ok) cloudSaved++;
+      else if (cloud && !cloud.skipped) cloudFailed++;
       // meta leve no localStorage
       var meta = getMetaMap();
       meta[id] = {
@@ -347,7 +422,7 @@
         turma: turmaCode,
         ano: ano,
         bimestre: bimestre,
-        fileName: 'Boletim ' + bimestre + ' - ' + pack.student.nome + '.pdf',
+        fileName: fileName,
         updatedAt: new Date().toISOString()
       };
       saveMetaMap(meta);
@@ -365,7 +440,7 @@
     };
     saveStatusMap(st);
     showProgress(false);
-    return { saved: saved, totalPages: pageCount, unmatched: pageOwner.filter(function (x) { return !x; }).length };
+    return { saved: saved, cloudSaved: cloudSaved, cloudFailed: cloudFailed, totalPages: pageCount, unmatched: pageOwner.filter(function (x) { return !x; }).length };
   }
 
   function showProgress(visible, label, current, total) {
@@ -419,7 +494,7 @@
     var countEl = document.getElementById('boletim-status-count');
     if (!tbody) return;
     var ano = (document.getElementById('boletim-filter-ano') || {}).value || '2026';
-    var bim = (document.getElementById('boletim-filter-bimestre') || {}).value || '1º Bimestre';
+    var bim = (document.getElementById('boletim-filter-bimestre') || {}).value || BOLETIM_TERM;
     var turmas = getTurmas();
     var stMap = getStatusMap();
     var published = 0;
@@ -452,7 +527,7 @@
 
   async function deleteTurmaBoletins(turma) {
     var ano = (document.getElementById('boletim-filter-ano') || {}).value || '2026';
-    var bim = (document.getElementById('boletim-filter-bimestre') || {}).value || '1º Bimestre';
+    var bim = (document.getElementById('boletim-filter-bimestre') || {}).value || BOLETIM_TERM;
     if (!confirm('Excluir boletins publicados da turma ' + turma + ' (' + bim + ' / ' + ano + ')?')) return;
     await idbDeleteByTurma(turma, ano, bim);
     var st = getStatusMap();
@@ -470,7 +545,7 @@
   async function handleUpload(file) {
     var turma = (document.getElementById('boletim-upload-turma') || {}).value;
     var ano = (document.getElementById('boletim-upload-ano') || {}).value || '2026';
-    var bim = (document.getElementById('boletim-upload-bimestre') || {}).value || '1º Bimestre';
+    var bim = (document.getElementById('boletim-upload-bimestre') || {}).value || BOLETIM_TERM;
     var mode = (document.getElementById('boletim-match-mode') || {}).value || 'inep';
     if (!turma) {
       boletimToast('Selecione a turma de destino.', 'error');
@@ -482,7 +557,10 @@
     }
     try {
       var result = await splitAndSave(file, turma, ano, bim, mode);
-      boletimToast('Gravados ' + result.saved + ' boletins. Turma marcada como Publicada.');
+      var note = result.cloudSaved
+        ? ' O boletim também foi enviado ao aplicativo do aluno.'
+        : (result.cloudFailed ? ' A ficha foi atualizada, mas o aplicativo não recebeu o arquivo.' : '');
+      boletimToast('Gravados ' + result.saved + ' boletins. Turma marcada como Publicada.' + note);
       // sync filters
       var fa = document.getElementById('boletim-filter-ano');
       var fb = document.getElementById('boletim-filter-bimestre');

@@ -60,6 +60,7 @@ export interface AttendanceSummary {
 }
 export interface ReportItem {
   bimestre: number;
+  label?: string;
   ano: number;
   published: boolean;
   id?: string;
@@ -382,42 +383,47 @@ function summarize(year: number, days: Record<string, {type?: string}>, marks: R
 }
 
 async function loadReports(student: Student, year: number): Promise<ReportItem[]> {
-  const statusMap = readJson<Record<string, {status?: string}>>('siga_boletim_status', {});
-  const meta = readJson<Record<string, {alunoId?: string; turma?: string; ano?: number | string; bimestre?: number | string; fileName?: string}>>('siga_boletim_meta', {});
-  const byBim = new Map<number, ReportItem>();
-  for (let bim = 1; bim <= 4; bim++) {
-    byBim.set(bim, {bimestre: bim, ano: year, published: false});
+  const token = readSession()?.portalToken || '';
+  if (token && /^[0-9a-f-]{36}$/i.test(student.id)) {
+    const res = await sb().rpc('student_portal_reports', {p_student_id: student.id, p_token: token});
+    const rows = Array.isArray(res.data) ? res.data as Array<Record<string, string>> : [];
+    const published = rows.filter((row) => Number(row.year_label) === year || String(row.year_label) === String(year));
+    if (published.length) {
+      return published.map((row) => ({
+        bimestre: 0,
+        label: row.term_label || 'Boletim',
+        ano: year,
+        published: true,
+        id: row.id,
+        fileName: row.file_name,
+      }));
+    }
   }
-  const consider = (id: string, rec: {alunoId?: string; turma?: string; ano?: number | string; bimestre?: number | string; fileName?: string; blob?: Blob}) => {
-    if (String(rec.alunoId || '') !== String(student.id)) return;
-    if (Number(rec.ano) !== year) return;
-    const bim = Number(rec.bimestre);
-    if (bim < 1 || bim > 4) return;
-    const key = [rec.turma || student.className, rec.ano, rec.bimestre].join('|');
-    const info = statusMap[key];
-    const published = !info || info.status === 'Publicado';
-    if (!published) return;
-    byBim.set(bim, {bimestre: bim, ano: year, published: true, id, fileName: rec.fileName});
-  };
-  Object.keys(meta).forEach((id) => consider(id, meta[id]));
-  try {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('siga_boletins_db', 1);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    const rows = await new Promise<Array<{id: string; alunoId?: string; turma?: string; ano?: number; bimestre?: number; fileName?: string; blob?: Blob}>>((resolve, reject) => {
-      const tx = db.transaction('pdfs', 'readonly');
-      const req = tx.objectStore('pdfs').getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error);
-    });
-    rows.forEach((row) => consider(row.id, row));
-  } catch { /* sem boletins neste navegador */ }
-  return [1, 2, 3, 4].map((bim) => byBim.get(bim)!);
+  return [{bimestre: 0, label: 'Boletim', ano: year, published: false}];
+}
+
+function pdfBlobFromBase64(value: string) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], {type: 'application/pdf'});
 }
 
 export async function openReport(id: string) {
+  const session = readSession();
+  if (session?.portalToken && /^[0-9a-f-]{36}$/i.test(id) && /^[0-9a-f-]{36}$/i.test(String(session.id || ''))) {
+    const res = await sb().rpc('student_portal_report_pdf', {
+      p_student_id: session.id,
+      p_token: session.portalToken,
+      p_card_id: id,
+    });
+    const payload = typeof res.data === 'string' ? res.data : '';
+    if (payload) {
+      const url = URL.createObjectURL(pdfBlobFromBase64(payload));
+      window.open(url, '_blank');
+      return true;
+    }
+  }
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open('siga_boletins_db', 1);
     req.onsuccess = () => resolve(req.result);
