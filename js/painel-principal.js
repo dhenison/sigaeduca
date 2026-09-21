@@ -488,6 +488,9 @@
     }
 
     renderAll();
+    if (typeof window.pullOccurrencesFromCloud === 'function') {
+      window.pullOccurrencesFromCloud().then(renderAll);
+    }
 
     // Após login de servidor, sincroniza alunos/turmas da escola ativa no Supabase
     var schoolApi = window.SigaSchoolData;

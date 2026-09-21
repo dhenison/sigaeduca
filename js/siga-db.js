@@ -3044,18 +3044,139 @@ window.gerarDeclaracaoMatriculaFicha = function () {
     }
 };
 
-function renderFichaOccurrences(student) {
+function occurrenceCloudClient() {
+    const api = window.SigaSupabase;
+    if (!api || typeof api.getClient !== 'function' || typeof api.isConfigured !== 'function' || !api.isConfigured()) return null;
+    return api.getClient();
+}
+
+function activeSchoolIdForOccurrences() {
+    try {
+        const active = localStorage.getItem('siga_active_school');
+        if (active) return active;
+        const session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+        return (session && session.schoolId) || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function cloudRowToLocalOcc(row) {
+    const day = String(row.occurrence_date || '').slice(0, 10);
+    const name = row.student_name || 'Aluno';
+    return {
+        id: row.id,
+        student: name,
+        aluno: name,
+        alunoId: row.student_id || '',
+        type: row.occurrence_type,
+        tipo: row.occurrence_type,
+        date: day,
+        data: day,
+        hora: row.occurrence_time || '',
+        turma: row.class_code || '',
+        prof: row.registered_by_name || 'Sistema (Automático)',
+        usuario: row.registered_by_name || 'Sistema (Automático)',
+        status: row.status || 'Em Análise',
+        desc: row.description || '',
+        descricao: row.description || '',
+        origem: row.source === 'frequencia' ? 'automatica' : (row.source || 'manual')
+    };
+}
+
+function sameEvasion(localOcc, incoming) {
+    const type = localOcc.type || localOcc.tipo || '';
+    const incomingType = incoming.type || incoming.tipo || '';
+    if (type !== 'Evasão' && type !== 'Evasao') return false;
+    if (incomingType !== 'Evasão' && incomingType !== 'Evasao') return false;
+    const sameDay = (localOcc.date || localOcc.data) === (incoming.date || incoming.data);
+    const sameStudent = (localOcc.alunoId && incoming.alunoId && String(localOcc.alunoId) === String(incoming.alunoId))
+        || ((localOcc.student || localOcc.aluno) === (incoming.student || incoming.aluno));
+    const sameClass = !localOcc.turma || !incoming.turma || localOcc.turma === incoming.turma;
+    return sameDay && sameStudent && sameClass;
+}
+
+function mergeCloudOccurrences(rows) {
+    const local = JSON.parse(localStorage.getItem('siga_occurrences') || '[]');
+    (rows || []).forEach(function (row) {
+        const mapped = cloudRowToLocalOcc(row);
+        const exists = local.some(function (item) {
+            return String(item.id) === String(mapped.id) || sameEvasion(item, mapped);
+        });
+        if (!exists) local.unshift(mapped);
+    });
+    localStorage.setItem('siga_occurrences', JSON.stringify(local));
+    return local;
+}
+
+function pullOccurrencesFromCloud() {
+    const sb = occurrenceCloudClient();
+    const schoolId = activeSchoolIdForOccurrences();
+    if (!sb || !schoolId) return Promise.resolve([]);
+    return sb.from('occurrences')
+        .select('id,student_id,student_name,class_code,occurrence_type,status,description,occurrence_date,occurrence_time,registered_by_name,source')
+        .eq('school_id', schoolId)
+        .order('occurrence_date', { ascending: false })
+        .limit(300)
+        .then(function (res) {
+            if (res.error || !res.data) return [];
+            return mergeCloudOccurrences(res.data);
+        })
+        .catch(function () { return []; });
+}
+
+function pushEvasionToCloud(occ) {
+    const sb = occurrenceCloudClient();
+    const schoolId = activeSchoolIdForOccurrences();
+    if (!sb || !schoolId || !occ) return Promise.resolve({ ok: false });
+    const studentId = /^[0-9a-f-]{36}$/i.test(String(occ.alunoId || '')) ? occ.alunoId : null;
+    const day = occ.date || occ.data;
+    let query = sb.from('occurrences').select('id').eq('school_id', schoolId).eq('occurrence_date', day).eq('occurrence_type', 'Evasão');
+    query = studentId ? query.eq('student_id', studentId) : query.eq('student_name', occ.student || occ.aluno || '');
+    return query.limit(1).then(function (existing) {
+        if (existing.error) return { ok: false, message: existing.error.message };
+        if (existing.data && existing.data.length) return { ok: true, skipped: true };
+        return sb.from('occurrences').insert({
+            school_id: schoolId,
+            student_id: studentId,
+            student_name: occ.student || occ.aluno,
+            class_code: occ.turma || null,
+            occurrence_type: 'Evasão',
+            status: 'Em Análise',
+            description: occ.desc || occ.descricao,
+            occurrence_date: day,
+            occurrence_time: occ.hora || null,
+            registered_by_name: 'Sistema (Automático)',
+            source: 'frequencia',
+            attendance_call_id: (function () {
+                const cloud = window.SigaFrequenciaCloud;
+                const id = cloud && typeof cloud.getLastCallId === 'function' ? cloud.getLastCallId() : '';
+                return /^[0-9a-f-]{36}$/i.test(String(id || '')) ? id : null;
+            })()
+        }).then(function (res) {
+            if (res.error) return { ok: false, message: res.error.message };
+            return { ok: true };
+        });
+    }).catch(function () { return { ok: false }; });
+}
+
+window.pullOccurrencesFromCloud = pullOccurrencesFromCloud;
+window.pushEvasionToCloud = pushEvasionToCloud;
+
+function renderFichaOccurrences(student, skipCloud) {
     const container = document.getElementById('ficha-occurrences-container');
     if (!container) return;
     
     const allOccurrences = JSON.parse(localStorage.getItem('siga_occurrences')) || [];
-    const studentOccurrences = allOccurrences.filter(o => (o.student === student.nome || o.aluno === student.nome));
+    const studentOccurrences = allOccurrences.filter(function (o) {
+        const name = o.student || o.aluno || '';
+        const id = String(o.alunoId || '');
+        return (student.nome && name === student.nome) || (student.id && id && id === String(student.id));
+    });
     
     if (studentOccurrences.length === 0) {
         container.innerHTML = '<div class="text-center py-6 text-text-secondary text-body-md italic">Nenhuma ocorrência registrada para este aluno.</div>';
-        return;
-    }
-    
+    } else {
     container.innerHTML = studentOccurrences.map(o => {
         let color = 'border-primary text-primary bg-surface-container-low/50';
         const type = o.type || o.tipo || 'Ocorrência';
@@ -3090,6 +3211,12 @@ function renderFichaOccurrences(student) {
             </div>
         `;
     }).join('');
+    }
+    if (!skipCloud) {
+        pullOccurrencesFromCloud().then(function () {
+            renderFichaOccurrences(student, true);
+        });
+    }
 }
 
 // Timeline rendering of class changes
