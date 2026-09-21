@@ -357,6 +357,8 @@
               codigo_inep: s.codigo_inep || "",
               _fromSupabase: true,
             };
+          }).sort(function (a, b) {
+            return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR", { sensitivity: "base" });
           });
         });
     }).catch(function (err) {

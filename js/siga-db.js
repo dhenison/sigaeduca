@@ -4044,6 +4044,12 @@ function isAeeClassCode(code) {
     return /^(EEMAE01|EETAE01)$/i.test(String(code || '').trim());
 }
 
+function sortStudentsByName(list) {
+    return (list || []).slice().sort(function (a, b) {
+        return String((a && a.nome) || '').localeCompare(String((b && b.nome) || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+}
+
 function studentBelongsToClass(student, classCode) {
     if (window.SigaSchoolData && typeof window.SigaSchoolData.studentInClass === 'function') {
         return window.SigaSchoolData.studentInClass(student, classCode);
@@ -4960,7 +4966,7 @@ function renderTurmaDetalhe(classCode) {
     if (!tbody) return;
 
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-    const classStudents = students.filter(s => studentBelongsToClass(s, classCode));
+    const classStudents = sortStudentsByName(students.filter(s => studentBelongsToClass(s, classCode)));
 
     const studentCountEl = document.getElementById('detail-student-count');
     if (studentCountEl) studentCountEl.textContent = classStudents.length;
@@ -5042,7 +5048,7 @@ window.downloadClassList = function() {
     if (!classObj) return;
 
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-    const classStudents = students.filter(s => studentBelongsToClass(s, classCode));
+    const classStudents = sortStudentsByName(students.filter(s => studentBelongsToClass(s, classCode)));
 
     let content = `SIGA EDUCA - LISTA DE ALUNOS\n`;
     content += `Turma: ${classObj.code} - ${classObj.serie}\n`;
@@ -5081,7 +5087,7 @@ window.printClassList = function() {
     if (!classObj) return;
 
     const students = JSON.parse(localStorage.getItem('siga_students')) || [];
-    const classStudents = students.filter(s => studentBelongsToClass(s, classCode));
+    const classStudents = sortStudentsByName(students.filter(s => studentBelongsToClass(s, classCode)));
 
     let content = `SIGA EDUCA - LISTA DE ALUNOS\r\n`;
     content += `Turma: ${classObj.code} - ${classObj.serie}\r\n`;
