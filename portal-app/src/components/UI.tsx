@@ -4,6 +4,6 @@ const icons={home:homeOutline,calendar:calendarOutline,attendance:statsChartOutl
 export type IconName=keyof typeof icons;
 export function Icon({name,className=''}:{name:IconName;className?:string}){return <IonIcon aria-hidden="true" icon={icons[name]} className={className}/>}
 const asset=(file:string)=>`${import.meta.env.BASE_URL}${file}`;
-export function Brand(){return <div className="brand"><img src={asset('icon.svg')} alt=""/><div><strong>SIGA EDUCA</strong><span>Portal do Aluno</span></div></div>}
+export function Brand({label='Portal do Aluno'}:{label?:string}){return <div className="brand"><img src={asset('icon.svg')} alt=""/><div><strong>SIGA EDUCA</strong><span>{label}</span></div></div>}
 export function Empty({title,description='As informações aparecerão aqui quando forem disponibilizadas pela escola.'}:{title:string;description?:string}){return <div className="empty"><Icon name="check"/><h3>{title}</h3><p>{description}</p></div>}
 export function Ring({value=0}:{value?:number}){const pct=Math.max(0,Math.min(100,value));return <div className="ring"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="84" className="ring-track"/><circle cx="100" cy="100" r="84" className="ring-value" style={{strokeDasharray:`${pct*5.278} 528`}}/></svg><div><strong>{pct}%</strong><span>Frequência</span></div></div>}

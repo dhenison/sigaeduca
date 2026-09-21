@@ -144,6 +144,19 @@
         return isInstitutionalEmail(email) || isSystemAdminEmail(email);
     }
 
+    function isProfessorSession(session) {
+        var role = String((session && session.role) || '');
+        if (/professor/i.test(role)) return true;
+        try {
+            var email = normEmail((session && session.email) || '');
+            var users = JSON.parse(localStorage.getItem('siga_users') || '[]') || [];
+            var mine = users.find(function (u) { return normEmail(u.email) === email; });
+            return !!(mine && /professor/i.test(String(mine.cargo || mine.funcao || mine.role || '')));
+        } catch (e) {
+            return false;
+        }
+    }
+
     /** Destino obrigatório após login — admin do sistema SEMPRE paineladmin */
     function redirectAfterLogin(email, session) {
         email = normEmail(email);
@@ -156,8 +169,19 @@
                 localStorage.removeItem('siga_school_name');
             } catch (e) { /* ignore */ }
         }
+        if (!goAdmin && session && isProfessorSession(session)) {
+            var professorEmail = normEmail((session && session.email) || email);
+            if (!professorEmail.endsWith(DOMAIN_SERVIDOR)) {
+                toast('O professor precisa entrar com e-mail @escola.seduc.pa.gov.br.', 'error');
+                return;
+            }
+            if (!/professor/i.test(String(session.role || ''))) {
+                session.role = 'Professor(a)';
+            }
+            setSession(session);
+        }
         // Caminhos absolutos evitam erro de resolução em /login.html
-        var dest = goAdmin ? '/paineladmin.html' : '/painelprincipal.html';
+        var dest = goAdmin ? '/paineladmin.html' : (isProfessorSession(session) ? '/portal/' : '/painelprincipal.html');
         try {
             sessionStorage.setItem('siga_post_login_dest', dest);
         } catch (e) { /* ignore */ }

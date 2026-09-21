@@ -810,6 +810,7 @@
             var matricula = String(idxMat >= 0 && row[idxMat] != null ? row[idxMat] : '').trim();
             if (!matricula && senha) matricula = senha;
             if (!nome && !email) continue;
+            if (!email.endsWith('@escola.seduc.pa.gov.br')) continue;
             if (!nome || !email || !senha || !matricula) continue;
             if (senha.length < 6) continue;
             out.push({ nome: nome, email: email, senha: senha, matricula: matricula });
@@ -884,6 +885,11 @@
 
         return rows.reduce(function (chain, row, idx) {
             return chain.then(function () {
+                if (!String(row.email || '').endsWith('@escola.seduc.pa.gov.br')) {
+                    fail += 1;
+                    errors.push(row.email + ': o e-mail do professor precisa ser @escola.seduc.pa.gov.br');
+                    return Promise.resolve();
+                }
                 if (stopOnRateLimit) {
                     fail += 1;
                     errors.push(row.email + ': parado por rate limit Auth');

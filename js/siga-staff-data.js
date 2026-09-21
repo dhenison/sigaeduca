@@ -126,7 +126,7 @@
     }
 
     /** Cria usuário no Auth sem trocar a sessão do admin */
-    function createAuthUserEphemeral(email, password, fullName) {
+        function createAuthUserEphemeral(email, password, fullName, role) {
         var cfg = getConfig();
         if (!cfg || !cfg.url || !cfg.anonKey || !global.supabase) {
             return Promise.resolve({ ok: false, reason: 'not_configured', message: 'Supabase não configurado.' });
@@ -151,7 +151,7 @@
             email: email,
             password: password,
             options: {
-                data: { full_name: fullName || '' },
+                data: { full_name: fullName || '', role: role || '' },
                 emailRedirectTo: undefined
             }
         }).then(function (res) {
@@ -289,6 +289,9 @@
         if (!row.full_name || !row.email || !row.employee_id) {
             return Promise.resolve({ ok: false, message: 'Dados incompletos para gravar no banco.' });
         }
+        if (/professor/i.test(row.role) && !row.email.endsWith('@escola.seduc.pa.gov.br')) {
+            return Promise.resolve({ ok: false, message: 'O e-mail do professor precisa ser @escola.seduc.pa.gov.br.' });
+        }
 
         var isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(localUser.id || ''));
 
@@ -346,9 +349,16 @@
 
                 var authStep = Promise.resolve({ ok: true, skipped: true });
                 if (saved.user_id) {
-                    authStep = Promise.resolve({ ok: true, skipped: true, alreadyLinked: true });
+                    authStep = ready.sb.from('profiles').update({
+                        email: row.email,
+                        full_name: row.full_name,
+                        role: row.role,
+                        school_id: ready.schoolId
+                    }).eq('id', saved.user_id).then(function () {
+                        return { ok: true, skipped: true, alreadyLinked: true };
+                    });
                 } else if (options.plainPassword && options.plainPassword.length >= 6) {
-                    authStep = createAuthUserEphemeral(row.email, options.plainPassword, row.full_name)
+                    authStep = createAuthUserEphemeral(row.email, options.plainPassword, row.full_name, row.role)
                         .then(function (authRes) {
                             if (!authRes.ok || !authRes.userId) return authRes;
                             return linkAuthUser(saved.id, authRes.userId).then(function (linkRes) {
