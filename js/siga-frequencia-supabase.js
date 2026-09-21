@@ -1,8 +1,8 @@
 /**
  * SIGA EDUCA — Frequência no Supabase (attendance_calls / attendance_marks)
  *
- * Reconhecimento facial grava P + locked (consolidação individual).
- * Entrada locked libera Saída daquele aluno; Dia = Entrada + Saída.
+ * Chamada online consolida a turma (P/F/FJ). Reconhecimento facial grava P + locked
+ * e não é sobrescrito pela consolidação. Entrada da turma, ou facial do aluno, libera a Saída.
  */
 (function (global) {
   "use strict";
@@ -190,7 +190,7 @@
                 cloudEnabled = true;
                 setStatusBanner(
                   true,
-                  "Frequência no SIGA · batida facial consolida o aluno individualmente (P fechado)."
+                  "Frequência online liberada. O reconhecimento facial continua fechando quem bater o ponto."
                 );
                 return {
                   ok: true,
