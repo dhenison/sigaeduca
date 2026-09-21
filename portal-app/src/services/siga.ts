@@ -421,7 +421,7 @@ export async function loadPortal(year = new Date().getFullYear()): Promise<Porta
     loadCalendar(schoolId),
     loadAgenda(schoolId, student.className),
     loadMarks(student, year),
-    loadReports(student, year),
+    loadReports(student, 2026),
   ]);
   const events = [...agenda, ...calendarEvents(days)].sort((a, b) => a.date.localeCompare(b.date));
   return {
