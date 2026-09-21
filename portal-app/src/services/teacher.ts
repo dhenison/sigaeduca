@@ -17,6 +17,7 @@ export interface TeacherProfile {
   role: string;
   school: string;
   schoolId: string;
+  avatarUrl: string;
 }
 export interface ClassOption {
   code: string;
@@ -193,6 +194,7 @@ export async function loadTeacherPortal(): Promise<TeacherSnapshot | null> {
     role: session.role || 'Professor(a)',
     school: localStorage.getItem('siga_school_name') || '',
     schoolId,
+    avatarUrl: await loadTeacherAvatar(session.email || '', schoolId),
   };
   const classes = await loadClasses(schoolId);
   const events = await loadEvents(schoolId);
@@ -425,4 +427,70 @@ async function registerEvasion(schoolId: string, classCode: string, day: string,
 export async function leaveTeacherPortal() {
   clearSession();
   await sb().auth.signOut().catch(() => undefined);
+}
+
+function avatarKey(email: string) {
+  return 'siga_profile_avatar__email:' + email.toLowerCase();
+}
+
+async function loadTeacherAvatar(email: string, schoolId: string) {
+  const local = email ? localStorage.getItem(avatarKey(email)) || '' : '';
+  if (!email) return local;
+  let query = sb().from('school_staff').select('avatar_url').eq('email', email.toLowerCase());
+  if (schoolId) query = query.eq('school_id', schoolId);
+  const res = await query.maybeSingle();
+  return String(res.data?.avatar_url || local || '');
+}
+
+export function compressAvatar(file: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, 512 / Math.max(image.naturalWidth || 1, image.naturalHeight || 1));
+      const width = Math.max(1, Math.round((image.naturalWidth || 1) * scale));
+      const height = Math.max(1, Math.round((image.naturalHeight || 1) * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Não foi possível processar a foto.'));
+        return;
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(image, 0, 0, width, height);
+      let quality = 0.72;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      while (dataUrl.length > 180000 && quality > 0.45) {
+        quality -= 0.08;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+      if (dataUrl.length > 180000) reject(new Error('A foto ficou muito pesada. Tente outra imagem.'));
+      else resolve(dataUrl);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Não foi possível ler a foto.'));
+    };
+    image.src = url;
+  });
+}
+
+export async function saveTeacherAvatar(teacher: TeacherProfile, dataUrl: string) {
+  const email = teacher.email.toLowerCase();
+  if (!email) throw new Error('E-mail do professor não encontrado.');
+  localStorage.removeItem('siga_profile_avatar');
+  localStorage.setItem(avatarKey(email), dataUrl);
+  const users = readJson<Array<Record<string, string>>>('siga_users', []);
+  localStorage.setItem('siga_users', JSON.stringify(users.map((user) => String(user.email || '').toLowerCase() === email ? {...user, avatar: dataUrl} : user)));
+  if (!teacher.schoolId) throw new Error('Escola não vinculada. Entre novamente para salvar a foto.');
+  const staff = await sb().from('school_staff').update({avatar_url: dataUrl}).eq('school_id', teacher.schoolId).eq('email', email).select('id');
+  if (staff.error) throw new Error(staff.error.message);
+  if (!staff.data?.length) throw new Error('Não encontrei seu cadastro de professor nesta escola.');
+  if (/^[0-9a-f-]{36}$/i.test(teacher.id)) {
+    await sb().from('profiles').update({avatar_url: dataUrl}).eq('id', teacher.id);
+  }
 }

@@ -31,3 +31,6 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .roll-options label:has(input:disabled){opacity:.8}
 .roll-reason{width:100%;max-width:none;margin:4px 0 8px}
 .roll-card .primary{margin:14px 0}
+.photo-actions{display:flex;gap:8px;margin:14px 0 8px}
+.photo-actions button{flex:1;border:1px solid #07419c;color:#07419c;border-radius:12px;min-height:44px;font-size:13px;font-weight:700}
+.file-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}

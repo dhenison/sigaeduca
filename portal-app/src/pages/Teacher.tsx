@@ -1,15 +1,17 @@
-import {useEffect, useState, type ReactNode} from 'react';
+import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {IonApp, IonContent, IonLabel, IonModal, IonPage, IonRefresher, IonRefresherContent, IonSkeletonText, IonTabBar, IonTabButton, IonToast} from '@ionic/react';
 import {Brand, Empty, Icon, type IconName} from '../components/UI';
 import {Calendar, Notices, Schedule} from './Academic';
 import {studentInitials} from '../services/siga';
 import {
   blankMark,
+  compressAvatar,
   consolidateRoll,
   isFacialLocked,
   leaveTeacherPortal,
   loadClassRoll,
   loadTeacherPortal,
+  saveTeacherAvatar,
   type ClassRoll,
   type MarkStatus,
   type PhaseName,
@@ -56,6 +58,7 @@ export default function TeacherApp() {
   const [read, setRead] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('siga_portal_notice_read') || '[]'); } catch { return []; }
   });
+  const [photo, setPhoto] = useState('');
   const [theme, setTheme] = useState(() => localStorage.getItem('siga-theme') || 'light');
   const [offline, setOffline] = useState(!navigator.onLine);
 
@@ -65,6 +68,7 @@ export default function TeacherApp() {
     setReady(true);
   }
   useEffect(() => { reload(); }, []);
+  useEffect(() => { if (data?.teacher.avatarUrl) setPhoto(data.teacher.avatarUrl); }, [data]);
   useEffect(() => {
     const fn = () => setRoute(location.hash.slice(2) || 'home');
     window.addEventListener('hashchange', fn);
@@ -108,19 +112,19 @@ export default function TeacherApp() {
   const selected = tabs.some((tab) => tab.route === route) ? route : 'more';
   let content: ReactNode;
   switch (route) {
-    case 'home': content = <TeacherHome data={data} go={go} />; break;
+    case 'home': content = <TeacherHome data={data} photo={photo} go={go} />; break;
     case 'calendar': content = <Calendar detail={(title, body) => setSheet({title, body})} events={data.events} />; break;
     case 'attendance': content = <TeacherAttendance data={data} notify={setToast} />; break;
     case 'notices': content = <Notices read={read} onRead={markRead} items={data.notices} />; break;
     case 'schedule': content = <Schedule />; break;
     case 'olympics': content = <Olympics data={data} />; break;
-    case 'profile': content = <TeacherProfile data={data} />; break;
+    case 'profile': content = <TeacherProfile data={data} photo={photo} onPhoto={setPhoto} notify={setToast} />; break;
     case 'settings': content = <section className="surface padded"><h2>Aparência</h2><p>Escolha o tema do aplicativo.</p><div className="theme-options">{[['light', 'Claro'], ['dark', 'Escuro'], ['system', 'Sistema']].map(([value, label]) => <label key={value}><input type="radio" name="theme" checked={theme === value} onChange={() => setTheme(value)} />{label}</label>)}</div></section>; break;
     case 'about': content = <section className="surface padded"><Brand label="Portal do Professor" /><h2>A chamada da turma em um só lugar.</h2><p>Portal do Professor · SIGA EDUCA</p><p>Versão 1.0</p></section>; break;
     default: content = <TeacherMore go={go} logout={logout} />;
   }
   return <IonApp><div className="app-viewport"><IonPage>
-    <header className="app-header">{route === 'home' ? <><button aria-label="Abrir menu" onClick={() => go('more')}><Icon name="menu" /></button><Brand label="Portal do Professor" /><button className="profile-button" aria-label="Meu perfil" onClick={() => go('profile')}><Icon name="profile" /></button></> : <><button aria-label="Voltar ao início" onClick={() => go('home')}><Icon name="back" /></button><h1>{titles[route] || 'Mais'}</h1><span /></>}</header>
+    <header className="app-header">{route === 'home' ? <><button aria-label="Abrir menu" onClick={() => go('more')}><Icon name="menu" /></button><Brand label="Portal do Professor" /><button className="profile-button" aria-label="Meu perfil" onClick={() => go('profile')}>{photo ? <img src={photo} alt="" /> : <Icon name="profile" />}</button></> : <><button aria-label="Voltar ao início" onClick={() => go('home')}><Icon name="back" /></button><h1>{titles[route] || 'Mais'}</h1><button className="profile-button" aria-label="Meu perfil" onClick={() => go('profile')}>{photo ? <img src={photo} alt="" /> : <Icon name="profile" />}</button></>}</header>
     {offline && <div className="offline">Sem conexão · A chamada precisa de internet para ser salva</div>}
     <IonContent><IonRefresher slot="fixed" onIonRefresh={(event) => { reload().finally(() => { setToast('Portal atualizado'); event.detail.complete(); }); }}><IonRefresherContent pullingText="Puxe para atualizar" /></IonRefresher>
       <main key={route} className={'page ' + (route === 'home' ? 'home-page' : '')}>{content}</main>
@@ -129,11 +133,11 @@ export default function TeacherApp() {
   </IonPage></div><IonModal isOpen={!!sheet} onDidDismiss={() => setSheet(null)} initialBreakpoint={0.8} breakpoints={[0, 0.8, 1]}><div className="sheet"><header><h2>{sheet?.title}</h2><button aria-label="Fechar" onClick={() => setSheet(null)}><Icon name="close" /></button></header>{sheet?.body}</div></IonModal><IonToast isOpen={!!toast} message={toast} duration={2400} onDidDismiss={() => setToast('')} /></IonApp>;
 }
 
-function TeacherHome({data, go}: {data: TeacherSnapshot; go: (route: string) => void}) {
+function TeacherHome({data, photo, go}: {data: TeacherSnapshot; photo: string; go: (route: string) => void}) {
   const {teacher} = data;
   return <>
     <button className="student-card surface" onClick={() => go('profile')}>
-      <div className="avatar">{studentInitials(teacher.name)}</div>
+      <div className="avatar">{photo ? <img src={photo} alt="" /> : studentInitials(teacher.name)}</div>
       <div className="student-info"><span>Olá,</span><h2>{teacher.name}</h2><p><Icon name="people" />{teacher.role}</p>{teacher.school && <p><Icon name="school" />{teacher.school}</p>}</div>
       <Icon name="next" />
     </button>
@@ -148,9 +152,37 @@ function TeacherMore({go, logout}: {go: (route: string) => void; logout: () => v
   return <section className="surface narrow">{items.map(([route, title]) => <button className="list-row" key={route} onClick={() => go(route)}><b>{title}</b><Icon name="next" /></button>)}<button className="list-row danger" onClick={logout}><b>Sair</b><Icon name="logout" /></button></section>;
 }
 
-function TeacherProfile({data}: {data: TeacherSnapshot}) {
+function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; photo: string; onPhoto: (value: string) => void; notify: (message: string) => void}) {
   const {teacher} = data;
-  return <section className="surface padded narrow profile"><div className="avatar">{studentInitials(teacher.name)}</div><h2>{teacher.name}</h2><p>Professor</p>{[['E-mail institucional', teacher.email], ['Função', teacher.role], ['Escola', teacher.school]].filter(([, value]) => value).map(([label, value]) => <div className="profile-field" key={label}><small>{label}</small><b>{value}</b></div>)}</section>;
+  const camera = useRef<HTMLInputElement>(null);
+  const gallery = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
+  async function onFile(file?: File) {
+    if (!file) return;
+    setSaving(true);
+    try {
+      const dataUrl = await compressAvatar(file);
+      await saveTeacherAvatar(teacher, dataUrl);
+      onPhoto(dataUrl);
+      notify('Foto salva. Ela também aparece no seu usuário do sistema.');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Não foi possível salvar a foto.');
+    } finally {
+      setSaving(false);
+    }
+  }
+  return <section className="surface padded narrow profile">
+    <div className="avatar">{photo ? <img src={photo} alt="" /> : studentInitials(teacher.name)}</div>
+    <h2>{teacher.name}</h2>
+    <p>Professor</p>
+    <div className="photo-actions">
+      <button type="button" disabled={saving} onClick={() => camera.current?.click()}>Tirar foto</button>
+      <button type="button" disabled={saving} onClick={() => gallery.current?.click()}>Enviar foto</button>
+    </div>
+    <input className="file-input" ref={camera} type="file" accept="image/*" capture="user" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
+    <input className="file-input" ref={gallery} type="file" accept="image/*" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
+    {[['E-mail institucional', teacher.email], ['Função', teacher.role], ['Escola', teacher.school]].filter(([, value]) => value).map(([label, value]) => <div className="profile-field" key={label}><small>{label}</small><b>{value}</b></div>)}
+  </section>;
 }
 
 function Olympics({data}: {data: TeacherSnapshot}) {
