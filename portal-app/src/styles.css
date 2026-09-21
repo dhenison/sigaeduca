@@ -9,3 +9,9 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .schedule-card{display:flex;align-items:center;gap:14px;padding:18px;text-decoration:none;color:inherit}
 .schedule-card h3{margin:0}
 .schedule-card p{margin:4px 0 0}
+.call-day{padding:16px 18px;border-bottom:1px solid var(--line)}
+.call-day:last-child{border-bottom:0}
+.call-day h3{font-size:15px;margin:0 0 8px;text-transform:capitalize}
+.call-phase{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
+.call-phase span{font-size:14px;color:var(--ink)}
+.badge.amber{background:#fdecc8;color:#8a5a00}

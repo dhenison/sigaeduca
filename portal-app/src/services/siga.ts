@@ -38,6 +38,16 @@ export interface MonthStat {
   justified: number;
   total: number;
 }
+export interface AttendancePhase {
+  code: string | null;
+  label: string;
+}
+export interface AttendanceDayView {
+  date: string;
+  entrada: AttendancePhase;
+  saida: AttendancePhase;
+  consolidado: AttendancePhase;
+}
 export interface AttendanceSummary {
   percentage: number;
   present: number;
@@ -45,6 +55,7 @@ export interface AttendanceSummary {
   justified: number;
   total: number;
   history: MonthStat[];
+  days: AttendanceDayView[];
 }
 export interface ReportItem {
   bimestre: number;
@@ -77,6 +88,7 @@ interface Session {
   nome?: string;
   email?: string;
   schoolId?: string | null;
+  portalToken?: string;
 }
 interface Mark {
   status?: string;
@@ -145,24 +157,26 @@ function isLetivo(type: string) {
   return type === 'letivo' || type === 'evento' || type === 'sabado' || type.startsWith('inicio_');
 }
 
-function consolidar(ent?: string | null, sai?: string | null) {
-  if (!ent && !sai) return null;
-  if (ent === 'P' && sai === 'P') return 'P';
-  if (ent === 'F' && sai === 'F') return 'F';
-  if (ent === 'P' && sai === 'FJ') return 'P';
-  if (ent === 'FJ' && sai === 'FJ') return 'FJ';
-  if (ent === 'FJ' && sai === 'P') return 'P';
-  if (ent === 'P' && sai === 'F') return 'F';
-  if (ent === 'F' && sai === 'P') return 'F';
-  if (ent === 'FJ' && !sai) return 'FJ';
-  if (ent === 'F' && !sai) return 'F';
-  if (ent === 'P' && !sai) return 'P';
-  return ent === 'P' || ent === 'F' || ent === 'FJ' ? ent : null;
+function phaseView(status?: string | null): AttendancePhase {
+  if (status === 'P') return {code: 'P', label: 'Presença'};
+  if (status === 'F') return {code: 'F', label: 'Falta'};
+  if (status === 'FJ') return {code: 'FJ', label: 'Falta justificada'};
+  return {code: null, label: 'Sem registro'};
+}
+
+function consolidatedView(ent?: string | null, sai?: string | null): AttendancePhase {
+  if (!ent || !sai) return {code: null, label: 'Pendente'};
+  if (ent === 'P' && sai === 'P') return {code: 'P', label: 'Presença'};
+  if (ent === 'FJ' && (sai === 'P' || sai === 'FJ')) return {code: 'P', label: 'Presença'};
+  if (ent === 'P' && sai === 'FJ') return {code: 'P', label: 'Presença'};
+  if (ent === 'P' && sai === 'F') return {code: 'F', label: 'Falta'};
+  if (ent === 'F' || sai === 'F') return {code: 'F', label: 'Falta'};
+  return {code: 'F', label: 'Falta'};
 }
 
 function dayStatus(day?: DayMarks | null) {
   if (!day) return null;
-  return consolidar(day.entrada?.status, day.saida?.status);
+  return consolidatedView(day.entrada?.status, day.saida?.status).code;
 }
 
 function localStudent(id: string) {
@@ -174,7 +188,9 @@ async function loadProfile(session: Session): Promise<Student | null> {
   const local = localStudent(String(session.id));
   let row: Record<string, string | number | null> | null = null;
   if (/^[0-9a-f-]{36}$/i.test(String(session.id))) {
-    const res = await sb().rpc('student_portal_profile', {p_student_id: session.id});
+    const res = session.portalToken
+      ? await sb().rpc('student_portal_profile', {p_student_id: session.id, p_token: session.portalToken})
+      : {error: null, data: null};
     if (!res.error && res.data) row = res.data as Record<string, string | number | null>;
   }
   if (!row && !local) return null;
@@ -204,7 +220,9 @@ async function loadProfile(session: Session): Promise<Student | null> {
 
 async function loadNotices(studentId: string): Promise<Notice[]> {
   if (!/^[0-9a-f-]{36}$/i.test(studentId)) return [];
-  const res = await sb().rpc('student_portal_informativos', {p_student_id: studentId});
+  const token = readSession()?.portalToken || '';
+  if (!token) return [];
+  const res = await sb().rpc('student_portal_informativos', {p_student_id: studentId, p_token: token});
   const data = Array.isArray(res.data) ? res.data : [];
   return data.map((item: Record<string, string>) => ({
     id: String(item.id || item.title),
@@ -293,10 +311,13 @@ function localAttendance(turma: string, studentId: string, year: number) {
 async function loadMarks(student: Student, year: number) {
   const local = localAttendance(student.className, student.id, year);
   if (!/^[0-9a-f-]{36}$/i.test(student.id)) return local;
+  const token = readSession()?.portalToken || '';
+  if (!token) return local;
   const res = await sb().rpc('student_portal_attendance_range', {
     p_student_id: student.id,
     p_from: `${year}-01-01`,
     p_to: `${year}-12-31`,
+    p_token: token,
   });
   const cloud = (res.data && (res.data as {days?: Record<string, DayMarks>}).days) || {};
   return {...local, ...cloud};
@@ -305,7 +326,8 @@ async function loadMarks(student: Student, year: number) {
 function summarize(year: number, days: Record<string, {type?: string}>, marks: Record<string, DayMarks>): AttendanceSummary {
   const today = new Date().toISOString().slice(0, 10);
   const letivos = Object.keys(days).filter((iso) => iso.startsWith(String(year)) && iso <= today && isLetivo(String(days[iso]?.type || ''))).sort();
-  const universe = letivos.length ? letivos : Object.keys(marks).filter((iso) => iso.startsWith(String(year)) && iso <= today).sort();
+  const marked = Object.keys(marks).filter((iso) => iso.startsWith(String(year)) && iso <= today);
+  const universe = [...new Set([...letivos, ...marked])].sort();
   const months = new Map<string, MonthStat>();
   let present = 0;
   let absent = 0;
@@ -326,6 +348,19 @@ function summarize(year: number, days: Record<string, {type?: string}>, marks: R
     months.set(key, row);
   }
   const total = universe.length;
+  const dayViews = Object.keys(marks)
+    .filter((iso) => iso.startsWith(String(year)) && (marks[iso]?.entrada?.status || marks[iso]?.saida?.status))
+    .sort((a, b) => b.localeCompare(a))
+    .map((iso) => {
+      const entrada = marks[iso]?.entrada?.status || null;
+      const saida = marks[iso]?.saida?.status || null;
+      return {
+        date: iso,
+        entrada: phaseView(entrada),
+        saida: phaseView(saida),
+        consolidado: consolidatedView(entrada, saida),
+      };
+    });
   return {
     percentage: total ? Math.round((present / total) * 100) : 0,
     present,
@@ -333,6 +368,7 @@ function summarize(year: number, days: Record<string, {type?: string}>, marks: R
     justified,
     total,
     history: [...months.values()].sort((a, b) => b.key.localeCompare(a.key)),
+    days: dayViews,
   };
 }
 

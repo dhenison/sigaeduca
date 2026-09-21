@@ -29,7 +29,13 @@
   function fetchInformativos(studentId) {
     var sb = getClient();
     if (!sb || !studentId) return Promise.resolve([]);
-    return sb.rpc('student_portal_informativos', { p_student_id: studentId })
+    var token = '';
+    try {
+      var session = JSON.parse(localStorage.getItem('siga_session') || 'null');
+      token = (session && session.portalToken) || '';
+    } catch (e) { token = ''; }
+    if (!token) return Promise.resolve([]);
+    return sb.rpc('student_portal_informativos', { p_student_id: studentId, p_token: token })
       .then(function (res) {
         if (res.error) {
           console.warn('[Portal] informativos:', res.error.message);

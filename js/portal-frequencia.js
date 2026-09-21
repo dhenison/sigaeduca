@@ -389,6 +389,12 @@
       .rpc("student_portal_attendance_day", {
         p_student_id: student.id,
         p_day_date: dateIso,
+        p_token: (function () {
+          try {
+            var s = JSON.parse(localStorage.getItem("siga_session") || "null");
+            return (s && s.portalToken) || "";
+          } catch (e) { return ""; }
+        })(),
       })
       .then(function (res) {
         if (res.error || !res.data) return null;
@@ -453,6 +459,12 @@
         p_student_id: student.id,
         p_from: fromIso,
         p_to: toIso,
+        p_token: (function () {
+          try {
+            var s = JSON.parse(localStorage.getItem("siga_session") || "null");
+            return (s && s.portalToken) || "";
+          } catch (e) { return ""; }
+        })(),
       })
       .then(function (res) {
         if (res.error || !res.data || !res.data.days) {

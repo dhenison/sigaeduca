@@ -133,7 +133,7 @@
       return Promise.resolve(findStudentForSession(session));
     }
     return sb
-      .rpc("student_portal_profile", { p_student_id: session.id })
+      .rpc("student_portal_profile", { p_student_id: session.id, p_token: session.portalToken || "" })
       .then(function (res) {
         if (res.error || !res.data) return findStudentForSession(session);
         var local = studentFromPortalPayload(res.data);

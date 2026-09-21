@@ -324,7 +324,8 @@
                     email: normEmail(local.email),
                     role: 'Aluno',
                     schoolId: local.schoolId || null,
-                    authProvider: 'students'
+                    authProvider: 'students',
+                    portalToken: payload.portal_token || ''
                 });
                 try { localStorage.setItem('siga_portal_aluno_id', String(local.id)); } catch (e3) { /* ignore */ }
                 toast('Bem-vindo(a), ' + (local.nome || 'aluno') + '!');
