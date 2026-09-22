@@ -43,5 +43,12 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .report-actions .view{background:#0844b2;color:#fff}
 .report-actions .download{background:#e7f0ff;color:#0844b2}
 .report-actions button{background:#e7f0ff;color:#45618b}
+.call-toggle{width:100%;min-height:54px;border-radius:16px;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;margin:0 0 10px;text-align:left}
+.call-toggle.pending{background:#c62828}
+.call-toggle.done{background:#1b7f4a;opacity:1;cursor:default}
+.call-done,.call-wait{border-radius:12px;padding:12px 14px;font-size:13px;font-weight:650;line-height:1.4}
+.call-done{background:#e7f6ec;color:#146c3a}
+.call-wait{background:#fde8e8;color:#9f1d1d}
+.roll-slot{margin-bottom:12px}
 .notice-text{white-space:pre-wrap}
 .notice-image{display:block;width:100%;max-height:420px;object-fit:contain;border-radius:16px;margin:12px 0;background:#f4f8fd}
