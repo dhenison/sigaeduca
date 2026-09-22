@@ -28,6 +28,8 @@ export interface Notice {
   title: string;
   date: string;
   content: string;
+  image?: string;
+  layout?: string;
 }
 export interface MonthStat {
   label: string;
@@ -239,7 +241,9 @@ async function loadNotices(studentId: string): Promise<Notice[]> {
     id: String(item.id || item.title),
     title: item.title || 'Aviso',
     date: String(item.published_at || '').slice(0, 10) || new Date().toISOString().slice(0, 10),
-    content: item.body_text || (item.image_data ? 'Informativo com imagem.' : ''),
+    content: item.body_text || '',
+    image: item.image_data || '',
+    layout: item.layout || 'texto_imagem',
   }));
 }
 

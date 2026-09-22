@@ -43,3 +43,5 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .report-actions .view{background:#0844b2;color:#fff}
 .report-actions .download{background:#e7f0ff;color:#0844b2}
 .report-actions button{background:#e7f0ff;color:#45618b}
+.notice-text{white-space:pre-wrap}
+.notice-image{display:block;width:100%;max-height:420px;object-fit:contain;border-radius:16px;margin:12px 0;background:#f4f8fd}
