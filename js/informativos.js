@@ -1,6 +1,6 @@
 /**
  * SIGA EDUCA — Informativos do Portal do Aluno (Gestão Escolar)
- * Admin cria/edita; alunos apenas visualizam no portal.
+ * Admin cria/edita; o destino escolhe aluno, professor ou ambos.
  */
 (function (global) {
   'use strict';
@@ -240,6 +240,7 @@
           image_data: item.imageData || null,
           layout: item.layout || 'texto_imagem',
           audience: item.audience || 'todos',
+          destinatario: item.destinatario || 'alunos',
           class_codes: item.classCodes || [],
           status: item.status || 'publicado',
           published_at: item.publishedAt || null,
@@ -290,6 +291,7 @@
       imageData: row.image_data || '',
       layout: row.layout || 'texto_imagem',
       audience: row.audience || 'todos',
+      destinatario: row.destinatario || 'alunos',
       classCodes: Array.isArray(row.class_codes) ? row.class_codes : [],
       status: row.status || 'publicado',
       publishedAt: row.published_at || null,
@@ -374,7 +376,10 @@
         '<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ' + badge + '">' +
         escapeHtml(statusLabel(item.status)) + '</span></div>' +
         '<p class="text-label-md text-text-secondary mt-1">' + escapeHtml(layoutLabel(item.layout)) +
-        ' · ' + (item.audience === 'turmas' ? ('Turmas: ' + escapeHtml((item.classCodes || []).join(', ') || '—')) : 'Todos os alunos') +
+        ' · ' + escapeHtml(destinoLabel(item.destinatario)) +
+        (item.destinatario !== 'professores' && item.audience === 'turmas'
+          ? (' · Turmas: ' + escapeHtml((item.classCodes || []).join(', ') || '—'))
+          : '') +
         '</p>' +
         '<p class="text-[11px] text-text-secondary mt-1">' + escapeHtml(item.createdBy || '') +
         ' · ' + escapeHtml(formatDateBr(item.publishedAt || item.createdAt)) + '</p>' +
@@ -437,6 +442,7 @@
     document.getElementById('inf-body').value = item ? (item.bodyText || '') : '';
     document.getElementById('inf-layout').value = item ? (item.layout || 'texto_imagem') : 'texto_imagem';
     document.getElementById('inf-status').value = item ? (item.status || 'publicado') : 'publicado';
+    document.getElementById('inf-destino').value = item ? (item.destinatario || 'alunos') : 'alunos';
     document.getElementById('inf-audience').value = item ? (item.audience || 'todos') : 'todos';
     document.getElementById('inf-expires').value = item && item.expiresAt
       ? String(item.expiresAt).slice(0, 16)
@@ -479,11 +485,27 @@
     }
   }
 
+  function destinoLabel(value) {
+    if (value === 'professores') return 'Professores';
+    if (value === 'ambos') return 'Alunos e professores';
+    return 'Alunos';
+  }
+
+  function destinoValue() {
+    var el = document.getElementById('inf-destino');
+    var value = el ? String(el.value || 'alunos') : 'alunos';
+    return value === 'professores' || value === 'ambos' ? value : 'alunos';
+  }
+
   function toggleAudienceUi() {
+    var destino = destinoValue();
     var aud = document.getElementById('inf-audience');
     var wrap = document.getElementById('inf-turmas-wrap');
-    if (!aud || !wrap) return;
-    wrap.classList.toggle('hidden', aud.value !== 'turmas');
+    var audienceWrap = document.getElementById('inf-audience-wrap');
+    var forStudents = destino !== 'professores';
+    if (audienceWrap) audienceWrap.classList.toggle('hidden', !forStudents);
+    if (!forStudents && aud) aud.value = 'todos';
+    if (wrap) wrap.classList.toggle('hidden', !forStudents || !aud || aud.value !== 'turmas');
   }
 
   function collectClassCodes() {
@@ -505,7 +527,10 @@
     var bodyText = String((document.getElementById('inf-body') || {}).value || '').trim();
     var layout = String((document.getElementById('inf-layout') || {}).value || 'texto_imagem');
     var status = String((document.getElementById('inf-status') || {}).value || 'publicado');
-    var audience = String((document.getElementById('inf-audience') || {}).value || 'todos');
+    var destinatario = destinoValue();
+    var audience = destinatario === 'professores'
+      ? 'todos'
+      : String((document.getElementById('inf-audience') || {}).value || 'todos');
     var expiresRaw = String((document.getElementById('inf-expires') || {}).value || '').trim();
     var classCodes = audience === 'turmas' ? collectClassCodes() : [];
 
@@ -544,6 +569,7 @@
       imageData: pendingImageData || '',
       layout: layout,
       audience: audience,
+      destinatario: destinatario,
       classCodes: classCodes,
       status: status,
       publishedAt: status === 'publicado'
@@ -594,7 +620,7 @@
   }
 
   function removeItem(id) {
-    if (!confirm('Excluir este informativo? Ele deixará de aparecer no portal do aluno.')) return;
+    if (!confirm('Excluir este informativo? Ele deixará de aparecer no aplicativo.')) return;
     saveList(getList().filter(function (x) { return x.id !== id; }));
     renderList();
     deleteCloud(id).then(function (res) {
@@ -617,6 +643,8 @@
 
     var aud = document.getElementById('inf-audience');
     if (aud) aud.addEventListener('change', toggleAudienceUi);
+    var destino = document.getElementById('inf-destino');
+    if (destino) destino.addEventListener('change', toggleAudienceUi);
 
     var filter = document.getElementById('inf-filter-status');
     if (filter) filter.addEventListener('change', renderList);

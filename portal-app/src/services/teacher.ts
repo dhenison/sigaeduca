@@ -238,9 +238,10 @@ async function loadEvents(schoolId: string): Promise<SchoolEvent[]> {
 
 async function loadNotices(schoolId: string): Promise<Notice[]> {
   if (!schoolId) return [];
-  const res = await sb().from('portal_informativos').select('local_id,title,body_text,published_at,status').eq('school_id', schoolId).eq('status', 'publicado').order('published_at', {ascending: false}).limit(50);
+  const res = await sb().from('portal_informativos').select('local_id,title,body_text,published_at,expires_at,status,destinatario').eq('school_id', schoolId).eq('status', 'publicado').in('destinatario', ['professores', 'ambos']).order('published_at', {ascending: false}).limit(50);
   if (res.error || !res.data) return [];
-  return res.data.map((item) => ({
+  const now = Date.now();
+  return res.data.filter((item) => !item.expires_at || new Date(String(item.expires_at)).getTime() > now).map((item) => ({
     id: String(item.local_id || item.title),
     title: item.title || 'Aviso',
     date: String(item.published_at || '').slice(0, 10) || new Date().toISOString().slice(0, 10),
