@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import {Icon,Ring,Empty} from '../components/UI';
 import {usePortal} from '../services/portal';
-import {loadAttendanceYear,openReport,type AttendanceSummary,type Notice,type SchoolEvent} from '../services/siga';
+import {clearSession,fetchReportFile,loadAttendanceYear,type AttendanceSummary,type Notice,type SchoolEvent} from '../services/siga';
 import {Navigate} from './Home';
 const fmt=(value:string)=>new Date(value+'T12:00:00').toLocaleDateString('pt-BR',{day:'numeric',month:'long'});
 const monthTag=(value:string)=>new Date(value+'T12:00:00').toLocaleDateString('pt-BR',{month:'short'}).replace('.','');
@@ -12,7 +12,41 @@ function emptyDay(date:string){const blank={code:null as string|null,label:'Sem 
 export function Attendance({detail}:{detail:(title:string,body:React.ReactNode)=>void}){const {data}=usePortal();const [year,setYear]=useState(new Date().getFullYear());const [day,setDay]=useState(()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`});const [stats,setStats]=useState<AttendanceSummary|null>(data?.attendance||null);useEffect(()=>{if(!data)return;if(year===new Date().getFullYear()){setStats(data.attendance);return}let on=true;loadAttendanceYear(data.student,year).then(next=>{if(on)setStats(next)});return()=>{on=false}},[year,data]);if(!stats)return null;const selected=(stats.days||[]).find(item=>item.date===day)||emptyDay(day);const changeYear=(next:number)=>{setYear(next);setDay(current=>current.startsWith(String(next))?current:`${next}-01-01`)};return <div className="narrow"><Year value={year} set={changeYear}/>{stats.total>0&&<section className="surface padded attendance"><Ring value={stats.percentage}/><div className="stats"><div><b>{stats.present}</b><span>Presenças</span></div><div><b>{stats.absent}</b><span>Faltas</span></div><div><b>{stats.justified}</b><span>Justificadas</span></div></div><div className="total">Total de aulas <b>{stats.total}</b></div></section>}<label className="date-filter surface"><span>Data da chamada</span><input type="date" value={day} onChange={event=>{const value=event.target.value;if(!value)return;setDay(value);const next=Number(value.slice(0,4));if(next&&next!==year)setYear(next)}}/></label><article className="surface call-day"><h3>{fmt(day)}</h3>{([['Entrada',selected.entrada],['Saída',selected.saida],['Dia consolidado',selected.consolidado]] as const).map(([name,phase])=><div className="call-phase" key={name}><span>{name}</span><b className={`badge ${phaseTone(phase.code)}`}>{phase.label}{phase.time?` · ${phase.time}`:''}</b></div>)}</article>{stats.history.length>0&&<><h2 className="section-title">Histórico</h2><section className="surface">{stats.history.map(m=><button className="list-row" key={m.key} onClick={()=>detail(`Frequência · ${m.label}`,<><Ring value={m.value}/><div className="stats"><div><b>{m.present}</b><span>Presenças</span></div><div><b>{m.absent}</b><span>Faltas</span></div><div><b>{m.justified}</b><span>Justificadas</span></div></div></>)}><b>{m.label}</b><span>{m.value}%</span><Icon name="next"/></button>)}</section></>}</div>}
 function Year({value,set}:{value:number;set:(n:number)=>void}){return <div className="selector surface"><button aria-label="Ano anterior" onClick={()=>set(value-1)}><Icon name="back"/></button><b>Ano letivo {value}</b><button aria-label="Próximo ano" onClick={()=>set(value+1)}><Icon name="next"/></button></div>}
 const REPORT_YEAR=2026;
-export function Reports({detail}:{detail:(title:string,body:React.ReactNode)=>void}){const {data}=usePortal();const reports=(data?.reports||[]).filter(r=>r.ano===REPORT_YEAR);const items=reports.length?reports:[{bimestre:0,label:'Boletim',ano:REPORT_YEAR,published:false,id:undefined as string|undefined,fileName:undefined as string|undefined}];return <div className="narrow"><div className="selector surface year-lock"><b>Ano letivo 2026</b></div>{items.map(n=>{const title=n.label||'Boletim';return <button className="surface report-item" key={n.id||title} onClick={()=>{if(n.published&&n.id){openReport(n.id).then(ok=>{if(!ok)detail(title,<Empty title="Não foi possível abrir o boletim." description="Peça à escola para publicar o arquivo novamente."/>)});return}detail(title,<Empty title="Seu boletim ainda não foi publicado." description="O boletim oficial aparece aqui quando a escola enviar."/>)}}><div className={`icon-box ${n.published?'green':'gray'}`}><Icon name="report"/></div><div><h3>{title}</h3><span className={`badge ${n.published?'green':'red'}`}>{n.published?'Publicado':'Não publicado'}</span><p>{n.fileName|| (n.published?'Toque para abrir o PDF':'Aguardando a escola')}</p></div><Icon name="next"/></button>})}<div className="info"><Icon name="about"/>Boletim do ano letivo de 2026, quando a escola publicar.</div></div>}
+export function Reports({detail}:{detail:(title:string,body:React.ReactNode)=>void}){
+  const {data}=usePortal();
+  const reports=(data?.reports||[]).filter(item=>item.ano===REPORT_YEAR&&item.published&&item.id);
+  const key=reports.map(item=>item.id).join('|');
+  const [files,setFiles]=useState<Record<string,{url:string;name:string}>>({});
+  const [failed,setFailed]=useState(false);
+  useEffect(()=>{
+    let alive=true;
+    const created:string[]=[];
+    if(!key){setFiles({});setFailed(false);return}
+    setFailed(false);
+    Promise.all(reports.map(async item=>{
+      const file=await fetchReportFile(String(item.id));
+      if(!file)return null;
+      const url=URL.createObjectURL(file.blob);
+      created.push(url);
+      return [String(item.id),{url,name:item.fileName||'Boletim.pdf'}] as const;
+    })).then(rows=>{
+      if(!alive){created.forEach(url=>URL.revokeObjectURL(url));return}
+      const next:Record<string,{url:string;name:string}>={};
+      rows.forEach(row=>{if(row)next[row[0]]=row[1]});
+      setFiles(next);
+      setFailed(!Object.keys(next).length);
+    });
+    return()=>{alive=false;created.forEach(url=>URL.revokeObjectURL(url))};
+  },[key]);
+  if(!data?.portalLive&&!reports.length)return <div className="narrow"><div className="selector surface year-lock"><b>Ano letivo 2026</b></div><section className="surface padded"><Empty title="Entre novamente para ver o boletim." description="O arquivo publicado pela escola aparece depois do acesso do aluno."/><button className="text-button" onClick={()=>{clearSession();location.replace('/login.html')}}>Entrar novamente</button></section></div>;
+  if(!reports.length)return <div className="narrow"><div className="selector surface year-lock"><b>Ano letivo 2026</b></div><section className="surface report-card"><div className="icon-box gray"><Icon name="report"/></div><div><h3>Boletim</h3><span className="badge red">Não publicado</span><p>Aguardando a escola</p></div></section><div className="info"><Icon name="about"/>O boletim de 2026 aparece aqui quando a escola publicar.</div></div>;
+  return <div className="narrow"><div className="selector surface year-lock"><b>Ano letivo 2026</b></div>{reports.map(item=>{
+    const title=item.label||'Boletim';
+    const file=item.id?files[item.id]:undefined;
+    return <article className="surface report-card" key={item.id}><div className="icon-box green"><Icon name="report"/></div><div><h3>{title}</h3><span className="badge green">Publicado</span><p>{item.fileName||'Boletim.pdf'}</p><div className="report-actions">{file?<><a className="view" href={file.url} target="_blank" rel="noopener noreferrer">Ver</a><a className="download" href={file.url} download={file.name}>Baixar</a></>:<button type="button" disabled>{failed?'Não foi possível abrir':'Preparando arquivo...'}</button>}</div></div></article>;
+  })}{failed&&<div className="info"><Icon name="about"/>Não foi possível abrir o arquivo. Puxe a tela para atualizar ou entre novamente.</div>}</div>;
+}
+
 export function Notices({read,onRead,items}:{read:string[];onRead:(id:string)=>void;items?:Notice[]}){const {data}=usePortal();const notices=items||data?.notices||[];if(!notices.length)return <Empty title="Nenhum informe no momento." description="Os comunicados da escola aparecerão aqui."/>;return <div className="notice-list">{notices.map(n=><article className="surface padded" key={n.id}><div className="notice-meta"><span>{fmt(n.date)}</span><span className={`badge ${read.includes(n.id)?'gray':'purple'}`}>{read.includes(n.id)?'Lido':'Novo'}</span></div><h2>{n.title}</h2><p>{n.content}</p><button className="text-button" disabled={read.includes(n.id)} onClick={()=>onRead(n.id)}><Icon name="check"/>{read.includes(n.id)?'Informe lido':'Marcar como lido'}</button></article>)}</div>}
 export function Occurrences(){const {data}=usePortal();const list=data?.occurrences||[];if(!list.length)return <section className="surface"><Empty title="Nenhuma ocorrência registrada." description="Seus registros e acompanhamentos aparecerão aqui."/></section>;return <section className="surface">{list.map(o=><article className="list-row" key={o.id}><div><b>{o.tipo}</b><p>{o.descricao||o.status}</p><small>{o.data?fmt(o.data):''} · {o.status}</small></div></article>)}</section>}
 const SCHEDULE_DRIVE_URL='https://drive.google.com/drive/folders/139yVJOFPzcaIfSxRuaK8MI22-W5OHpxI';

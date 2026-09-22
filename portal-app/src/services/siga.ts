@@ -82,6 +82,7 @@ export interface PortalSnapshot {
   occurrences: OccurrenceItem[];
   agenda: SchoolEvent[];
   quote: {text: string; author: string};
+  portalLive: boolean;
 }
 
 interface Session {
@@ -194,7 +195,7 @@ function localStudent(id: string) {
   return list.find((s) => String(s.id) === String(id)) || null;
 }
 
-async function loadProfile(session: Session): Promise<Student | null> {
+async function loadProfile(session: Session): Promise<{student: Student | null; portalLive: boolean}> {
   const local = localStudent(String(session.id));
   let row: Record<string, string | number | null> | null = null;
   if (/^[0-9a-f-]{36}$/i.test(String(session.id))) {
@@ -203,7 +204,7 @@ async function loadProfile(session: Session): Promise<Student | null> {
       : {error: null, data: null};
     if (!res.error && res.data) row = res.data as Record<string, string | number | null>;
   }
-  if (!row && !local) return null;
+  if (!row && !local) return {student: null, portalLive: false};
   const schoolId = String(row?.school_id || local?.schoolId || session.schoolId || '');
   let school = '';
   try {
@@ -214,7 +215,7 @@ async function loadProfile(session: Session): Promise<Student | null> {
     if (!sch.error && sch.data?.nome) school = String(sch.data.nome);
   }
   const status = String(row?.status || local?.status || 'Ativo');
-  return {
+  return {portalLive: !!row, student: {
     id: String(row?.id || local?.id || session.id),
     name: String(row?.nome || local?.nome || session.nome || 'Aluno'),
     email: String(row?.email || local?.email || session.email || ''),
@@ -225,7 +226,7 @@ async function loadProfile(session: Session): Promise<Student | null> {
     avatarUrl: String(row?.avatar_url || local?.avatar || '') || undefined,
     status,
     schoolId,
-  };
+  }};
 }
 
 async function loadNotices(studentId: string): Promise<Notice[]> {
@@ -382,12 +383,21 @@ function summarize(year: number, days: Record<string, {type?: string}>, marks: R
   };
 }
 
+function reportRows(data: unknown): Array<Record<string, string>> {
+  let value = data;
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value); } catch { return []; }
+  }
+  return Array.isArray(value) ? value as Array<Record<string, string>> : [];
+}
+
 async function loadReports(student: Student, year: number): Promise<ReportItem[]> {
-  const token = readSession()?.portalToken || '';
-  if (token && /^[0-9a-f-]{36}$/i.test(student.id)) {
-    const res = await sb().rpc('student_portal_reports', {p_student_id: student.id, p_token: token});
-    const rows = Array.isArray(res.data) ? res.data as Array<Record<string, string>> : [];
-    const published = rows.filter((row) => Number(row.year_label) === year || String(row.year_label) === String(year));
+  const session = readSession();
+  const token = session?.portalToken || '';
+  const studentId = String(session?.id || student.id || '');
+  if (token && /^[0-9a-f-]{36}$/i.test(studentId)) {
+    const res = await sb().rpc('student_portal_reports', {p_student_id: studentId, p_token: token});
+    const published = reportRows(res.data).filter((row) => String(row.year_label) === String(year));
     if (published.length) {
       return published.map((row) => ({
         bimestre: 0,
@@ -395,7 +405,7 @@ async function loadReports(student: Student, year: number): Promise<ReportItem[]
         ano: year,
         published: true,
         id: row.id,
-        fileName: row.file_name,
+        fileName: row.file_name || 'Boletim.pdf',
       }));
     }
   }
@@ -403,13 +413,14 @@ async function loadReports(student: Student, year: number): Promise<ReportItem[]
 }
 
 function pdfBlobFromBase64(value: string) {
-  const binary = atob(value);
+  const clean = String(value || '').replace(/^data:application\/pdf;base64,/i, '').replace(/\s/g, '');
+  const binary = atob(clean);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return new Blob([bytes], {type: 'application/pdf'});
 }
 
-export async function openReport(id: string) {
+export async function fetchReportFile(id: string): Promise<{blob: Blob; fileName: string} | null> {
   const session = readSession();
   if (session?.portalToken && /^[0-9a-f-]{36}$/i.test(id) && /^[0-9a-f-]{36}$/i.test(String(session.id || ''))) {
     const res = await sb().rpc('student_portal_report_pdf', {
@@ -418,11 +429,17 @@ export async function openReport(id: string) {
       p_card_id: id,
     });
     const payload = typeof res.data === 'string' ? res.data : '';
-    if (payload) {
-      const url = URL.createObjectURL(pdfBlobFromBase64(payload));
-      window.open(url, '_blank');
-      return true;
-    }
+    if (payload) return {blob: pdfBlobFromBase64(payload), fileName: 'Boletim.pdf'};
+  }
+  return null;
+}
+
+export async function openReport(id: string) {
+  const file = await fetchReportFile(id);
+  if (file) {
+    const url = URL.createObjectURL(file.blob);
+    window.open(url, '_blank');
+    return true;
   }
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open('siga_boletins_db', 1);
@@ -458,7 +475,8 @@ function loadOccurrences(student: Student): OccurrenceItem[] {
 export async function loadPortal(year = new Date().getFullYear()): Promise<PortalSnapshot | null> {
   const session = readSession();
   if (!session) return null;
-  const student = await loadProfile(session);
+  const profile = await loadProfile(session);
+  const student = profile.student;
   if (!student || student.status === 'Transferido') {
     clearSession();
     return null;
@@ -484,6 +502,7 @@ export async function loadPortal(year = new Date().getFullYear()): Promise<Porta
     occurrences: loadOccurrences(student),
     agenda,
     quote: quoteOfDay(),
+    portalLive: profile.portalLive,
   };
 }
 

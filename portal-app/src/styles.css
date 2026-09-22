@@ -34,3 +34,12 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .photo-actions{display:flex;gap:8px;margin:14px 0 8px}
 .photo-actions button{flex:1;border:1px solid #07419c;color:#07419c;border-radius:12px;min-height:44px;font-size:13px;font-weight:700}
 .file-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.report-card{display:flex;align-items:flex-start;gap:15px;padding:20px 16px;margin-bottom:14px}
+.report-card>div:last-child{flex:1;min-width:0}
+.report-card h3{font-size:15px;margin-bottom:7px}
+.report-card p{font-size:12px;margin-bottom:0}
+.report-actions{display:flex;gap:8px;margin-top:12px;width:100%}
+.report-actions a,.report-actions button{flex:1;min-height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;text-decoration:none}
+.report-actions .view{background:#0844b2;color:#fff}
+.report-actions .download{background:#e7f0ff;color:#0844b2}
+.report-actions button{background:#e7f0ff;color:#45618b}
