@@ -260,6 +260,26 @@ export function youtubeId(url?: string) {
   return match ? match[1] : '';
 }
 
+export function openYoutube(url?: string) {
+  const id = youtubeId(url);
+  if (!id) return;
+  const watch = `https://www.youtube.com/watch?v=${id}`;
+  const ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) {
+    window.location.href = `intent://www.youtube.com/watch?v=${id}#Intent;package=com.google.android.youtube;scheme=https;S.browser_fallback_url=${encodeURIComponent(watch)};end`;
+    return;
+  }
+  if (/iPhone|iPad|iPod/i.test(ua)) {
+    const started = Date.now();
+    window.location.href = `youtube://www.youtube.com/watch?v=${id}`;
+    window.setTimeout(() => {
+      if (document.visibilityState === 'visible' && Date.now() - started < 2000) window.location.href = watch;
+    }, 900);
+    return;
+  }
+  window.open(watch, '_blank', 'noopener');
+}
+
 async function loadCalendar(schoolId: string) {
   const local = readJson<Record<string, {type?: string; label?: string}>>('siga_calendar_days', {});
   if (!schoolId) return local;

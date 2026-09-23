@@ -57,8 +57,7 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .enem-card h3{font-size:16px}
 .enem-card p{font-size:12px;margin:4px 0 0}
 .enem-card>ion-icon{margin-left:auto}
-.lesson-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left}
-.lesson-head p{margin:4px 0 0;white-space:pre-wrap}
-.lesson-video{position:relative;width:100%;padding-top:56.25%;border-radius:16px;overflow:hidden;background:#111;margin-top:12px}
-.lesson-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.lesson-youtube{display:block;position:relative;margin-top:12px;border-radius:16px;overflow:hidden;background:#111}
+.lesson-youtube img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.lesson-youtube span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#e11d2e;color:#fff;font-weight:700;border-radius:999px;padding:10px 16px;font-size:14px;white-space:nowrap}
 @media(max-width:599px){.home-page .enem-card{margin-top:11px;padding:10px 14px;min-height:84px;gap:12px}.home-page .enem-card img{width:64px;height:64px}.home-page .enem-card p{font-size:11px}}

@@ -516,9 +516,8 @@
   }
 
   function toggleEnemFields() {
-    var box = document.getElementById('inf-enem');
     var fields = document.getElementById('inf-enem-fields');
-    if (fields) fields.classList.toggle('hidden', !(box && box.checked));
+    if (fields) fields.classList.remove('hidden');
   }
 
   function toggleAudienceUi() {
@@ -683,6 +682,13 @@
     if (destino) destino.addEventListener('change', toggleAudienceUi);
     var enemBox = document.getElementById('inf-enem');
     if (enemBox) enemBox.addEventListener('change', toggleEnemFields);
+    var videoInput = document.getElementById('inf-video');
+    if (videoInput) {
+      videoInput.addEventListener('input', function () {
+        var box = document.getElementById('inf-enem');
+        if (box && isYoutubeUrl(videoInput.value)) box.checked = true;
+      });
+    }
 
     var filter = document.getElementById('inf-filter-status');
     if (filter) filter.addEventListener('change', renderList);
