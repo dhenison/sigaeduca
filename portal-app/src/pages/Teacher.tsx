@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {IonApp, IonContent, IonLabel, IonModal, IonPage, IonRefresher, IonRefresherContent, IonSkeletonText, IonTabBar, IonTabButton, IonToast} from '@ionic/react';
-import {Brand, Empty, Icon, type IconName} from '../components/UI';
+import {Brand, Empty, Icon, Credit, type IconName} from '../components/UI';
 import {Calendar, Notices, Schedule} from './Academic';
 import {studentInitials} from '../services/siga';
 import {
@@ -120,7 +120,7 @@ export default function TeacherApp() {
     case 'olympics': content = <Olympics data={data} />; break;
     case 'profile': content = <TeacherProfile data={data} photo={photo} onPhoto={setPhoto} notify={setToast} />; break;
     case 'settings': content = <section className="surface padded"><h2>Aparência</h2><p>Escolha o tema do aplicativo.</p><div className="theme-options">{[['light', 'Claro'], ['dark', 'Escuro'], ['system', 'Sistema']].map(([value, label]) => <label key={value}><input type="radio" name="theme" checked={theme === value} onChange={() => setTheme(value)} />{label}</label>)}</div></section>; break;
-    case 'about': content = <section className="surface padded"><Brand label="Portal do Professor" /><h2>A chamada da turma em um só lugar.</h2><p>Portal do Professor · SIGA EDUCA</p><p>Versão 1.0</p></section>; break;
+    case 'about': content = <section className="surface padded"><Brand label="Portal do Professor" /><h2>A chamada da turma em um só lugar.</h2><p>Portal do Professor · SIGA EDUCA</p><p>Versão 1.0</p><Credit /></section>; break;
     default: content = <TeacherMore go={go} logout={logout} />;
   }
   return <IonApp><div className="app-viewport"><IonPage>

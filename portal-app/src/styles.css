@@ -66,5 +66,6 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .lesson-body{padding:0 16px 16px}
 .lesson-youtube{display:block;position:relative;margin-top:12px;border-radius:16px;overflow:hidden;background:#111}
 .lesson-youtube img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
-.lesson-youtube span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#e11d2e;color:#fff;font-weight:700;border-radius:999px;padding:10px 16px;font-size:14px;white-space:nowrap}
+.credit{font-size:13px;margin-top:14px}
+.credit a{color:#0844b2;font-weight:650;text-decoration:underline}
 @media(max-width:599px){.home-page .enem-card{margin-top:11px;padding:10px 14px;min-height:84px;gap:12px}.home-page .enem-card img{width:64px;height:64px}.home-page .enem-card p{font-size:11px}}
