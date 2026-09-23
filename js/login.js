@@ -739,15 +739,11 @@
             if (nomeEl) nomeEl.textContent = d.nome || 'Aluno';
             if (emailEl) emailEl.textContent = d.email || '—';
             if (senhaEl) {
-                senhaEl.textContent = d.senha || 'Senha enviada na planilha';
+                senhaEl.textContent = d.senha || '—';
                 senhaEl.dataset.real = d.senha ? '1' : '0';
             }
             var aviso = document.getElementById('rec-aluno-aviso');
-            if (aviso) {
-                aviso.textContent = d.senha
-                    ? 'Esta é a senha da planilha. O sistema não criou outra.'
-                    : 'O acesso continua com a senha da planilha. Nenhuma senha nova foi criada. Envie a planilha novamente em Alunos para ela aparecer aqui.';
-            }
+            if (aviso) aviso.classList.toggle('hidden', !d.senha);
             showRecoverStep('alunoCreds');
             var sec = window.SigaSecurity;
             if (sec && typeof sec.hashPassword === 'function' && d.senha && d.email) {
