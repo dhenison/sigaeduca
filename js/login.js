@@ -7,7 +7,7 @@
     var USERS_KEY = 'siga_users';
     var SESSION_KEY = 'siga_session';
 
-    var recoverTipo = 'servidor';
+    var recoverTipo = 'aluno';
     var pendingServidorId = null;
     var pendingAlunoId = null;
 
@@ -648,8 +648,7 @@
         var modal = document.getElementById('modal-recuperar');
         if (!modal) return;
         modal.classList.remove('hidden');
-        var typed = normEmail((document.getElementById('username') || {}).value);
-        setRecoverTipo(typed.endsWith(DOMAIN_ALUNO) ? 'aluno' : 'servidor');
+        recoverTipo = 'aluno';
         clearRecoverForms();
         showRecoverStep('form');
     }
@@ -706,34 +705,6 @@
     }
 
     function localizarAcesso() {
-        if (recoverTipo === 'servidor') {
-            var mat = String((document.getElementById('rec-matricula') || {}).value || '').trim();
-            var cpf = digits((document.getElementById('rec-cpf-serv') || {}).value);
-            var nasc = (document.getElementById('rec-nasc-serv') || {}).value;
-            if (!mat || cpf.length !== 11 || !parseBrDate(nasc)) {
-                toast('Informe Matrícula sem Vínculo, CPF e Data de Nascimento.', 'error');
-                return;
-            }
-            var users = getUsers();
-            var user = users.find(function (u) {
-                return String(u.matriculaSemVinculo || '').trim() === mat &&
-                    digits(u.cpf) === cpf &&
-                    sameDate(u.dataNascimento, nasc);
-            });
-            if (!user) {
-                toast('Servidor não encontrado. Verifique os dados informados.', 'error');
-                return;
-            }
-            pendingServidorId = user.id;
-            pendingAlunoId = null;
-            var emailEl = document.getElementById('rec-servidor-email');
-            if (emailEl) emailEl.textContent = user.email || ('—' + DOMAIN_SERVIDOR);
-            var nomeEl = document.getElementById('rec-servidor-nome');
-            if (nomeEl) nomeEl.textContent = user.nome || 'Servidor';
-            showRecoverStep('servidorSenha');
-            return;
-        }
-
         var cpfA = digits((document.getElementById('rec-cpf-aluno') || {}).value);
         if (cpfA.length !== 11) {
             toast('Informe o CPF completo.', 'error');
@@ -920,11 +891,6 @@
         var backdrop = document.getElementById('modal-recuperar-backdrop');
         if (closeBtn) closeBtn.addEventListener('click', closeRecoverModal);
         if (backdrop) backdrop.addEventListener('click', closeRecoverModal);
-
-        var tabS = document.getElementById('tab-servidor');
-        var tabA = document.getElementById('tab-aluno');
-        if (tabS) tabS.addEventListener('click', function () { setRecoverTipo('servidor'); });
-        if (tabA) tabA.addEventListener('click', function () { setRecoverTipo('aluno'); });
 
         var btnLoc = document.getElementById('btn-localizar-acesso');
         if (btnLoc) btnLoc.addEventListener('click', localizarAcesso);
