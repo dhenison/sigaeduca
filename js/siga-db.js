@@ -3171,8 +3171,10 @@ function pullOccurrencesFromCloud() {
         .order('occurrence_date', { ascending: false })
         .limit(300)
         .then(function (res) {
-            if (res.error || !res.data) return [];
-            return mergeCloudOccurrences(res.data);
+            if (res.error || !Array.isArray(res.data)) return [];
+            const local = res.data.map(cloudRowToLocalOcc);
+            localStorage.setItem('siga_occurrences', JSON.stringify(local));
+            return local;
         })
         .catch(function () { return []; });
 }
@@ -3213,6 +3215,58 @@ function pushEvasionToCloud(occ) {
 }
 
 window.pullOccurrencesFromCloud = pullOccurrencesFromCloud;
+
+function occurrenceRowFromLocal(occ, schoolId) {
+    const studentId = /^[0-9a-f-]{36}$/i.test(String(occ.alunoId || '')) ? occ.alunoId : null;
+    const turma = occ.turma && occ.turma !== '—' ? occ.turma : null;
+    const status = occ.status || 'Em Análise';
+    return {
+        school_id: schoolId,
+        student_id: studentId,
+        student_name: occ.student || occ.aluno || 'Aluno',
+        class_code: turma,
+        occurrence_type: occ.type || occ.tipo || 'Indisciplina',
+        status: status === 'Em Analise' ? 'Em Análise' : status,
+        description: occ.desc || occ.descricao || 'Registro',
+        occurrence_date: String(occ.date || occ.data || new Date().toISOString()).slice(0, 10),
+        occurrence_time: occ.hora && occ.hora !== '—' ? occ.hora : null,
+        registered_by_name: occ.prof || occ.usuario || null,
+        source: (occ.origem === 'automatica' || occ.source === 'frequencia') ? 'frequencia' : 'manual'
+    };
+}
+
+function pushOccurrencesToCloud(list) {
+    const sb = occurrenceCloudClient();
+    const schoolId = activeSchoolIdForOccurrences();
+    if (!sb || !schoolId) return Promise.resolve({ ok: false });
+    const jobs = (list || []).map(function (occ) {
+        const row = occurrenceRowFromLocal(occ, schoolId);
+        const id = String(occ.id || '');
+        if (/^[0-9a-f-]{36}$/i.test(id)) {
+            return sb.from('occurrences').update(row).eq('id', id).eq('school_id', schoolId);
+        }
+        return sb.from('occurrences').insert(row).select('id').maybeSingle().then(function (res) {
+            if (res.data && res.data.id) occ.id = res.data.id;
+            return res;
+        });
+    });
+    return Promise.all(jobs).then(function () {
+        localStorage.setItem('siga_occurrences', JSON.stringify(list || []));
+        return { ok: true };
+    });
+}
+
+function deleteOccurrenceFromCloud(id) {
+    const sb = occurrenceCloudClient();
+    const schoolId = activeSchoolIdForOccurrences();
+    if (!sb || !schoolId || !/^[0-9a-f-]{36}$/i.test(String(id || ''))) return Promise.resolve({ ok: true });
+    return sb.from('occurrences').delete().eq('school_id', schoolId).eq('id', id).then(function () {
+        return { ok: true };
+    });
+}
+
+window.pushOccurrencesToCloud = pushOccurrencesToCloud;
+window.deleteOccurrenceFromCloud = deleteOccurrenceFromCloud;
 window.pushEvasionToCloud = pushEvasionToCloud;
 
 function renderFichaOccurrences(student, skipCloud) {

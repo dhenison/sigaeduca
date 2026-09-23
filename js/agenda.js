@@ -58,7 +58,88 @@
 
   function saveEvents(list) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list || []));
+    syncAgendaCloud(list || []);
   }
+
+  function agendaClient() {
+    var api = window.SigaSupabase;
+    if (!api || typeof api.getClient !== 'function' || typeof api.isConfigured !== 'function' || !api.isConfigured()) return null;
+    return api.getClient();
+  }
+
+  function agendaSchoolId() {
+    try {
+      return localStorage.getItem('siga_active_school') || (JSON.parse(localStorage.getItem('siga_session') || 'null') || {}).schoolId || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function cloudEventToLocal(row) {
+    return {
+      id: row.local_id || row.id,
+      title: row.title || '',
+      type: row.event_type || 'Evento Escolar',
+      date: String(row.event_date || '').slice(0, 10),
+      desc: row.description || '',
+      scope: row.scope === 'turmas' ? 'turmas' : 'geral',
+      turmas: Array.isArray(row.class_codes) ? row.class_codes : []
+    };
+  }
+
+  function localEventToCloud(evt, schoolId) {
+    var allowed = ['Provas & Testes', 'Entrega de Trabalho', 'Reunião de Pais', 'Evento Escolar', 'Feriado / Recesso'];
+    var type = allowed.indexOf(evt.type) >= 0 ? evt.type : 'Evento Escolar';
+    var scope = evt.scope === 'turmas' && (evt.turmas || []).length ? 'turmas' : 'geral';
+    return {
+      school_id: schoolId,
+      local_id: String(evt.id),
+      title: evt.title || 'Evento',
+      event_type: type,
+      event_date: String(evt.date || '').slice(0, 10),
+      description: evt.desc || null,
+      scope: scope,
+      class_codes: scope === 'turmas' ? (evt.turmas || []) : []
+    };
+  }
+
+  function loadAgendaFromCloud() {
+    var sb = agendaClient();
+    var schoolId = agendaSchoolId();
+    if (!sb || !schoolId) return Promise.resolve(getEvents());
+    return sb.from('agenda_events')
+      .select('local_id,title,event_type,event_date,description,scope,class_codes')
+      .eq('school_id', schoolId)
+      .order('event_date', { ascending: true })
+      .then(function (res) {
+        if (res.error || !Array.isArray(res.data)) return getEvents();
+        var list = res.data.map(cloudEventToLocal).map(normalizeEvent);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        return list;
+      })
+      .catch(function () { return getEvents(); });
+  }
+
+  function syncAgendaCloud(list) {
+    var sb = agendaClient();
+    var schoolId = agendaSchoolId();
+    if (!sb || !schoolId) return Promise.resolve({ ok: false });
+    return sb.from('agenda_events').select('local_id').eq('school_id', schoolId).then(function (existing) {
+      var keep = {};
+      (list || []).forEach(function (evt) { keep[String(evt.id)] = true; });
+      var deletes = ((existing && existing.data) || []).filter(function (row) {
+        return row.local_id && !keep[row.local_id];
+      }).map(function (row) {
+        return sb.from('agenda_events').delete().eq('school_id', schoolId).eq('local_id', row.local_id);
+      });
+      var writes = (list || []).filter(function (evt) { return evt && evt.date && evt.title; }).map(function (evt) {
+        return sb.from('agenda_events').upsert(localEventToCloud(evt, schoolId), { onConflict: 'school_id,local_id' });
+      });
+      return Promise.all(deletes.concat(writes));
+    }).catch(function () { return { ok: false }; });
+  }
+
+  window.loadAgendaFromCloud = loadAgendaFromCloud;
 
   function normalizeEvent(evt) {
     var e = Object.assign({}, evt);
@@ -734,7 +815,7 @@
     if (typeof getClasses === 'function') getClasses();
     populateFilterTurmas();
     bindEvents();
-    renderAll();
+    loadAgendaFromCloud().then(function () { renderAll(); });
   }
 
   window.openNovaAtividadeAgenda = openNovaAtividade;

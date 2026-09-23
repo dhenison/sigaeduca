@@ -466,6 +466,68 @@
       .replace(/"/g, '&quot;');
   }
 
+  function cloudClient() {
+    var api = window.SigaSupabase;
+    if (!api || typeof api.getClient !== 'function' || typeof api.isConfigured !== 'function' || !api.isConfigured()) return null;
+    return api.getClient();
+  }
+
+  function activeSchoolId() {
+    try {
+      return localStorage.getItem('siga_active_school') || (JSON.parse(localStorage.getItem('siga_session') || 'null') || {}).schoolId || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function pullAgendaForDashboard() {
+    if (typeof window.loadAgendaFromCloud === 'function') return window.loadAgendaFromCloud();
+    var sb = cloudClient();
+    var schoolId = activeSchoolId();
+    if (!sb || !schoolId) return Promise.resolve();
+    return sb.from('agenda_events')
+      .select('local_id,title,event_type,event_date,description,scope,class_codes')
+      .eq('school_id', schoolId)
+      .then(function (res) {
+        if (res.error || !Array.isArray(res.data)) return;
+        var list = res.data.map(function (row) {
+          return {
+            id: row.local_id || row.id,
+            title: row.title || '',
+            type: row.event_type || '',
+            date: String(row.event_date || '').slice(0, 10),
+            desc: row.description || '',
+            scope: row.scope === 'turmas' ? 'turmas' : 'geral',
+            turmas: Array.isArray(row.class_codes) ? row.class_codes : []
+          };
+        });
+        localStorage.setItem('siga_agenda_events', JSON.stringify(list));
+      });
+  }
+
+  function pullSecretaryDocs() {
+    var sb = cloudClient();
+    var schoolId = activeSchoolId();
+    if (!sb || !schoolId) return Promise.resolve();
+    return sb.from('secretary_documents')
+      .select('id,protocolo,doc_type,status,student_name,issued_on')
+      .eq('school_id', schoolId)
+      .then(function (res) {
+        if (res.error || !Array.isArray(res.data)) return;
+        var list = res.data.map(function (row) {
+          return {
+            id: row.id,
+            protocolo: row.protocolo || '',
+            tipo: row.doc_type || '',
+            status: row.status || '',
+            aluno: row.student_name || '',
+            dataEmissao: row.issued_on || ''
+          };
+        });
+        localStorage.setItem('siga_documentos_secretaria', JSON.stringify(list));
+      });
+  }
+
   function initPainelPrincipal() {
     if (!document.getElementById('dash-kpi-alunos')) return;
 
@@ -488,9 +550,11 @@
     }
 
     renderAll();
-    if (typeof window.pullOccurrencesFromCloud === 'function') {
-      window.pullOccurrencesFromCloud().then(renderAll);
-    }
+    var cloudLoads = [];
+    if (typeof window.pullOccurrencesFromCloud === 'function') cloudLoads.push(window.pullOccurrencesFromCloud());
+    cloudLoads.push(pullAgendaForDashboard());
+    cloudLoads.push(pullSecretaryDocs());
+    Promise.all(cloudLoads).then(renderAll).catch(renderAll);
 
     // Após login de servidor, sincroniza alunos/turmas da escola ativa no Supabase
     var schoolApi = window.SigaSchoolData;

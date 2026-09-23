@@ -53,7 +53,7 @@ body.sidebar-collapsed aside#sidebar .nav-dropdown-menu { display: none !importa
 </style>
 <style id="fouc-styles">html { visibility: hidden; opacity: 0; } html.ready { visibility: visible; opacity: 1; transition: opacity 0.15s ease-in-out; }</style>
 <script id="fouc-prevention">(function(){document.addEventListener("DOMContentLoaded",()=>{document.documentElement.classList.add('ready');});window.addEventListener("load",()=>{document.documentElement.classList.add('ready');});})();</script>
-<script src="js/siga-config.js?v=20260921e"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260921e"></script><script src="js/siga-security.js?v=20260921e"></script><script src="js/siga-school-data.js?v=20260921e"></script><script src="js/siga-db.js?v=20260921e"></script>
+<script src="js/siga-config.js?v=20260921e"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260921e"></script><script src="js/siga-security.js?v=20260921e"></script><script src="js/siga-school-data.js?v=20260921e"></script><script src="js/siga-db.js?v=20260923e"></script>
 <script src="js/documentos-secretaria.js"></script>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -536,6 +536,7 @@ function saveOcorrencias() {
         };
     });
     localStorage.setItem('siga_occurrences', JSON.stringify(raw));
+    if (typeof window.pushOccurrencesToCloud === 'function') window.pushOccurrencesToCloud(raw);
 }
 
 function getTurmas() {
@@ -945,6 +946,7 @@ function submitOcorrencia(e) {
 
 function deleteOcorrencia(id) {
     if (!confirm('Tem certeza que deseja excluir esta ocorrência?')) return;
+    if (typeof window.deleteOccurrenceFromCloud === 'function') window.deleteOccurrenceFromCloud(id);
     ocorrencias = ocorrencias.filter(function(o) { return o.id !== id; });
     saveOcorrencias();
     renderTable();
