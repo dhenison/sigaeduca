@@ -202,7 +202,7 @@
 <input id="lembrar-me" class="w-4 h-4 rounded border-border-subtle text-primary focus:ring-primary transition-all" type="checkbox"/>
 <span class="font-label-md text-label-md text-text-secondary group-hover:text-on-surface whitespace-nowrap">Lembrar de mim</span>
 </label>
-<a id="link-esqueci-senha" class="font-label-md text-label-md text-primary hover:underline transition-all whitespace-nowrap" href="#">Esqueci minha senha</a>
+<a id="link-esqueci-senha" class="font-label-md text-label-md text-primary hover:underline transition-all whitespace-nowrap" href="#">Esqueceu a senha?</a>
 </div>
 <button class="w-full bg-primary-container hover:bg-primary text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-primary/10" type="submit">
 <span>Entrar na conta</span>
@@ -272,16 +272,10 @@
 </div>
 
 <div id="recover-form-aluno" class="space-y-4 hidden">
-<p class="text-sm text-text-secondary">Informe CPF e Data de Nascimento para localizar o acesso do aluno.</p>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<p class="text-sm text-text-secondary">Informe o CPF. A busca é feita no banco e mostra o nome completo, o e-mail institucional e a senha de acesso.</p>
 <div>
 <label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="rec-cpf-aluno">CPF</label>
-<input id="rec-cpf-aluno" style="font-size:16px" type="text" inputmode="numeric" class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="000.000.000-00"/>
-</div>
-<div>
-<label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="rec-nasc-aluno">Data de Nascimento</label>
-<input id="rec-nasc-aluno" style="font-size:16px" type="text" inputmode="numeric" class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="DD/MM/AAAA"/>
-</div>
+<input id="rec-cpf-aluno" style="font-size:16px" type="text" inputmode="numeric" autocomplete="off" class="w-full px-4 py-2.5 border border-border-subtle rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="000.000.000-00"/>
 </div>
 </div>
 
@@ -322,11 +316,11 @@ Fazer sua senha
 <p id="rec-aluno-email" class="font-mono text-sm font-semibold text-on-surface break-all mt-0.5">—</p>
 </div>
 <div>
-<p class="text-[11px] font-bold uppercase text-text-secondary">Senha gerada</p>
+<p class="text-[11px] font-bold uppercase text-text-secondary">Senha</p>
 <p id="rec-aluno-senha" class="font-mono text-sm font-semibold text-on-surface mt-0.5">—</p>
 </div>
 </div>
-<p class="text-sm text-text-secondary">Use este e-mail e senha para acessar somente o <strong>Portal do Aluno</strong>.</p>
+<p class="text-sm text-text-secondary">Esta senha vale agora para entrar no portal. Anote antes de fechar esta janela.</p>
 <button type="button" id="btn-usar-creds-aluno" class="w-full py-3.5 rounded-xl bg-primary text-white font-bold hover:bg-[#005228] transition-colors">
 Usar no login
 </button>
@@ -351,5 +345,5 @@ Usar no login
 <script src="js/siga-staff-data.js?v=20260921d"></script>
 <script src="js/siga-db.js?v=20260724x"></script>
 <script src="js/portal-aluno-app.js?v=20260724x"></script>
-<script src="js/login.js?v=20260923d"></script>
+<script src="js/login.js?v=20260923f"></script>
 </body></html>

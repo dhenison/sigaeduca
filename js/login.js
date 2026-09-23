@@ -382,7 +382,7 @@
                     ? window.SigaSupabase.getClient()
                     : null;
                 if (!sb || !sec || typeof sec.hashPassword !== 'function') {
-                    toast('Aluno não encontrado com este e-mail. Confirme o cadastro no SIGA EDUCA ou defina a senha em “Esqueci minha senha”.', 'error');
+                    toast('Aluno não encontrado com este e-mail. Confirme o cadastro no SIGA EDUCA ou use “Esqueceu a senha?”.', 'error');
                     return;
                 }
                 sec.hashPassword(senha).then(function (hashed) {
@@ -392,7 +392,7 @@
                     });
                 }).then(function (res) {
                     if (res.error || !res.data) {
-                        toast('Aluno não encontrado ou senha incorreta. Se for o primeiro acesso, use “Esqueci minha senha”.', 'error');
+                        toast('Aluno não encontrado ou senha incorreta. Se esqueceu a senha, use “Esqueceu a senha?”.', 'error');
                         return;
                     }
                     finishAlunoCloud(res.data);
@@ -648,7 +648,8 @@
         var modal = document.getElementById('modal-recuperar');
         if (!modal) return;
         modal.classList.remove('hidden');
-        setRecoverTipo('servidor');
+        var typed = normEmail((document.getElementById('username') || {}).value);
+        setRecoverTipo(typed.endsWith(DOMAIN_ALUNO) ? 'aluno' : 'servidor');
         clearRecoverForms();
         showRecoverStep('form');
     }
@@ -667,6 +668,8 @@
                 var el = document.getElementById(id);
                 if (el) el.value = '';
             });
+        var senhaAluno = document.getElementById('rec-aluno-senha');
+        if (senhaAluno) senhaAluno.textContent = '—';
     }
 
     function setRecoverTipo(tipo) {
@@ -683,6 +686,8 @@
         }
         if (formS) formS.classList.toggle('hidden', recoverTipo !== 'servidor');
         if (formA) formA.classList.toggle('hidden', recoverTipo !== 'aluno');
+        var btnLoc = document.getElementById('btn-localizar-acesso');
+        if (btnLoc) btnLoc.textContent = recoverTipo === 'aluno' ? 'Buscar pelo CPF' : 'Localizar Acesso';
         showRecoverStep('form');
     }
 
@@ -729,87 +734,62 @@
             return;
         }
 
-        // Aluno — localiza (local ou SIGA) e pede nova senha
         var cpfA = digits((document.getElementById('rec-cpf-aluno') || {}).value);
-        var nascA = (document.getElementById('rec-nasc-aluno') || {}).value;
-        var nascIso = parseBrDate(nascA);
-        if (cpfA.length !== 11 || !nascIso) {
-            toast('Informe CPF e Data de Nascimento.', 'error');
+        if (cpfA.length !== 11) {
+            toast('Informe o CPF completo.', 'error');
             return;
         }
-        var students = getStudents();
-        var aluno = students.find(function (s) {
-            return digits(s.cpf) === cpfA && sameDate(s.dataNascimento, nascA);
-        });
-
-        function openAlunoSenhaStep(found) {
-            if (typeof window.isStudentTransferred === 'function' && window.isStudentTransferred(found)) {
-                toast('Aluno transferido: acesso ao Portal do Aluno indisponível.', 'error');
-                return;
-            }
-            if (String(found.status || '') === 'Transferido') {
-                toast('Aluno transferido: acesso ao Portal do Aluno indisponível.', 'error');
-                return;
-            }
-            var email = ensureAlunoEmail(found);
-            pendingAlunoId = found.id;
-            pendingServidorId = null;
-            var list = getStudents();
-            var exists = list.some(function (s) { return String(s.id) === String(found.id); });
-            if (!exists) {
-                list.unshift(Object.assign({}, found, { email: email }));
-            } else {
-                list = list.map(function (s) {
-                    if (String(s.id) !== String(found.id)) return s;
-                    return Object.assign({}, s, { email: email, nome: found.nome || s.nome });
-                });
-            }
-            saveStudents(list);
-            var emailAlunoEl = document.getElementById('rec-aluno-email');
-            if (emailAlunoEl) emailAlunoEl.textContent = email;
-            var nomeAlunoEl = document.getElementById('rec-aluno-nome');
-            if (nomeAlunoEl) nomeAlunoEl.textContent = found.nome || 'Aluno';
-            var emailServ = document.getElementById('rec-servidor-email');
-            if (emailServ) emailServ.textContent = email;
-            var nomeServ = document.getElementById('rec-servidor-nome');
-            if (nomeServ) nomeServ.textContent = found.nome || 'Aluno';
-            showRecoverStep('servidorSenha');
-        }
-
-        if (aluno) {
-            openAlunoSenhaStep(aluno);
-            return;
-        }
-
         var sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
             ? window.SigaSupabase.getClient()
             : null;
         if (!sb) {
-            toast('Aluno não encontrado. Verifique os dados ou sincronize a escola no SIGA EDUCA.', 'error');
+            toast('Não foi possível consultar o banco agora. Tente novamente.', 'error');
             return;
         }
-        sb.rpc('student_lookup_by_identity', {
-            p_cpf: cpfA,
-            p_birth_date: nascIso
-        }).then(function (res) {
+        var btn = document.getElementById('btn-localizar-acesso');
+        if (btn) btn.disabled = true;
+        sb.rpc('student_recover_access_by_cpf', { p_cpf: cpfA }).then(function (res) {
+            if (btn) btn.disabled = false;
             if (res.error || !res.data) {
-                toast('Aluno não encontrado no SIGA EDUCA. Verifique CPF e data de nascimento.', 'error');
+                toast('Não foi possível consultar o banco. Tente novamente.', 'error');
                 return;
             }
             var d = res.data;
-            openAlunoSenhaStep({
-                id: d.id,
-                nome: d.nome || '',
-                email: d.email || '',
-                turma: d.turma || '',
-                avatar: d.avatar_url || '',
-                schoolId: d.school_id || null,
-                cpf: cpfA,
-                dataNascimento: nascIso,
-                precisaDefinirSenha: true
-            });
+            if (!d.ok) {
+                if (d.reason === 'limite') toast('Muitas tentativas para este CPF. Aguarde 30 minutos.', 'error');
+                else toast('Não encontramos um aluno ativo com esse CPF.', 'error');
+                return;
+            }
+            pendingAlunoId = null;
+            pendingServidorId = null;
+            var nomeEl = document.getElementById('rec-aluno-nome');
+            var emailEl = document.getElementById('rec-aluno-email');
+            var senhaEl = document.getElementById('rec-aluno-senha');
+            if (nomeEl) nomeEl.textContent = d.nome || 'Aluno';
+            if (emailEl) emailEl.textContent = d.email || '—';
+            if (senhaEl) senhaEl.textContent = d.senha || '—';
+            showRecoverStep('alunoCreds');
+            var sec = window.SigaSecurity;
+            if (sec && typeof sec.hashPassword === 'function' && d.senha && d.email) {
+                sec.hashPassword(d.senha).then(function (hashed) {
+                    var list = getStudents();
+                    var changed = false;
+                    list = list.map(function (s) {
+                        if (digits(s.cpf) !== cpfA && normEmail(s.email) !== normEmail(d.email)) return s;
+                        changed = true;
+                        return Object.assign({}, s, {
+                            senha: hashed,
+                            precisaDefinirSenha: false,
+                            email: d.email,
+                            nome: d.nome || s.nome
+                        });
+                    });
+                    if (changed) saveStudents(list);
+                });
+            }
         }).catch(function () {
-            toast('Falha ao consultar o SIGA EDUCA. Tente novamente.', 'error');
+            if (btn) btn.disabled = false;
+            toast('Não foi possível consultar o banco. Tente novamente.', 'error');
         });
     }
 
@@ -903,11 +883,14 @@
     }
 
     function usarCredenciaisAluno() {
-        var email = (document.getElementById('rec-aluno-email') || {}).textContent || '';
-        document.getElementById('username').value = email;
-        document.getElementById('password').value = '';
+        var email = String((document.getElementById('rec-aluno-email') || {}).textContent || '').trim();
+        var senha = String((document.getElementById('rec-aluno-senha') || {}).textContent || '').trim();
+        var user = document.getElementById('username');
+        var pass = document.getElementById('password');
+        if (user) user.value = email === '—' ? '' : email;
+        if (pass) pass.value = senha === '—' ? '' : senha;
         closeRecoverModal();
-        toast('E-mail preenchido. Informe a senha definida na recuperação.');
+        toast('E-mail e senha preenchidos. Toque em Entrar na conta.');
     }
 
     function bindUi() {
