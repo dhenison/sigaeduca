@@ -776,7 +776,12 @@
     if (contatoEl && student) contatoEl.textContent = student.contato || '—';
     var senhaEl = document.getElementById('ficha-senha');
     if (senhaEl && student) {
-      senhaEl.textContent = student.senha ? '•••••••• (definida)' : 'Não definida';
+      senhaEl.textContent = '—';
+      if (typeof window.loadStudentAccessPassword === 'function') {
+        window.loadStudentAccessPassword(student.id).then(function (senhaAcesso) {
+          if (senhaAcesso) senhaEl.textContent = senhaAcesso;
+        });
+      }
     }
   }
 

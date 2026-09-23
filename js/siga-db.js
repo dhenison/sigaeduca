@@ -1831,6 +1831,16 @@ async function saveSpreadsheetAccessPasswords(list) {
     return { ok: true, saved: saved };
 }
 
+function loadStudentAccessPassword(studentId) {
+    const sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
+        ? window.SigaSupabase.getClient()
+        : null;
+    if (!sb || !studentId) return Promise.resolve('');
+    return sb.rpc('student_view_access_password', { p_student_id: studentId }).then(function (res) {
+        return (res && typeof res.data === 'string') ? res.data : '';
+    }).catch(function () { return ''; });
+}
+
 function loadSheetJsLib() {
     return new Promise((resolve, reject) => {
         if (window.XLSX) return resolve(window.XLSX);
@@ -2027,10 +2037,13 @@ async function importAlunosFromFile(file) {
             }
         }
 
-        // A senha da planilha vira a senha de acesso no banco, antes de virar hash neste navegador.
-        try {
-            await saveSpreadsheetAccessPasswords(students);
-        } catch (eSave) { /* o hash local segue abaixo */ }
+        const senhasImportadas = [];
+        students.forEach(function (s) {
+            const senhaPlano = spreadsheetAccessPassword(s && s.senha);
+            if (!senhaPlano) return;
+            if (window.SigaSecurity && window.SigaSecurity.isHashedPassword(senhaPlano)) return;
+            senhasImportadas.push({ cpf: s.cpf, senha: senhaPlano });
+        });
 
         // Hash de senhas em claro antes de persistir (mitigação local até Supabase Auth)
         if (window.SigaSecurity && typeof window.SigaSecurity.hashPassword === 'function') {
@@ -2065,9 +2078,14 @@ async function importAlunosFromFile(file) {
             showToast('Sincronizando alunos com o banco…');
             const cloud = await window.SigaSchoolData.upsertStudents(students, { replace: replace });
             if (cloud && cloud.ok) {
+                const gravadas = await saveSpreadsheetAccessPasswords(senhasImportadas);
                 refreshAlunosFilterOptions();
                 renderAlunos();
-                showToast(`${localMsg} Gravado no Supabase.`);
+                if (senhasImportadas.length && (!gravadas || !gravadas.ok || !gravadas.saved)) {
+                    showToast('Cadastro gravado. A senha da planilha não ficou disponível para o acesso. Importe de novo com a sessão da escola aberta.', 'error');
+                } else {
+                    showToast(`${localMsg} Gravado no Supabase.`);
+                }
             } else {
                 showToast(
                     `${localMsg} Banco: ${(cloud && cloud.message) || 'não sincronizado (verifique login Supabase e escola ativa).'}`,
@@ -2403,8 +2421,9 @@ function openNewStudentModal() {
                     </div>
                 </div>
                 <div>
-                    <label class="block text-label-md font-bold text-on-surface mb-1">Senha</label>
-                    <input type="password" id="std-senha" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" placeholder="Senha de acesso do aluno" autocomplete="new-password" required>
+                    <label class="block text-label-md font-bold text-on-surface mb-1">Senha de acesso</label>
+                    <input type="text" class="w-full border border-border-subtle bg-surface-container-low rounded-lg px-4 py-2 text-body-md outline-none cursor-not-allowed text-text-secondary" value="Definida somente na importação da planilha" autocomplete="off" disabled readonly>
+                    <p class="mt-1 text-[11px] text-text-secondary">O cadastro no sistema não altera essa senha.</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2445,18 +2464,13 @@ function openNewStudentModal() {
         const idade = document.getElementById('std-idade').value;
         const rotaEscolar = (document.getElementById('std-rota-escolar') || {}).value || '';
         const email = document.getElementById('std-email-institucional').value;
-        const senha = (document.getElementById('std-senha') || {}).value || '';
 
         const id = newStudentLocalId();
         const persist = async () => {
-            let hashed = senha;
-            if (window.SigaSecurity && senha) {
-                hashed = await window.SigaSecurity.hashPassword(senha);
-            }
             const newStudent = {
-                id, codigoInep, nome, cpf, serie, turma, aeeTurmas: readSelectedAeeCodes(), turno, responsavel, contato, dataNascimento, idade, rotaEscolar, email,
-                senha: hashed,
-                precisaDefinirSenha: !senha,
+                id, codigoInep, nome, cpf, serie, turma, aeeTurmas: readSelectedAeeCodes(), turno, responsavel, contato, dataNascimento, idade,                 rotaEscolar, email,
+                senha: '',
+                precisaDefinirSenha: true,
                 frequencia: 95, status: "Ativo", avatar: "", classHistory: []
             };
 
@@ -2467,7 +2481,6 @@ function openNewStudentModal() {
             modal.remove();
             renderAlunos();
             await syncStudentsToCloud([newStudent], 'Aluno cadastrado e gravado no banco online.');
-            if (senha) await saveSpreadsheetAccessPasswords([{ cpf: cpf, senha: senha }]);
         };
         persist();
     });
@@ -2486,7 +2499,6 @@ function openEditStudentModal(studentId) {
     modal.className = 'fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-on-background/40 backdrop-blur-sm';
 
     const esc = (typeof escapeHtml === 'function') ? escapeHtml : (s) => String(s == null ? '' : s);
-    const hasPwd = !!(student.senha);
 
     modal.innerHTML = `
         <div class="bg-background-surface w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-border-subtle" style="font-family: 'Inter', sans-serif;">
@@ -2567,15 +2579,8 @@ function openEditStudentModal(studentId) {
                 </div>
                 <div>
                     <label class="block text-label-md font-bold text-on-surface mb-1">Senha de acesso</label>
-                    <div id="std-senha-locked" class="flex flex-col sm:flex-row gap-2 sm:items-center">
-                        <input type="password" id="std-senha" class="w-full border border-border-subtle bg-surface-container-low rounded-lg px-4 py-2 text-body-md outline-none cursor-not-allowed text-text-secondary" value="" placeholder="${hasPwd ? 'Senha definida' : 'Sem senha de acesso'}" autocomplete="off" disabled readonly>
-                        <button type="button" id="std-redefinir-senha" class="shrink-0 px-4 py-2 rounded-lg border border-primary text-primary text-label-md font-bold hover:bg-primary/10 transition-colors">${hasPwd ? 'Redefinir senha' : 'Definir senha'}</button>
-                    </div>
-                    <div id="std-senha-reset" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                        <input type="password" id="std-senha-nova" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" placeholder="Nova senha (mínimo 6)" autocomplete="new-password">
-                        <input type="password" id="std-senha-confirma" class="w-full border border-border-subtle rounded-lg px-4 py-2 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" placeholder="Confirmar nova senha" autocomplete="new-password">
-                    </div>
-                    <p class="mt-1 text-[11px] text-text-secondary">A senha fica bloqueada. Ela só muda quando você redefine o acesso do aluno.</p>
+                    <input type="text" id="std-senha" class="w-full border border-border-subtle bg-surface-container-low rounded-lg px-4 py-2 text-body-md outline-none cursor-not-allowed text-text-secondary" value="" placeholder="Definida na importação da planilha" autocomplete="off" disabled readonly>
+                    <p class="mt-1 text-[11px] text-text-secondary">Visível para consulta. O sistema não permite alterar.</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2601,17 +2606,10 @@ function openEditStudentModal(studentId) {
     `;
     document.body.appendChild(modal);
     bindAgeCalculator();
-    const resetBtn = modal.querySelector('#std-redefinir-senha');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            const box = modal.querySelector('#std-senha-reset');
-            const locked = modal.querySelector('#std-senha-locked');
-            if (box) box.classList.remove('hidden');
-            if (locked) locked.classList.add('hidden');
-            const nova = modal.querySelector('#std-senha-nova');
-            if (nova) nova.focus();
-        });
-    }
+    loadStudentAccessPassword(student.id).then(function (senhaAcesso) {
+        const campo = document.getElementById('std-senha');
+        if (campo && senhaAcesso) campo.value = senhaAcesso;
+    });
 
     modal.querySelector('form').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -2627,39 +2625,17 @@ function openEditStudentModal(studentId) {
         const idade = document.getElementById('std-idade').value;
         const rotaEscolar = (document.getElementById('std-rota-escolar') || {}).value || '';
         const email = document.getElementById('std-email-institucional').value;
-        const resetBox = document.getElementById('std-senha-reset');
-        const redefinindo = resetBox && !resetBox.classList.contains('hidden');
-        const senhaNova = String((document.getElementById('std-senha-nova') || {}).value || '');
-        const senhaConfirma = String((document.getElementById('std-senha-confirma') || {}).value || '');
-        if (redefinindo) {
-            if (senhaNova.length < 6) {
-                showToast('A nova senha deve ter pelo menos 6 caracteres.', 'error');
-                return;
-            }
-            if (senhaNova !== senhaConfirma) {
-                showToast('As senhas não coincidem.', 'error');
-                return;
-            }
-        }
 
         const persist = async () => {
             const currentStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
             const index = currentStudents.findIndex(s => s.id === studentId);
             let updated = null;
             if (index !== -1) {
-                let nextSenha = currentStudents[index].senha || '';
-                let precisa = currentStudents[index].precisaDefinirSenha;
-                if (redefinindo) {
-                    nextSenha = window.SigaSecurity
-                        ? await window.SigaSecurity.hashPassword(senhaNova)
-                        : senhaNova;
-                    precisa = false;
-                }
                 currentStudents[index] = {
                     ...currentStudents[index],
-                    codigoInep, nome, cpf, serie, turma, aeeTurmas: readSelectedAeeCodes(), turno, responsavel, contato, dataNascimento, idade, rotaEscolar, email,
-                    senha: nextSenha,
-                    precisaDefinirSenha: !!precisa && !nextSenha
+                    codigoInep, nome, cpf, serie, turma, aeeTurmas: readSelectedAeeCodes(), turno, responsavel, contato, dataNascimento, idade, rotaEscolar,                     email,
+                    senha: currentStudents[index].senha || '',
+                    precisaDefinirSenha: currentStudents[index].precisaDefinirSenha
                 };
                 updated = currentStudents[index];
                 localStorage.setItem('siga_students', JSON.stringify(currentStudents));
@@ -2669,7 +2645,6 @@ function openEditStudentModal(studentId) {
             renderAlunos();
             if (updated) {
                 await syncStudentsToCloud([updated], 'Cadastro atualizado e gravado no banco online.');
-                if (redefinindo && senhaNova) await saveSpreadsheetAccessPasswords([{ cpf: cpf, senha: senhaNova }]);
             } else {
                 showToast('Cadastro atualizado!');
             }
