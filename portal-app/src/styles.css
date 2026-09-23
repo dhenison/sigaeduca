@@ -57,6 +57,13 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .enem-card h3{font-size:16px}
 .enem-card p{font-size:12px;margin:4px 0 0}
 .enem-card>ion-icon{margin-left:auto}
+.lesson-item{background:#fff;border:1px solid #e8eff9;border-radius:18px;overflow:hidden}
+.lesson-item.dropdown{border-radius:12px;background:#f7faff}
+.lesson-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:16px}
+.lesson-item.dropdown .lesson-toggle{min-height:52px;padding:12px 14px}
+.lesson-toggle h2{font-size:17px}
+.lesson-caret{color:#45618b;font-size:14px}
+.lesson-body{padding:0 16px 16px}
 .lesson-youtube{display:block;position:relative;margin-top:12px;border-radius:16px;overflow:hidden;background:#111}
 .lesson-youtube img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
 .lesson-youtube span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#e11d2e;color:#fff;font-weight:700;border-radius:999px;padding:10px 16px;font-size:14px;white-space:nowrap}

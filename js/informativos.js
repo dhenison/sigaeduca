@@ -249,7 +249,8 @@
           created_at: item.createdAt || new Date().toISOString(),
           video_url: item.videoUrl || null,
           aula_dados: item.aulaDados || null,
-          enem_digital: !!item.enemDigital
+          enem_digital: !!item.enemDigital,
+          exibicao: item.exibicao === 'dropdown' ? 'dropdown' : 'card'
         };
         return auth.sb.from('portal_informativos')
           .upsert(row, { onConflict: 'school_id,local_id' })
@@ -304,7 +305,8 @@
       updatedAt: row.updated_at,
       videoUrl: row.video_url || '',
       aulaDados: row.aula_dados || '',
-      enemDigital: row.enem_digital === true
+      enemDigital: row.enem_digital === true,
+      exibicao: row.exibicao === 'dropdown' ? 'dropdown' : 'card'
     };
   }
 
@@ -383,7 +385,7 @@
         escapeHtml(statusLabel(item.status)) + '</span></div>' +
         '<p class="text-label-md text-text-secondary mt-1">' + escapeHtml(layoutLabel(item.layout)) +
         ' · ' + escapeHtml(destinoLabel(item.destinatario)) +
-        (item.enemDigital ? ' · Enem Pará Digital' : '') +
+        (item.enemDigital ? (' · Enem Pará Digital · ' + (item.exibicao === 'dropdown' ? 'Dropdown' : 'Card')) : '') +
         (item.destinatario !== 'professores' && item.audience === 'turmas'
           ? (' · Turmas: ' + escapeHtml((item.classCodes || []).join(', ') || '—'))
           : '') +
@@ -461,6 +463,8 @@
     if (videoEl) videoEl.value = item ? (item.videoUrl || '') : '';
     var dadosEl = document.getElementById('inf-aula-dados');
     if (dadosEl) dadosEl.value = item ? (item.aulaDados || '') : '';
+    var tipoEl = document.getElementById('inf-tipo');
+    if (tipoEl) tipoEl.value = item && item.exibicao === 'dropdown' ? 'dropdown' : 'card';
     toggleEnemFields();
     pendingImageData = item && item.imageData ? item.imageData : null;
     updateImagePreview();
@@ -559,6 +563,7 @@
     var enem = !!(document.getElementById('inf-enem') && document.getElementById('inf-enem').checked);
     var videoUrl = String((document.getElementById('inf-video') || {}).value || '').trim();
     var aulaDados = String((document.getElementById('inf-aula-dados') || {}).value || '').trim();
+    var exibicao = String((document.getElementById('inf-tipo') || {}).value || 'card') === 'dropdown' ? 'dropdown' : 'card';
 
     if (!title) {
       toast('Informe o título.', 'erro');
@@ -613,7 +618,8 @@
       updatedAt: now,
       videoUrl: enem ? videoUrl : '',
       aulaDados: enem ? aulaDados : '',
-      enemDigital: enem
+      enemDigital: enem,
+      exibicao: enem ? exibicao : 'card'
     };
 
     if (editingId) {

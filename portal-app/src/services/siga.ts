@@ -33,6 +33,7 @@ export interface Notice {
   videoUrl?: string;
   lessonData?: string;
   enem?: boolean;
+  displayType?: 'card' | 'dropdown';
 }
 export interface MonthStat {
   label: string;
@@ -251,6 +252,7 @@ async function loadNotices(studentId: string): Promise<Notice[]> {
     videoUrl: String(item.video_url || ''),
     lessonData: String(item.aula_dados || ''),
     enem: item.enem_digital === true || item.enem_digital === 'true',
+    displayType: item.exibicao === 'dropdown' ? 'dropdown' : 'card',
   }));
 }
 
