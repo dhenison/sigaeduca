@@ -157,6 +157,23 @@
         }
     }
 
+    function showProfessorDestination() {
+        var form = document.getElementById('login-form');
+        var welcome = document.getElementById('login-welcome');
+        var signup = document.getElementById('login-signup');
+        var dest = document.getElementById('professor-destino');
+        if (form) form.classList.add('hidden');
+        if (welcome) welcome.classList.add('hidden');
+        if (signup) signup.classList.add('hidden');
+        if (dest) dest.className = 'flex flex-col gap-3';
+        document.body.classList.add('professor-choice');
+    }
+
+    function goProfessorDestination(url) {
+        try { sessionStorage.setItem('siga_post_login_dest', url); } catch (e) { /* ignore */ }
+        window.location.replace(url);
+    }
+
     /** Destino obrigatório após login — admin do sistema SEMPRE paineladmin */
     function redirectAfterLogin(email, session) {
         email = normEmail(email);
@@ -179,9 +196,11 @@
                 session.role = 'Professor(a)';
             }
             setSession(session);
+            showProfessorDestination();
+            return;
         }
         // Caminhos absolutos evitam erro de resolução em /login.html
-        var dest = goAdmin ? '/paineladmin.html' : (isProfessorSession(session) ? '/portal/' : '/painelprincipal.html');
+        var dest = goAdmin ? '/paineladmin.html' : '/painelprincipal.html';
         try {
             sessionStorage.setItem('siga_post_login_dest', dest);
         } catch (e) { /* ignore */ }
@@ -908,6 +927,11 @@
             e.preventDefault();
             openRecoverModal();
         });
+
+        var goWeb = document.getElementById('prof-go-web');
+        var goApp = document.getElementById('prof-go-app');
+        if (goWeb) goWeb.addEventListener('click', function () { goProfessorDestination('/painelprincipal.html'); });
+        if (goApp) goApp.addEventListener('click', function () { goProfessorDestination('/portal/'); });
 
         var closeBtn = document.getElementById('btn-close-recuperar');
         var backdrop = document.getElementById('modal-recuperar-backdrop');
