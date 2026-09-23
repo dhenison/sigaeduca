@@ -1807,6 +1807,30 @@ function spreadsheetAccessPassword(raw) {
     return value;
 }
 
+async function saveSpreadsheetAccessPasswords(list) {
+    const sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
+        ? window.SigaSupabase.getClient()
+        : null;
+    if (!sb) return { ok: false };
+    const rows = [];
+    (list || []).forEach(function (s) {
+        const senha = spreadsheetAccessPassword(s && s.senha);
+        if (!senha) return;
+        if (window.SigaSecurity && window.SigaSecurity.isHashedPassword(senha)) return;
+        const cpf = String((s && s.cpf) || '').replace(/\D/g, '');
+        if (cpf.length !== 11) return;
+        rows.push({ cpf: cpf, senha: senha });
+    });
+    if (!rows.length) return { ok: true, saved: 0 };
+    let saved = 0;
+    for (let i = 0; i < rows.length; i += 80) {
+        const res = await sb.rpc('student_save_spreadsheet_passwords', { p_rows: rows.slice(i, i + 80) });
+        if (res.error) return { ok: false };
+        saved += (res.data && res.data.saved) || 0;
+    }
+    return { ok: true, saved: saved };
+}
+
 function loadSheetJsLib() {
     return new Promise((resolve, reject) => {
         if (window.XLSX) return resolve(window.XLSX);
@@ -2002,6 +2026,11 @@ async function importAlunosFromFile(file) {
                 added++;
             }
         }
+
+        // A senha da planilha vira a senha de acesso no banco, antes de virar hash neste navegador.
+        try {
+            await saveSpreadsheetAccessPasswords(students);
+        } catch (eSave) { /* o hash local segue abaixo */ }
 
         // Hash de senhas em claro antes de persistir (mitigação local até Supabase Auth)
         if (window.SigaSecurity && typeof window.SigaSecurity.hashPassword === 'function') {
@@ -2438,6 +2467,7 @@ function openNewStudentModal() {
             modal.remove();
             renderAlunos();
             await syncStudentsToCloud([newStudent], 'Aluno cadastrado e gravado no banco online.');
+            if (senha) await saveSpreadsheetAccessPasswords([{ cpf: cpf, senha: senha }]);
         };
         persist();
     });
@@ -2639,6 +2669,7 @@ function openEditStudentModal(studentId) {
             renderAlunos();
             if (updated) {
                 await syncStudentsToCloud([updated], 'Cadastro atualizado e gravado no banco online.');
+                if (redefinindo && senhaNova) await saveSpreadsheetAccessPasswords([{ cpf: cpf, senha: senhaNova }]);
             } else {
                 showToast('Cadastro atualizado!');
             }

@@ -738,7 +738,16 @@
             var senhaEl = document.getElementById('rec-aluno-senha');
             if (nomeEl) nomeEl.textContent = d.nome || 'Aluno';
             if (emailEl) emailEl.textContent = d.email || '—';
-            if (senhaEl) senhaEl.textContent = d.senha || '—';
+            if (senhaEl) {
+                senhaEl.textContent = d.senha || 'Senha enviada na planilha';
+                senhaEl.dataset.real = d.senha ? '1' : '0';
+            }
+            var aviso = document.getElementById('rec-aluno-aviso');
+            if (aviso) {
+                aviso.textContent = d.senha
+                    ? 'Esta é a senha da planilha. O sistema não criou outra.'
+                    : 'O acesso continua com a senha da planilha. Nenhuma senha nova foi criada. Envie a planilha novamente em Alunos para ela aparecer aqui.';
+            }
             showRecoverStep('alunoCreds');
             var sec = window.SigaSecurity;
             if (sec && typeof sec.hashPassword === 'function' && d.senha && d.email) {
@@ -855,11 +864,14 @@
 
     function usarCredenciaisAluno() {
         var email = String((document.getElementById('rec-aluno-email') || {}).textContent || '').trim();
-        var senha = String((document.getElementById('rec-aluno-senha') || {}).textContent || '').trim();
+        var senhaEl = document.getElementById('rec-aluno-senha');
+        var senha = senhaEl && senhaEl.dataset.real === '1'
+            ? String(senhaEl.textContent || '').trim()
+            : '';
         var user = document.getElementById('username');
         var pass = document.getElementById('password');
         if (user) user.value = email === '—' ? '' : email;
-        if (pass) pass.value = senha === '—' ? '' : senha;
+        if (pass) pass.value = senha;
         closeRecoverModal();
         toast('E-mail e senha preenchidos. Toque em Entrar na conta.');
     }
