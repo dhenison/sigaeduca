@@ -246,7 +246,10 @@
           published_at: item.publishedAt || null,
           expires_at: item.expiresAt || null,
           created_by_name: item.createdBy || null,
-          created_at: item.createdAt || new Date().toISOString()
+          created_at: item.createdAt || new Date().toISOString(),
+          video_url: item.videoUrl || null,
+          aula_dados: item.aulaDados || null,
+          enem_digital: !!item.enemDigital
         };
         return auth.sb.from('portal_informativos')
           .upsert(row, { onConflict: 'school_id,local_id' })
@@ -298,7 +301,10 @@
       expiresAt: row.expires_at || null,
       createdBy: row.created_by_name || '',
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
+      videoUrl: row.video_url || '',
+      aulaDados: row.aula_dados || '',
+      enemDigital: row.enem_digital === true
     };
   }
 
@@ -377,6 +383,7 @@
         escapeHtml(statusLabel(item.status)) + '</span></div>' +
         '<p class="text-label-md text-text-secondary mt-1">' + escapeHtml(layoutLabel(item.layout)) +
         ' · ' + escapeHtml(destinoLabel(item.destinatario)) +
+        (item.enemDigital ? ' · Enem Pará Digital' : '') +
         (item.destinatario !== 'professores' && item.audience === 'turmas'
           ? (' · Turmas: ' + escapeHtml((item.classCodes || []).join(', ') || '—'))
           : '') +
@@ -448,6 +455,13 @@
       ? String(item.expiresAt).slice(0, 16)
       : '';
     document.getElementById('inf-turmas-extra').value = '';
+    var enemEl = document.getElementById('inf-enem');
+    if (enemEl) enemEl.checked = !!(item && item.enemDigital);
+    var videoEl = document.getElementById('inf-video');
+    if (videoEl) videoEl.value = item ? (item.videoUrl || '') : '';
+    var dadosEl = document.getElementById('inf-aula-dados');
+    if (dadosEl) dadosEl.value = item ? (item.aulaDados || '') : '';
+    toggleEnemFields();
     pendingImageData = item && item.imageData ? item.imageData : null;
     updateImagePreview();
     fillTurmaCheckboxes(item ? item.classCodes : []);
@@ -497,6 +511,16 @@
     return value === 'professores' || value === 'ambos' ? value : 'alunos';
   }
 
+  function isYoutubeUrl(value) {
+    return /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))[A-Za-z0-9_-]{11}/.test(String(value || ''));
+  }
+
+  function toggleEnemFields() {
+    var box = document.getElementById('inf-enem');
+    var fields = document.getElementById('inf-enem-fields');
+    if (fields) fields.classList.toggle('hidden', !(box && box.checked));
+  }
+
   function toggleAudienceUi() {
     var destino = destinoValue();
     var aud = document.getElementById('inf-audience');
@@ -533,26 +557,35 @@
       : String((document.getElementById('inf-audience') || {}).value || 'todos');
     var expiresRaw = String((document.getElementById('inf-expires') || {}).value || '').trim();
     var classCodes = audience === 'turmas' ? collectClassCodes() : [];
+    var enem = !!(document.getElementById('inf-enem') && document.getElementById('inf-enem').checked);
+    var videoUrl = String((document.getElementById('inf-video') || {}).value || '').trim();
+    var aulaDados = String((document.getElementById('inf-aula-dados') || {}).value || '').trim();
 
     if (!title) {
       toast('Informe o título.', 'erro');
       return;
     }
-    if (layout === 'texto' && !bodyText) {
-      toast('Informe o texto do informativo.', 'erro');
+    if (enem && !isYoutubeUrl(videoUrl)) {
+      toast('Informe o link do YouTube da aula.', 'erro');
       return;
     }
-    if (layout === 'imagem' && !pendingImageData) {
-      toast('Anexe uma imagem.', 'erro');
-      return;
-    }
-    if ((layout === 'texto_imagem' || layout === 'imagem_texto') && !bodyText && !pendingImageData) {
-      toast('Informe texto e/ou imagem.', 'erro');
-      return;
-    }
-    if (!bodyText && !pendingImageData) {
-      toast('Inclua texto ou imagem.', 'erro');
-      return;
+    if (!enem) {
+      if (layout === 'texto' && !bodyText) {
+        toast('Informe o texto do informativo.', 'erro');
+        return;
+      }
+      if (layout === 'imagem' && !pendingImageData) {
+        toast('Anexe uma imagem.', 'erro');
+        return;
+      }
+      if ((layout === 'texto_imagem' || layout === 'imagem_texto') && !bodyText && !pendingImageData) {
+        toast('Informe texto e/ou imagem.', 'erro');
+        return;
+      }
+      if (!bodyText && !pendingImageData) {
+        toast('Inclua texto ou imagem.', 'erro');
+        return;
+      }
     }
     if (audience === 'turmas' && !classCodes.length) {
       toast('Selecione ao menos uma turma.', 'erro');
@@ -578,7 +611,10 @@
       expiresAt: expiresRaw ? new Date(expiresRaw).toISOString() : null,
       createdBy: (prev && prev.createdBy) || sessionUserName(),
       createdAt: (prev && prev.createdAt) || now,
-      updatedAt: now
+      updatedAt: now,
+      videoUrl: enem ? videoUrl : '',
+      aulaDados: enem ? aulaDados : '',
+      enemDigital: enem
     };
 
     if (editingId) {
@@ -645,6 +681,8 @@
     if (aud) aud.addEventListener('change', toggleAudienceUi);
     var destino = document.getElementById('inf-destino');
     if (destino) destino.addEventListener('change', toggleAudienceUi);
+    var enemBox = document.getElementById('inf-enem');
+    if (enemBox) enemBox.addEventListener('change', toggleEnemFields);
 
     var filter = document.getElementById('inf-filter-status');
     if (filter) filter.addEventListener('change', renderList);

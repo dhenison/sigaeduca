@@ -30,6 +30,9 @@ export interface Notice {
   content: string;
   image?: string;
   layout?: string;
+  videoUrl?: string;
+  lessonData?: string;
+  enem?: boolean;
 }
 export interface MonthStat {
   label: string;
@@ -79,6 +82,7 @@ export interface PortalSnapshot {
   student: Student;
   events: SchoolEvent[];
   notices: Notice[];
+  lessons: Notice[];
   attendance: AttendanceSummary;
   reports: ReportItem[];
   occurrences: OccurrenceItem[];
@@ -237,14 +241,23 @@ async function loadNotices(studentId: string): Promise<Notice[]> {
   if (!token) return [];
   const res = await sb().rpc('student_portal_informativos', {p_student_id: studentId, p_token: token});
   const data = Array.isArray(res.data) ? res.data : [];
-  return data.map((item: Record<string, string>) => ({
+  return data.map((item: Record<string, unknown>) => ({
     id: String(item.id || item.title),
-    title: item.title || 'Aviso',
+    title: String(item.title || 'Aviso'),
     date: String(item.published_at || '').slice(0, 10) || new Date().toISOString().slice(0, 10),
-    content: item.body_text || '',
-    image: item.image_data || '',
-    layout: item.layout || 'texto_imagem',
+    content: String(item.body_text || ''),
+    image: String(item.image_data || ''),
+    layout: String(item.layout || 'texto_imagem'),
+    videoUrl: String(item.video_url || ''),
+    lessonData: String(item.aula_dados || ''),
+    enem: item.enem_digital === true || item.enem_digital === 'true',
   }));
+}
+
+export function youtubeId(url?: string) {
+  const value = String(url || '').trim();
+  const match = value.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/);
+  return match ? match[1] : '';
 }
 
 async function loadCalendar(schoolId: string) {
@@ -489,7 +502,7 @@ export async function loadPortal(year = new Date().getFullYear()): Promise<Porta
     try { localStorage.setItem('siga_school_name', student.school); } catch { /* ignore */ }
   }
   const schoolId = student.schoolId;
-  const [notices, days, agenda, marks, reports] = await Promise.all([
+  const [allNotices, days, agenda, marks, reports] = await Promise.all([
     loadNotices(student.id),
     loadCalendar(schoolId),
     loadAgenda(schoolId, student.className),
@@ -497,10 +510,13 @@ export async function loadPortal(year = new Date().getFullYear()): Promise<Porta
     loadReports(student, 2026),
   ]);
   const events = [...agenda, ...calendarEvents(days)].sort((a, b) => a.date.localeCompare(b.date));
+  const notices = allNotices.filter(item => !item.enem);
+  const lessons = allNotices.filter(item => item.enem);
   return {
     student,
     events,
     notices,
+    lessons,
     attendance: summarize(year, days, marks),
     reports,
     occurrences: loadOccurrences(student),
