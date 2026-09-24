@@ -20,6 +20,7 @@
 
   let SEC_ACTIVE_TAB = 'historico';
   let SEC_FILTER_CACHE = { search: '', tipo: '' };
+  let SEC_HISTORICO_EDIT_ID = '';
 
   // ─── Storage ───────────────────────────────────────────────────────────────
   function getSecDocumentos() {
@@ -44,6 +45,10 @@
 
   function isAtestadoConclusao(tipo) {
     return tipo === DOCUMENTO_SECRETARIA_TIPO_ATESTADO;
+  }
+
+  function isHistoricoEscolar(tipo) {
+    return tipo === (window.HISTORICO_ESCOLAR_TIPO || 'Histórico Escolar do Ensino Médio');
   }
 
   function isDeclaracao(tipo) {
@@ -608,6 +613,8 @@
     const grupoNasc = document.getElementById('sec-grupo-nascimento');
     const grupoVaga = document.getElementById('sec-grupo-vaga');
     const grupoAtestado = document.getElementById('sec-grupo-atestado');
+    const grupoHistorico = document.getElementById('sec-grupo-historico');
+    const modalCard = document.getElementById('sec-modal-card');
 
     function hide(el) { if (el) { el.classList.add('hidden'); el.style.display = 'none'; } }
     function show(el) { if (el) { el.classList.remove('hidden'); el.style.display = ''; } }
@@ -618,6 +625,21 @@
     hide(grupoNasc);
     hide(grupoVaga);
     hide(grupoAtestado);
+    hide(grupoHistorico);
+    if (modalCard) {
+      modalCard.classList.toggle('max-w-2xl', !isHistoricoEscolar(tipo));
+      modalCard.classList.toggle('max-w-6xl', isHistoricoEscolar(tipo));
+    }
+
+    if (isHistoricoEscolar(tipo)) {
+      hide(grupoNasc);
+      show(grupoHistorico);
+      if (grupoHistorico && !grupoHistorico.querySelector('[data-h="aluno"]') && typeof window.renderHistoricoEscolarEditor === 'function') {
+        window.renderHistoricoEscolarEditor(grupoHistorico, null);
+      }
+      preencherHistoricoDoAluno();
+      return;
+    }
 
     if (tipo && isDeclaracao(tipo) && tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA) {
       show(grupoNasc);
@@ -652,6 +674,30 @@
     }
     const aluno = findStudentById(alunoId);
     dataNascField.value = (aluno && (aluno.dataNascimento || aluno.nasc)) || '';
+    preencherHistoricoDoAluno();
+  }
+
+  function formatarNascCampo(dt) {
+    if (!dt) return '';
+    if (String(dt).indexOf('/') !== -1) return dt;
+    const parts = String(dt).split('-');
+    if (parts.length === 3 && parts[0].length === 4) return parts[2] + '/' + parts[1] + '/' + parts[0];
+    return dt;
+  }
+
+  function preencherHistoricoDoAluno() {
+    const tipo = document.getElementById('sec-doc-tipo')?.value || '';
+    const box = document.getElementById('sec-grupo-historico');
+    if (!isHistoricoEscolar(tipo) || !box) return;
+    const aluno = findStudentById(document.getElementById('sec-doc-aluno-id')?.value || '');
+    if (!aluno) return;
+    function setIfEmpty(key, value) {
+      const el = box.querySelector('[data-h="' + key + '"]');
+      if (el && !String(el.value || '').trim() && value) el.value = value;
+    }
+    setIfEmpty('aluno', aluno.nome || '');
+    setIfEmpty('cpf', aluno.cpf || '');
+    setIfEmpty('nascimento', formatarNascCampo(aluno.dataNascimento || aluno.nasc || ''));
   }
 
   function populateAlunoSelect() {
@@ -687,6 +733,9 @@
     const nomeMae = document.getElementById('sec-doc-nome-mae'); if (nomeMae) nomeMae.value = '';
     const nomePai = document.getElementById('sec-doc-nome-pai'); if (nomePai) nomePai.value = '';
     const alunoSel = document.getElementById('sec-doc-aluno-id'); if (alunoSel) alunoSel.value = '';
+    SEC_HISTORICO_EDIT_ID = '';
+    const grupoHistorico = document.getElementById('sec-grupo-historico');
+    if (grupoHistorico) grupoHistorico.innerHTML = '';
 
     mostrarCamposDinamicosSec();
 
@@ -695,6 +744,104 @@
       modal.classList.remove('hidden');
       modal.style.display = '';
       modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function salvarHistoricoEscolar(alunoId) {
+    const box = document.getElementById('sec-grupo-historico');
+    const historico = typeof window.collectHistoricoEscolar === 'function'
+      ? window.collectHistoricoEscolar(box)
+      : null;
+    if (!historico || !historico.aluno) {
+      showSecToast('Informe o nome do aluno no histórico.', 'alerta');
+      return;
+    }
+    const aluno = alunoId ? findStudentById(alunoId) : null;
+    const responsavel = localStorage.getItem('siga_profile_name') || 'Secretaria';
+    const hoje = new Date().toISOString().split('T')[0];
+    const list = getSecDocumentos();
+    const existente = SEC_HISTORICO_EDIT_ID
+      ? list.find(function (d) { return d.id === SEC_HISTORICO_EDIT_ID; })
+      : null;
+
+    function gravar(doc) {
+      if (existente) {
+        const idx = list.findIndex(function (d) { return d.id === existente.id; });
+        if (idx >= 0) list[idx] = doc;
+      } else {
+        list.unshift(doc);
+      }
+      saveSecDocumentos(list);
+      syncDocumentoSecretariaCloud(doc).then(function () {
+        showSecToast(existente ? 'Histórico atualizado.' : 'Histórico escolar emitido.', 'success');
+        fecharModalNovoDocSecretaria();
+        renderSecPage();
+        imprimirDocumentoSec(doc.id);
+      });
+    }
+
+    if (existente) {
+      gravar(Object.assign({}, existente, {
+        alunoId: aluno ? aluno.id : (existente.alunoId || null),
+        alunoNome: historico.aluno,
+        alunoCpf: historico.cpf || (aluno && aluno.cpf) || '',
+        alunoTurma: aluno ? (aluno.turma || existente.alunoTurma || '') : (existente.alunoTurma || ''),
+        alunoSerie: aluno ? (resolveSerie(aluno) || '') : (existente.alunoSerie || ''),
+        alunoTurno: aluno ? (aluno.turno || '') : (existente.alunoTurno || ''),
+        nomeMae: historico.mae || '',
+        nomePai: historico.pai || '',
+        dataNascimento: historico.nascimento || '',
+        historico: historico,
+        responsavel: responsavel
+      }));
+      return;
+    }
+
+    gerarProtocoloSecAsync(window.HISTORICO_ESCOLAR_TIPO).then(function (protocolo) {
+      gravar({
+        id: uid(),
+        protocolo: protocolo,
+        alunoId: aluno ? aluno.id : null,
+        alunoNome: historico.aluno,
+        alunoCpf: historico.cpf || (aluno && aluno.cpf) || '',
+        alunoTurma: aluno ? (aluno.turma || '') : '',
+        alunoSerie: aluno ? (resolveSerie(aluno) || '') : '',
+        alunoTurno: aluno ? (aluno.turno || '') : '',
+        tipo: window.HISTORICO_ESCOLAR_TIPO,
+        dataEmissao: hoje,
+        dataValidade: computeDataValidadeIso(hoje),
+        status: 'concluido',
+        solicitante: '',
+        motivo: '',
+        obs: '',
+        responsavel: responsavel,
+        cidadeNascimento: historico.naturalidade || '',
+        ufNascimento: historico.uf || '',
+        dataNascimento: historico.nascimento || '',
+        frequencia: '',
+        vagaEtapa: '',
+        vagaTurno: '',
+        anoLetivo: SEC_ANO_LETIVO,
+        nomeMae: historico.mae || '',
+        nomePai: historico.pai || '',
+        historico: historico
+      });
+    });
+  }
+
+  function editarHistoricoSec(id) {
+    const doc = getSecDocumentos().find(function (d) { return d.id === id; });
+    if (!doc || !isHistoricoEscolar(doc.tipo)) return;
+    abrirModalNovoDocSecretaria();
+    SEC_HISTORICO_EDIT_ID = doc.id;
+    const tipo = document.getElementById('sec-doc-tipo');
+    if (tipo) tipo.value = doc.tipo;
+    const alunoSel = document.getElementById('sec-doc-aluno-id');
+    if (alunoSel && doc.alunoId) alunoSel.value = doc.alunoId;
+    mostrarCamposDinamicosSec();
+    const box = document.getElementById('sec-grupo-historico');
+    if (box && typeof window.renderHistoricoEscolarEditor === 'function') {
+      window.renderHistoricoEscolarEditor(box, doc.historico || null);
     }
   }
 
@@ -728,6 +875,10 @@
 
     if (!tipo) {
       showSecToast('Selecione o tipo de emissão.', 'alerta');
+      return;
+    }
+    if (isHistoricoEscolar(tipo)) {
+      salvarHistoricoEscolar(alunoId);
       return;
     }
     if (tipo !== DOCUMENTO_SECRETARIA_TIPO_VAGA && !isAtestadoConclusao(tipo) && !alunoId) {
@@ -1313,6 +1464,9 @@
 
   function buildDocumentoPrintHtml(doc) {
     if (!doc) return null;
+    if (isHistoricoEscolar(doc.tipo) && typeof window.buildHistoricoEscolarPrintHtml === 'function') {
+      return window.buildHistoricoEscolarPrintHtml(doc);
+    }
     const body = buildDocumentoPrintBody(doc);
     if (!body) return null;
     return (
@@ -1489,7 +1643,7 @@
     updateKpis(allDocs);
 
     const historico = allDocs.filter(function (d) {
-      return isDeclaracao(d.tipo) && d.status === 'concluido' && matchesFilters(d);
+      return (isDeclaracao(d.tipo) || isHistoricoEscolar(d.tipo)) && d.status === 'concluido' && matchesFilters(d);
     });
     const requerimentos = allDocs.filter(function (d) {
       return isRequerimento(d.tipo) && matchesFilters(d);
@@ -1504,8 +1658,16 @@
       } else {
         tbodyHist.innerHTML = historico.map(function (doc) {
           const isVaga = doc.tipo === DOCUMENTO_SECRETARIA_TIPO_VAGA;
+          const isHist = isHistoricoEscolar(doc.tipo);
           const valido = isDocumentoSecretariaValido(doc);
           const validade = getDocumentoSecretariaDataValidade(doc);
+          const validadeHtml = isHist
+            ? '<span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-primary/10 text-primary">Documento escolar</span>'
+            : '<span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ' +
+              (valido ? 'bg-primary/10 text-primary' : 'bg-error-container/20 text-error') + '">' +
+              (valido ? 'Válido' : 'Fora da Validade') +
+              (validade ? ' até ' + formatarDataBr(validade) : '') +
+              '</span>';
           return (
             '<tr class="border-b border-border-subtle hover:bg-surface-container-low/40">' +
             '<td class="px-4 py-3 font-mono text-sm text-primary font-semibold">' +
@@ -1520,12 +1682,13 @@
             '<td class="px-4 py-3"><span class="text-sm font-medium">' +
             escapeHtml(doc.tipo) + '</span></td>' +
             '<td class="px-4 py-3">' + escapeHtml(formatarDataBr(doc.dataEmissao)) + '</td>' +
-            '<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ' +
-            (valido ? 'bg-primary/10 text-primary' : 'bg-error-container/20 text-error') + '">' +
-            (valido ? 'Válido' : 'Fora da Validade') +
-            (validade ? ' até ' + formatarDataBr(validade) : '') +
-            '</span></td>' +
+            '<td class="px-4 py-3">' + validadeHtml + '</td>' +
             '<td class="px-4 py-3 text-right whitespace-nowrap">' +
+            (isHist
+              ? '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
+                'onclick="editarHistoricoSec(\'' + doc.id + '\')" title="Editar">' +
+                '<span class="material-symbols-outlined text-xl">edit</span></button>'
+              : '') +
             '<button type="button" class="p-2 text-text-secondary hover:text-primary rounded-lg" ' +
             'onclick="imprimirDocumentoSec(\'' + doc.id + '\')" title="Reimprimir">' +
             '<span class="material-symbols-outlined text-xl">print</span></button>' +
@@ -1837,6 +2000,7 @@
   window.formatarSerieDocumento = formatarSerieDocumento;
   window.showSecToast = showSecToast;
   window.atualizarDataNascAoSelecionarAluno = atualizarDataNascAoSelecionarAluno;
+  window.editarHistoricoSec = editarHistoricoSec;
   window.emitirDeclaracaoMatriculaAluno = emitirDeclaracaoMatriculaAluno;
 
   document.addEventListener('DOMContentLoaded', function () {

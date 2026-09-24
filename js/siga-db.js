@@ -3138,7 +3138,8 @@ function cloudRowToLocalOcc(row) {
         status: row.status || 'Em Análise',
         desc: row.description || '',
         descricao: row.description || '',
-        origem: row.source === 'frequencia' ? 'automatica' : (row.source || 'manual')
+        origem: row.source === 'frequencia' ? 'automatica' : (row.source || 'manual'),
+        tratamento: (row.meta && row.meta.tratamento) || null
     };
 }
 
@@ -3172,13 +3173,22 @@ function pullOccurrencesFromCloud() {
     const schoolId = activeSchoolIdForOccurrences();
     if (!sb || !schoolId) return Promise.resolve([]);
     return sb.from('occurrences')
-        .select('id,student_id,student_name,class_code,occurrence_type,status,description,occurrence_date,occurrence_time,registered_by_name,source')
+        .select('id,student_id,student_name,class_code,occurrence_type,status,description,occurrence_date,occurrence_time,registered_by_name,source,meta')
         .eq('school_id', schoolId)
         .order('occurrence_date', { ascending: false })
         .limit(300)
         .then(function (res) {
             if (res.error || !Array.isArray(res.data)) return [];
-            const local = res.data.map(cloudRowToLocalOcc);
+            const previous = JSON.parse(localStorage.getItem('siga_occurrences') || '[]');
+            const local = res.data.map(function (row) {
+                const mapped = cloudRowToLocalOcc(row);
+                const prev = previous.find(function (item) {
+                    return String(item.id) === String(mapped.id) || sameEvasion(item, mapped);
+                });
+                if (prev && prev.tratamento && !mapped.tratamento) mapped.tratamento = prev.tratamento;
+                if (prev && (prev.status === 'Tratado' || prev.status === 'Resolvida')) mapped.status = prev.status;
+                return mapped;
+            });
             localStorage.setItem('siga_occurrences', JSON.stringify(local));
             return local;
         })
@@ -3237,7 +3247,9 @@ function occurrenceRowFromLocal(occ, schoolId) {
         occurrence_date: String(occ.date || occ.data || new Date().toISOString()).slice(0, 10),
         occurrence_time: occ.hora && occ.hora !== '—' ? occ.hora : null,
         registered_by_name: occ.prof || occ.usuario || null,
-        source: (occ.origem === 'automatica' || occ.source === 'frequencia') ? 'frequencia' : 'manual'
+        source: (occ.origem === 'automatica' || occ.source === 'frequencia') ? 'frequencia' : 'manual',
+        treatment_notes: (occ.tratamento && occ.tratamento.descricao) || null,
+        meta: occ.tratamento ? { tratamento: occ.tratamento } : {}
     };
 }
 
@@ -3296,8 +3308,10 @@ function renderFichaOccurrences(student, skipCloud) {
         const date = o.date || o.data || '';
         const status = o.status || 'Em Análise';
         
-        if (['Indisciplina', 'Atraso'].indexOf(type) >= 0) color = 'border-tertiary text-tertiary bg-surface-container-low/50';
-        if (['Evasão', 'Evasao', 'Agressão Física', 'Agressao Fisica', 'Suspensão', 'Suspensao', 'Bullying'].indexOf(type) >= 0) color = 'border-error text-error bg-surface-container-low/50';
+        const tratado = status === 'Tratado' || status === 'Resolvida';
+        if (tratado) color = 'border-emerald-600 text-emerald-800 bg-emerald-50';
+        else if (['Indisciplina', 'Atraso'].indexOf(type) >= 0) color = 'border-tertiary text-tertiary bg-surface-container-low/50';
+        else if (['Evasão', 'Evasao', 'Agressão Física', 'Agressao Fisica', 'Suspensão', 'Suspensao', 'Bullying'].indexOf(type) >= 0) color = 'border-error text-error bg-error-container/10';
         
         let displayDate = date;
         if (date.includes('-')) {
@@ -3308,19 +3322,20 @@ function renderFichaOccurrences(student, skipCloud) {
             displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
         }
         
+        const occId = String(o.id || '').replace(/'/g, '');
         return `
-            <div class="flex gap-4 p-3 rounded-lg border-l-4 ${color}">
+            <button type="button" class="w-full text-left flex gap-4 p-3 rounded-lg border-l-4 cursor-pointer hover:brightness-95 transition ${color}" onclick="openFichaOccurrenceDetail('${occId}')">
                 <div class="flex-1">
-                    <div class="flex justify-between items-start mb-1">
+                    <div class="flex justify-between items-start mb-1 gap-2">
                         <span class="text-label-md font-bold uppercase">${type}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs px-2 py-0.5 rounded-full font-bold bg-white/70">${status}</span>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-bold ${tratado ? 'bg-emerald-600 text-white' : 'bg-white/70'}">${status}</span>
                             <span class="text-label-sm text-text-secondary">${displayDate}</span>
                         </div>
                     </div>
                     <p class="text-body-md text-on-surface leading-tight">${desc}</p>
                 </div>
-            </div>
+            </button>
         `;
     }).join('');
     }
@@ -3330,6 +3345,60 @@ function renderFichaOccurrences(student, skipCloud) {
         });
     }
 }
+
+function fichaOccText(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function openFichaOccurrenceDetail(id) {
+    const all = JSON.parse(localStorage.getItem('siga_occurrences') || '[]');
+    const o = all.find(function (item) { return String(item.id) === String(id); });
+    if (!o) return;
+    const status = o.status || 'Em Análise';
+    const tratado = status === 'Tratado' || status === 'Resolvida';
+    const trat = o.tratamento || null;
+    const tratHtml = trat
+        ? '<div class="mt-4 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">' +
+          '<p class="text-[10px] font-bold text-emerald-700 uppercase mb-2">Tratamento registrado na aba Ocorrências</p>' +
+          '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm mb-2">' +
+          '<span><strong>Advertido:</strong> ' + fichaOccText(trat.advertido || '—') + '</span>' +
+          '<span><strong>Suspenso:</strong> ' + fichaOccText(trat.suspenso || '—') + '</span>' +
+          '<span><strong>Resp. comunicado:</strong> ' + fichaOccText(trat.responsavel || '—') + '</span>' +
+          '</div><p class="text-sm text-emerald-900">' + fichaOccText(trat.descricao || '') + '</p></div>'
+        : '<p class="mt-4 text-sm text-text-secondary">Esta ocorrência ainda não tem tratamento registrado na aba Ocorrências.</p>';
+    let modal = document.getElementById('ficha-occ-detail');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'ficha-occ-detail';
+        modal.className = 'fixed inset-0 z-[200] flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+    }
+    modal.innerHTML =
+        '<div class="absolute inset-0 bg-black/40" onclick="closeFichaOccurrenceDetail()"></div>' +
+        '<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6">' +
+        '<div class="flex items-start justify-between gap-3 mb-4">' +
+        '<div><p class="text-[10px] font-bold uppercase text-text-secondary">Situação do tratamento</p>' +
+        '<h3 class="font-bold text-lg">' + fichaOccText(o.type || o.tipo || 'Ocorrência') + '</h3></div>' +
+        '<button type="button" class="w-8 h-8 rounded-lg hover:bg-surface-container" onclick="closeFichaOccurrenceDetail()" aria-label="Fechar">×</button>' +
+        '</div>' +
+        '<span class="inline-block px-3 py-1 rounded-full text-xs font-bold ' +
+        (tratado ? 'bg-emerald-600 text-white' : 'bg-amber-100 text-amber-800') + '">' + fichaOccText(status) + '</span>' +
+        '<p class="text-sm mt-4">' + fichaOccText(o.desc || o.descricao || '') + '</p>' +
+        tratHtml +
+        '</div>';
+    modal.classList.remove('hidden');
+}
+
+function closeFichaOccurrenceDetail() {
+    const modal = document.getElementById('ficha-occ-detail');
+    if (modal) modal.classList.add('hidden');
+}
+
+window.openFichaOccurrenceDetail = openFichaOccurrenceDetail;
+window.closeFichaOccurrenceDetail = closeFichaOccurrenceDetail;
 
 // Timeline rendering of class changes
 function renderClassHistory(student) {
