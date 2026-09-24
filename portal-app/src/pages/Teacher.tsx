@@ -38,6 +38,33 @@ const tabs: {route: string; icon: IconName; label: string}[] = [
   {route: 'notices', icon: 'notices', label: 'Informes'},
   {route: 'more', icon: 'more', label: 'Mais'},
 ];
+const TEACHER_QUOTES = [
+  {text: 'A educação é a arma mais poderosa que você pode usar para mudar o mundo.', author: 'Nelson Mandela'},
+  {text: 'Um livro, uma caneta, uma criança e um professor podem mudar o mundo.', author: 'Malala Yousafzai'},
+  {text: 'Ensinar é um exercício de imortalidade.', author: 'Rubem Alves'},
+  {text: 'Feliz aquele que transfere o que sabe e aprende o que ensina.', author: 'Cora Coralina'},
+  {text: 'Um país se faz com homens e livros.', author: 'Monteiro Lobato'},
+  {text: 'A educação não é preparação para a vida; a educação é a própria vida.', author: 'John Dewey'},
+  {text: 'O homem que move montanhas começa carregando pequenas pedras.', author: 'Confúcio'},
+  {text: 'Uma jornada de mil quilômetros começa com um único passo.', author: 'Lao Tsé'},
+  {text: 'Sozinhos podemos fazer tão pouco; juntos podemos fazer tanto.', author: 'Helen Keller'},
+  {text: 'O futuro pertence àqueles que acreditam na beleza dos seus sonhos.', author: 'Eleanor Roosevelt'},
+  {text: 'Se vi mais longe, foi por estar sobre os ombros de gigantes.', author: 'Isaac Newton'},
+  {text: 'Tudo vale a pena se a alma não é pequena.', author: 'Fernando Pessoa'},
+  {text: 'O que a vida quer da gente é coragem.', author: 'Guimarães Rosa'},
+  {text: 'A escuridão não pode expulsar a escuridão; só a luz pode fazer isso.', author: 'Martin Luther King Jr.'},
+  {text: 'É preciso uma aldeia inteira para educar uma criança.', author: 'Provérbio africano'},
+  {text: 'O grande professor inspira.', author: 'William Arthur Ward'},
+];
+
+function quoteForThisVisit() {
+  const last = Number(sessionStorage.getItem('siga_teacher_quote') || '-1');
+  let index = Math.floor(Math.random() * TEACHER_QUOTES.length);
+  if (TEACHER_QUOTES.length > 1 && index === last) index = (index + 1) % TEACHER_QUOTES.length;
+  sessionStorage.setItem('siga_teacher_quote', String(index));
+  return TEACHER_QUOTES[index];
+}
+
 const features: {route: string; title: string; icon: IconName; color: string; description: string}[] = [
   {route: 'calendar', title: 'Calendário', icon: 'calendar', color: 'blue', description: 'Veja os dias letivos e os eventos da escola.'},
   {route: 'attendance', title: 'Frequência', icon: 'attendance', color: 'green', description: 'Faça a chamada de entrada e de saída da turma.'},
@@ -60,6 +87,7 @@ export default function TeacherApp() {
     try { return JSON.parse(localStorage.getItem('siga_portal_notice_read') || '[]'); } catch { return []; }
   });
   const [photo, setPhoto] = useState('');
+  const [quote] = useState(quoteForThisVisit);
   const [theme, setTheme] = useState(() => localStorage.getItem('siga-theme') || 'light');
   const [offline, setOffline] = useState(!navigator.onLine);
 
@@ -113,7 +141,7 @@ export default function TeacherApp() {
   const selected = tabs.some((tab) => tab.route === route) ? route : 'more';
   let content: ReactNode;
   switch (route) {
-    case 'home': content = <TeacherHome data={data} photo={photo} go={go} />; break;
+    case 'home': content = <TeacherHome data={data} photo={photo} quote={quote} go={go} />; break;
     case 'calendar': content = <Calendar detail={(title, body) => setSheet({title, body})} events={data.events} />; break;
     case 'attendance': content = <TeacherAttendance data={data} notify={setToast} />; break;
     case 'notices': content = <Notices read={read} onRead={markRead} items={data.notices} />; break;
@@ -134,7 +162,7 @@ export default function TeacherApp() {
   </IonPage></div><IonModal isOpen={!!sheet} onDidDismiss={() => setSheet(null)} initialBreakpoint={0.8} breakpoints={[0, 0.8, 1]}><div className="sheet"><header><h2>{sheet?.title}</h2><button aria-label="Fechar" onClick={() => setSheet(null)}><Icon name="close" /></button></header>{sheet?.body}</div></IonModal><IonToast isOpen={!!toast} message={toast} duration={2400} onDidDismiss={() => setToast('')} /></IonApp>;
 }
 
-function TeacherHome({data, photo, go}: {data: TeacherSnapshot; photo: string; go: (route: string) => void}) {
+function TeacherHome({data, photo, quote, go}: {data: TeacherSnapshot; photo: string; quote: {text: string; author: string}; go: (route: string) => void}) {
   const {teacher} = data;
   return <>
     <button className="student-card surface" onClick={() => go('profile')}>
@@ -142,7 +170,7 @@ function TeacherHome({data, photo, go}: {data: TeacherSnapshot; photo: string; g
       <div className="student-info"><span>Olá,</span><h2>{teacher.name}</h2><p><Icon name="people" />{teacher.role}</p>{teacher.school && <p><Icon name="school" />{teacher.school}</p>}</div>
       <Icon name="next" />
     </button>
-    <div className="quote"><span>“</span><em>A entrada e a saída da turma ficam registradas para toda a escola.</em><small>SIGA EDUCA</small></div>
+    <div className="quote"><span>“</span><em>{quote.text}</em><small>{quote.author}</small></div>
     <div className="features">{features.map((feature) => <button key={feature.route} className="feature surface" onClick={() => go(feature.route)}><div className={`icon-box ${feature.color}`}><Icon name={feature.icon} /></div><Icon name="next" className="feature-arrow" /><h3>{feature.title}</h3><p>{feature.description}</p></button>)}</div>
     <button className="inform-banner" onClick={() => go('notices')}><div className="icon-box purple"><Icon name="notices" /></div><div><h3>Informes</h3><p>{data.notices[0]?.title || 'Comunicados publicados para a escola.'}</p></div><Icon name="next" /></button>
   </>;
