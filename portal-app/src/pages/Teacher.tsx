@@ -350,7 +350,7 @@ function RollCard({title, phase, open, onToggle, roll, saving, onMark, onReason,
             {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : studentInitials(student.nome)}
           </button>
           <b>{student.nome}</b>
-          <div className="roll-options">{marks.map(([status, label]) => <label key={status} title={label}><input type="radio" name={`${phase}-${student.id}`} checked={mark.hasMark ? mark.status === status : status === 'P'} disabled={frozen} onChange={() => onMark(phase, student.id, status)} /><span className="roll-short">{status}</span><span className="roll-long">{label}</span></label>)}</div>
+          <div className="roll-options">{marks.map(([status, label]) => <label key={status} title={label}><input type="radio" name={`${phase}-${student.id}`} aria-label={label} checked={mark.hasMark ? mark.status === status : status === 'P'} disabled={frozen} onChange={() => onMark(phase, student.id, status)} />{status}</label>)}</div>
         </div>
         {isFacialLocked(mark) && <small>Reconhecimento facial</small>}
         {mark.status === 'FJ' && !frozen && <input className="roll-reason" placeholder="Motivo da falta justificada" value={mark.justification} onChange={(event) => onReason(phase, student.id, event.target.value)} />}
@@ -359,6 +359,9 @@ function RollCard({title, phase, open, onToggle, roll, saving, onMark, onReason,
     })}
     <button className="primary" disabled={saving || !roll.students.length} onClick={onConsolidate}>{saving ? 'Salvando...' : phase === 'entrada' ? 'Consolidar Entrada' : 'Consolidar Saída'}</button>
     </div>}
-    {zoom && <button type="button" className="photo-zoom" aria-label="Fechar foto" onClick={() => setZoom(null)}><img src={zoom.url} alt={zoom.nome} /></button>}
+    {zoom && <div className="photo-zoom" role="dialog" aria-label={`Foto de ${zoom.nome}`}>
+      <button type="button" className="photo-zoom-close" aria-label="Fechar foto" onClick={() => setZoom(null)}>×</button>
+      <img src={zoom.url} alt={zoom.nome} />
+    </div>}
   </section>;
 }
