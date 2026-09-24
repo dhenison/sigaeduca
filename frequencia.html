@@ -438,6 +438,18 @@
 <div class="bg-background-surface rounded-[16px] border border-border-subtle custom-shadow p-6 flex flex-col gap-4">
     <div class="flex flex-wrap items-end gap-6">
         <div class="space-y-2 flex-1 w-full sm:min-w-[200px] sm:w-auto">
+            <label class="font-label-sm text-label-sm text-text-secondary uppercase tracking-wider">Turno</label>
+            <div class="relative">
+                <select id="filter-turno-select" class="w-full border-border-subtle rounded-lg py-2.5 pl-4 pr-10 appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md">
+                    <option value="">Selecione o turno</option>
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">keyboard_arrow_down</span>
+            </div>
+        </div>
+        <div class="space-y-2 flex-1 w-full sm:min-w-[200px] sm:w-auto">
             <label class="font-label-sm text-label-sm text-text-secondary uppercase tracking-wider">Selecionar Turma</label>
             <div class="relative">
                 <select id="filter-turma-select" class="w-full border-border-subtle rounded-lg py-2.5 pl-4 pr-10 appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-body-md">
@@ -454,6 +466,11 @@
         </div>
     </div>
     
+    <div id="freq-painel-turnos" class="space-y-3">
+        <h3 class="font-headline-sm font-bold text-on-surface">Painel</h3>
+        <p class="text-label-sm text-text-secondary">Vermelho: nenhuma chamada. Amarelo: entrada feita, aguardando a saída. Verde: dia consolidado.</p>
+        <div id="freq-turno-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+    </div>
     <!-- Warning Banner Container -->
     <div id="date-validation-warning" class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 text-red-800 hidden">
         <span class="material-symbols-outlined text-red-600 mt-0.5">warning</span>
@@ -653,6 +670,112 @@ let allStudents = [];
 let filteredStudents = [];
 let calendarDays = {};
 
+let painelCloudFlags = {};
+
+function normalizeTurnoPainel(value) {
+    const s = String(value || '').toLowerCase();
+    if (s.startsWith('manh') || s.startsWith('matut')) return 'Manhã';
+    if (s.startsWith('tard') || s.startsWith('vesp')) return 'Tarde';
+    if (s.startsWith('noit') || s.startsWith('not')) return 'Noite';
+    return String(value || '').trim();
+}
+
+function classesDoPainel() {
+    const classes = (typeof window.getClasses === 'function'
+        ? window.getClasses()
+        : JSON.parse(localStorage.getItem('siga_classes') || '[]')) || [];
+    return classes.filter(function (c) {
+        return String(c.status || 'Ativo').toLowerCase() !== 'inativo';
+    });
+}
+
+function faseConsolidada(localFase, cloudFlag) {
+    return !!(cloudFlag || (localFase && localFase.consolidado));
+}
+
+function renderPainelTurnos() {
+    const host = document.getElementById('freq-turno-cards');
+    const turno = document.getElementById('filter-turno-select')?.value || '';
+    const date = document.getElementById('filter-date-input')?.value || '';
+    if (!host) return;
+    if (!turno || !date) {
+        host.innerHTML = '<p class="text-sm text-text-secondary">Selecione o turno e o dia para ver as turmas.</p>';
+        return;
+    }
+    const list = classesDoPainel().filter(function (c) {
+        return normalizeTurnoPainel(c.turno) === turno;
+    });
+    if (!list.length) {
+        host.innerHTML = '<p class="text-sm text-text-secondary">Nenhuma turma neste turno.</p>';
+        return;
+    }
+    host.innerHTML = list.map(function (c) {
+        let local = null;
+        try {
+            local = JSON.parse(localStorage.getItem('siga_attendance_' + date + '_' + c.code) || 'null');
+        } catch (e) { local = null; }
+        const cloud = painelCloudFlags[c.code] || {};
+        const ent = faseConsolidada(local && local.entrada, cloud.entrada);
+        const sai = faseConsolidada(local && local.saida, cloud.saida);
+        let card = 'border-red-400 bg-red-50';
+        if (ent && sai) card = 'border-emerald-500 bg-emerald-50';
+        else if (ent) card = 'border-amber-400 bg-amber-50';
+        const selo = function (ok, texto) {
+            return '<span class="inline-block mt-2 px-2 py-1 rounded-full text-[11px] font-bold uppercase ' +
+                (ok ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white') + '">' + texto + '</span>';
+        };
+        const code = String(c.code || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return '<button type="button" class="text-left rounded-2xl border-2 p-4 shadow-sm hover:brightness-95 transition ' + card + '" onclick="abrirTurmaDoPainel(\'' + code + '\')">' +
+            '<p class="font-bold text-on-surface">' + String(c.code || '') + '</p>' +
+            '<p class="text-xs text-text-secondary">' + String(c.serie || '') + '</p>' +
+            selo(ent, 'Chamada de entrada') +
+            '<br>' + selo(sai, 'Chamada de saída') +
+            '</button>';
+    }).join('');
+}
+
+function refreshPainelTurnos() {
+    const date = document.getElementById('filter-date-input')?.value || '';
+    const api = window.SigaSupabase;
+    const schoolId = localStorage.getItem('siga_active_school') || '';
+    if (!date || !api || typeof api.getClient !== 'function' || typeof api.isConfigured !== 'function' || !api.isConfigured() || !schoolId) {
+        renderPainelTurnos();
+        return;
+    }
+    api.getClient().from('attendance_calls')
+        .select('class_code,entrada_consolidada,saida_consolidada')
+        .eq('school_id', schoolId)
+        .eq('day_date', date)
+        .then(function (res) {
+            painelCloudFlags = {};
+            (res.data || []).forEach(function (row) {
+                painelCloudFlags[row.class_code] = {
+                    entrada: !!row.entrada_consolidada,
+                    saida: !!row.saida_consolidada
+                };
+            });
+            renderPainelTurnos();
+        })
+        .catch(function () { renderPainelTurnos(); });
+}
+
+function abrirTurmaDoPainel(code) {
+    const turmaSelect = document.getElementById('filter-turma-select');
+    if (!turmaSelect) return;
+    turmaSelect.value = code;
+    loadAttendanceData();
+    const alvo = document.getElementById('attendance-columns-container');
+    if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function bindPainelTurno() {
+    const turno = document.getElementById('filter-turno-select');
+    if (turno && !turno.dataset.bound) {
+        turno.addEventListener('change', renderPainelTurnos);
+        turno.dataset.bound = '1';
+    }
+}
+
 function initFrequencia() {
     calendarDays = window.getCalendarDays ? window.getCalendarDays() : {};
     allStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
@@ -689,6 +812,7 @@ function initFrequencia() {
             dateInput.dataset.bound = '1';
         }
 
+        bindPainelTurno();
         loadAttendanceData();
         updateFrequenciaKpis();
     }
@@ -822,6 +946,7 @@ function loadAttendanceData() {
 
     currentClass = turmaSelect.value || '';
     currentDate = dateInput.value || '';
+    refreshPainelTurnos();
     allStudents = JSON.parse(localStorage.getItem('siga_students')) || [];
 
     if (!currentClass) {
@@ -1422,6 +1547,7 @@ function consolidarEntrada() {
     updateFrequenciaKpis();
     if (typeof showToast === 'function') {
         showToast('Chamada de Entrada consolidada. O reconhecimento facial continua valendo.');
+    refreshPainelTurnos();
     }
 }
 
@@ -1503,6 +1629,7 @@ function consolidarSaida() {
     if (typeof showToast === 'function') {
         showToast('Chamada de Saída consolidada com sucesso!');
     }
+    refreshPainelTurnos();
 }
 
 function solicitarDesbloqueio(type) {
