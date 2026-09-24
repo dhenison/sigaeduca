@@ -125,7 +125,7 @@ export default function TeacherApp() {
     default: content = <TeacherMore go={go} logout={logout} />;
   }
   return <IonApp><div className="app-viewport"><IonPage>
-    <header className="app-header">{route === 'home' ? <><button aria-label="Abrir menu" onClick={() => go('more')}><Icon name="menu" /></button><Brand label="Portal do Professor" /><button className="profile-button" aria-label="Meu perfil" onClick={() => go('profile')}>{photo ? <img src={photo} alt="" /> : <Icon name="profile" />}</button></> : <><button aria-label="Voltar ao início" onClick={() => go('home')}><Icon name="back" /></button><h1>{titles[route] || 'Mais'}</h1><button className="profile-button" aria-label="Meu perfil" onClick={() => go('profile')}>{photo ? <img src={photo} alt="" /> : <Icon name="profile" />}</button></>}</header>
+    <header className="app-header">{route === 'home' ? <><button aria-label="Abrir menu" onClick={() => go('more')}><Icon name="menu" /></button><Brand label="Portal do Professor" /><span className="header-spacer" aria-hidden="true" /></> : <><button aria-label="Voltar ao início" onClick={() => go('home')}><Icon name="back" /></button><h1>{titles[route] || 'Mais'}</h1><button className="profile-button" aria-label="Meu perfil" onClick={() => go('profile')}>{photo ? <img src={photo} alt="" /> : <Icon name="profile" />}</button></>}</header>
     {offline && <div className="offline">Sem conexão · A chamada precisa de internet para ser salva</div>}
     <IonContent><IonRefresher slot="fixed" onIonRefresh={(event) => { reload().finally(() => { setToast('Portal atualizado'); event.detail.complete(); }); }}><IonRefresherContent pullingText="Puxe para atualizar" /></IonRefresher>
       <main key={route} className={'page ' + (route === 'home' ? 'home-page' : '')}>{content}</main>
@@ -165,7 +165,7 @@ function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; 
       const dataUrl = await compressAvatar(file);
       await saveTeacherAvatar(teacher, dataUrl);
       onPhoto(dataUrl);
-      notify('Foto salva. Ela também aparece no seu usuário do sistema.');
+      notify('Foto salva no aplicativo e no cadastro da web.');
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Não foi possível salvar a foto.');
     } finally {
@@ -209,7 +209,7 @@ function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; 
     <p>{form.role || 'Professor'}</p>
     <div className="photo-actions">
       <button type="button" disabled={saving} onClick={() => camera.current?.click()}>Tirar foto</button>
-      <button type="button" disabled={saving} onClick={() => gallery.current?.click()}>Enviar foto</button>
+      <button type="button" disabled={saving} onClick={() => gallery.current?.click()}>Carregar foto</button>
     </div>
     <input className="file-input" ref={camera} type="file" accept="image/*" capture="user" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
     <input className="file-input" ref={gallery} type="file" accept="image/*" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
