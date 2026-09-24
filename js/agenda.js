@@ -88,7 +88,7 @@
 
   function saveEvents(list) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list || []));
-    syncAgendaCloud(list || []);
+    return syncAgendaCloud(list || []);
   }
 
   function agendaClient() {
@@ -158,20 +158,27 @@
   function syncAgendaCloud(list) {
     var sb = agendaClient();
     var schoolId = agendaSchoolId();
-    if (!sb || !schoolId) return Promise.resolve({ ok: false });
-    return sb.from('agenda_events').select('local_id').eq('school_id', schoolId).then(function (existing) {
-      var keep = {};
-      (list || []).forEach(function (evt) { keep[String(evt.id)] = true; });
-      var deletes = ((existing && existing.data) || []).filter(function (row) {
-        return row.local_id && !keep[row.local_id];
-      }).map(function (row) {
-        return sb.from('agenda_events').delete().eq('school_id', schoolId).eq('local_id', row.local_id);
+    if (!sb || !schoolId) {
+      return Promise.resolve({ ok: false, message: 'A atividade ficou neste computador. Entre de novo na escola para publicá-la no aplicativo.' });
+    }
+    var rows = (list || []).filter(function (evt) { return evt && evt.date && evt.title && !evt.fromCalendar; });
+    var write = rows.length
+      ? sb.from('agenda_events').upsert(rows.map(function (evt) { return localEventToCloud(evt, schoolId); }), { onConflict: 'school_id,local_id' })
+      : Promise.resolve({ error: null });
+    return write.then(function (res) {
+      if (res.error) return { ok: false, message: res.error.message || 'Não foi possível publicar a atividade.' };
+      return sb.from('agenda_events').select('local_id').eq('school_id', schoolId).then(function (existing) {
+        if (existing.error) return { ok: false, message: existing.error.message || 'Não foi possível confirmar a atividade.' };
+        var keep = {};
+        rows.forEach(function (evt) { keep[String(evt.id)] = true; });
+        var stale = (existing.data || []).filter(function (row) { return row.local_id && !keep[row.local_id]; });
+        return Promise.all(stale.map(function (row) {
+          return sb.from('agenda_events').delete().eq('school_id', schoolId).eq('local_id', row.local_id);
+        })).then(function () { return { ok: true }; });
       });
-      var writes = (list || []).filter(function (evt) { return evt && evt.date && evt.title; }).map(function (evt) {
-        return sb.from('agenda_events').upsert(localEventToCloud(evt, schoolId), { onConflict: 'school_id,local_id' });
-      });
-      return Promise.all(deletes.concat(writes));
-    }).catch(function () { return { ok: false }; });
+    }).catch(function (err) {
+      return { ok: false, message: (err && err.message) || 'Não foi possível publicar a atividade.' };
+    });
   }
 
   window.loadAgendaFromCloud = loadAgendaFromCloud;
@@ -504,12 +511,14 @@
         return;
       }
       list[idx] = payload;
-      saveEvents(list);
-      showAgendaToast('Atividade atualizada.');
+      saveEvents(list).then(function (res) {
+        showAgendaToast(res && res.ok ? 'Atividade atualizada.' : ((res && res.message) || 'Não foi possível publicar a atividade.'), res && res.ok ? undefined : 'error');
+      });
     } else {
       list.unshift(payload);
-      saveEvents(list);
-      showAgendaToast('Atividade criada.');
+      saveEvents(list).then(function (res) {
+        showAgendaToast(res && res.ok ? 'Atividade criada. Atualize o aplicativo para vê-la.' : ((res && res.message) || 'Não foi possível publicar a atividade.'), res && res.ok ? undefined : 'error');
+      });
     }
     closeModal();
     renderAll();

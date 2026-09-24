@@ -17,7 +17,12 @@ export function PortalProvider({children}: {children: React.ReactNode}) {
     setData(next);
     setReady(true);
   }
-  useEffect(() => { reload(); }, []);
+  useEffect(() => {
+    reload();
+    const refresh = () => { reload(); };
+    window.addEventListener('pageshow', refresh);
+    return () => window.removeEventListener('pageshow', refresh);
+  }, []);
   return <PortalContext.Provider value={{data, ready, reload}}>{children}</PortalContext.Provider>;
 }
 

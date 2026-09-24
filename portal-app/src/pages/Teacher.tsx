@@ -97,6 +97,14 @@ export default function TeacherApp() {
     setReady(true);
   }
   useEffect(() => { reload(); }, []);
+  useEffect(() => {
+    if (route === 'calendar') reload();
+  }, [route]);
+  useEffect(() => {
+    const refresh = () => { reload(); };
+    window.addEventListener('pageshow', refresh);
+    return () => window.removeEventListener('pageshow', refresh);
+  }, []);
   useEffect(() => { if (data?.teacher.avatarUrl) setPhoto(data.teacher.avatarUrl); }, [data]);
   useEffect(() => {
     const fn = () => setRoute(location.hash.slice(2) || 'home');
