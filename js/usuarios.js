@@ -922,7 +922,7 @@
                     };
 
                     // Sempre tenta Auth (mesmo se já estiver no banco sem user_id)
-                    return staffApi.upsertStaff(payload, { plainPassword: row.senha }).then(function (cloud) {
+                    return staffApi.upsertStaff(payload).then(function (cloud) {
                         if (cloud && cloud.ok) {
                             ok += 1;
                             if (cloud.auth && cloud.auth.ok && !cloud.auth.skipped) linked += 1;
@@ -982,7 +982,55 @@
                 msg += ' Detalhes no console (F12).';
             }
             toast(msg, fail ? 'error' : 'success');
+            return abrirLoginsDosProfessores(rows);
         });
+    }
+
+    function abrirLoginsDosProfessores(rows) {
+        var sb = window.SigaSupabase && window.SigaSupabase.getClient && window.SigaSupabase.getClient();
+        if (!sb || !sb.functions || typeof sb.functions.invoke !== 'function') {
+            toast('Cadastro gravado. Entre de novo na escola para criar os logins.', 'error');
+            return Promise.resolve();
+        }
+        toast('Criando os logins dos professores…');
+        return sb.functions.invoke('importar-professores', {
+            body: {
+                rows: rows.map(function (row) {
+                    return {
+                        nome: row.nome,
+                        email: row.email,
+                        senha: row.senha,
+                        matricula: row.matricula
+                    };
+                })
+            }
+        }).then(function (res) {
+            var data = res && res.data;
+            if (res && res.error) {
+                toast('Cadastro gravado. Login em lote: ' + (res.error.message || 'falha'), 'error');
+                return;
+            }
+            if (!data || data.ok === false) {
+                toast((data && data.message) || 'Cadastro gravado, mas os logins não foram criados.', 'error');
+                return;
+            }
+            toast('Logins: ' + (data.linked || 0) + ' prontos, ' + (data.fail || 0) + ' falhas.', data.fail ? 'error' : 'success');
+        }).catch(function (err) {
+            toast('Cadastro gravado. Login em lote: ' + ((err && err.message) || 'falha'), 'error');
+        });
+    }
+
+    function downloadModeloProfessores() {
+        var csv = '\uFEFFProfessor;E-mail Institucional;Senha padrão;Matrícula\r\n'
+            + 'NOME DO PROFESSOR;nome.sobrenome@escola.seduc.pa.gov.br;senha123;000000\r\n';
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'modelo-professores-siga.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
     }
 
     function handleImportProfessoresFile(file) {
@@ -993,7 +1041,7 @@
                 toast('Nenhuma linha válida. Use: Professor | E-mail Institucional | Senha padrão.', 'error');
                 return;
             }
-            if (!confirm('Importar ' + rows.length + ' professor(es)?\n\nATENÇÃO: o e-mail padrão do Supabase só permite ~2 cadastros Auth por hora.\nPara os 30 de uma vez, use o script admin:\n  scripts/import-professores-auth.mjs\n\nContinuar mesmo assim pela tela?')) {
+            if (!confirm('Importar ' + rows.length + ' professor(es)?\n\nA planilha pode ter quantas linhas forem necessárias. Use o botão Baixar modelo.')) {
                 return;
             }
             return importProfessoresFromRows(rows);
@@ -1014,6 +1062,9 @@
 
         var btnNew = document.getElementById('btn-novo-usuario');
         if (btnNew) btnNew.addEventListener('click', function () { openModal(null); });
+
+        var btnModelo = document.getElementById('btn-modelo-professores');
+        if (btnModelo) btnModelo.addEventListener('click', downloadModeloProfessores);
 
         var btnImport = document.getElementById('btn-importar-professores');
         var inputImport = document.getElementById('input-importar-professores');
