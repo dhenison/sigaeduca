@@ -333,7 +333,7 @@ function calendarEvents(days: Record<string, {type?: string; label?: string}>): 
       title: days[iso]?.label || 'Dia do calendário',
       date: iso,
       time: '',
-      category: 'Calendário',
+      category: 'Agenda EGAP',
       description: days[iso]?.label || '',
     }));
 }

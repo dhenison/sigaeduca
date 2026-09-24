@@ -21,7 +21,7 @@ import {
 
 const titles: Record<string, string> = {
   home: 'Início',
-  calendar: 'Calendário',
+  calendar: 'Agenda EGAP',
   attendance: 'Frequência',
   notices: 'Informes',
   schedule: 'Horário de Aula',
@@ -33,7 +33,7 @@ const titles: Record<string, string> = {
 };
 const tabs: {route: string; icon: IconName; label: string}[] = [
   {route: 'home', icon: 'home', label: 'Início'},
-  {route: 'calendar', icon: 'calendar', label: 'Calendário'},
+  {route: 'calendar', icon: 'calendar', label: 'Agenda EGAP'},
   {route: 'attendance', icon: 'attendance', label: 'Frequência'},
   {route: 'notices', icon: 'notices', label: 'Informes'},
   {route: 'more', icon: 'more', label: 'Mais'},
@@ -66,7 +66,7 @@ function quoteForThisVisit() {
 }
 
 const features: {route: string; title: string; icon: IconName; color: string; description: string}[] = [
-  {route: 'calendar', title: 'Calendário', icon: 'calendar', color: 'blue', description: 'Veja os dias letivos e os eventos da escola.'},
+  {route: 'calendar', title: 'Agenda EGAP', icon: 'calendar', color: 'blue', description: 'Veja as datas do calendário e as atividades da escola.'},
   {route: 'attendance', title: 'Frequência', icon: 'attendance', color: 'green', description: 'Faça a chamada de entrada e de saída da turma.'},
   {route: 'schedule', title: 'Horário de Aula', icon: 'schedule', color: 'red', description: 'Abra a grade de horários no Drive.'},
   {route: 'olympics', title: 'Topo do Saber', icon: 'olympics', color: 'orange', description: 'Acompanhe as olimpíadas e os projetos da escola.'},

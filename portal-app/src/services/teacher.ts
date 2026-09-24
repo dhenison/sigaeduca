@@ -188,7 +188,7 @@ function calendarEvents(days: Record<string, {type?: string; label?: string}>): 
       title: days[iso]?.label || 'Dia do calendário',
       date: iso,
       time: '',
-      category: 'Calendário',
+      category: 'Agenda EGAP',
       description: days[iso]?.label || '',
     }));
 }
@@ -243,17 +243,47 @@ async function loadClasses(schoolId: string): Promise<ClassOption[]> {
     .sort((a, b) => a.code.localeCompare(b.code, 'pt-BR'));
 }
 
+async function loadAgendaEvents(schoolId: string): Promise<SchoolEvent[]> {
+  const local = readJson<Array<Record<string, unknown>>>('siga_agenda_events', []).map((row) => {
+    const date = String(row.date || row.event_date || '').slice(0, 10);
+    if (!date) return null;
+    return {
+      id: String(row.id || date),
+      title: String(row.title || 'Atividade'),
+      date,
+      time: '',
+      category: String(row.type || row.event_type || 'Evento escolar'),
+      description: String(row.desc || row.description || ''),
+    };
+  }).filter((row): row is SchoolEvent => !!row);
+  if (!schoolId) return local;
+  const res = await sb().from('agenda_events').select('id, title, event_type, event_date, description').eq('school_id', schoolId);
+  if (res.error || !res.data?.length) return local;
+  return res.data.map((row) => ({
+    id: String(row.id),
+    title: row.title || 'Atividade',
+    date: String(row.event_date || '').slice(0, 10),
+    time: '',
+    category: row.event_type || 'Evento escolar',
+    description: row.description || '',
+  })).filter((row) => row.date);
+}
+
 async function loadEvents(schoolId: string): Promise<SchoolEvent[]> {
   const local = readJson<Record<string, {type?: string; label?: string}>>('siga_calendar_days', {});
-  if (!schoolId) return calendarEvents(local);
-  const res = await sb().from('calendar_days').select('day_date, day_type, label').eq('school_id', schoolId);
-  if (res.error || !res.data) return calendarEvents(local);
-  const days = {...local};
-  res.data.forEach((row) => {
-    const iso = String(row.day_date || '').slice(0, 10);
-    if (iso) days[iso] = {type: row.day_type || '', label: row.label || ''};
-  });
-  return calendarEvents(days).sort((a, b) => a.date.localeCompare(b.date));
+  let days = local;
+  if (schoolId) {
+    const res = await sb().from('calendar_days').select('day_date, day_type, label').eq('school_id', schoolId);
+    if (!res.error && res.data) {
+      days = {...local};
+      res.data.forEach((row) => {
+        const iso = String(row.day_date || '').slice(0, 10);
+        if (iso) days[iso] = {type: row.day_type || '', label: row.label || ''};
+      });
+    }
+  }
+  const agenda = await loadAgendaEvents(schoolId);
+  return [...agenda, ...calendarEvents(days)].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 async function loadNotices(schoolId: string): Promise<Notice[]> {
