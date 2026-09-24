@@ -282,18 +282,24 @@ export function openYoutube(url?: string) {
   window.open(watch, '_blank', 'noopener');
 }
 
+export async function loadPublishedAgenda(schoolId: string): Promise<{days: Record<string, {type?: string; label?: string}>; rows: Array<Record<string, unknown>>}> {
+  const empty = {days: {} as Record<string, {type?: string; label?: string}>, rows: [] as Array<Record<string, unknown>>};
+  if (!schoolId) return empty;
+  const res = await sb().rpc('portal_school_agenda', {p_school_id: schoolId});
+  if (res.error || !res.data) return empty;
+  const payload = res.data as {days?: Array<{date?: string; type?: string; label?: string}>; events?: Array<Record<string, unknown>>};
+  const days: Record<string, {type?: string; label?: string}> = {};
+  (payload.days || []).forEach((row) => {
+    const iso = String(row.date || '').slice(0, 10);
+    if (iso) days[iso] = {type: row.type || '', label: row.label || ''};
+  });
+  return {days, rows: payload.events || []};
+}
+
 async function loadCalendar(schoolId: string) {
   const local = readJson<Record<string, {type?: string; label?: string}>>('siga_calendar_days', {});
-  if (!schoolId) return local;
-  const res = await sb().from('calendar_days').select('day_date, day_type, label').eq('school_id', schoolId);
-  if (res.error || !res.data) return local;
-  const days = {...local};
-  for (const row of res.data) {
-    const iso = String(row.day_date || '').slice(0, 10);
-    if (!iso) continue;
-    days[iso] = {type: row.day_type || '', label: row.label || ''};
-  }
-  return days;
+  const published = await loadPublishedAgenda(schoolId);
+  return {...local, ...published.days};
 }
 
 function mapAgendaRow(row: Record<string, unknown>, turma: string): SchoolEvent | null {
@@ -317,16 +323,22 @@ async function loadAgenda(schoolId: string, turma: string): Promise<SchoolEvent[
     .map((row) => mapAgendaRow(row, turma))
     .filter((row): row is SchoolEvent => !!row);
   if (!schoolId) return local;
-  const res = await sb().from('agenda_events').select('id, title, event_type, event_date, description, scope, class_codes').eq('school_id', schoolId);
-  if (res.error || !res.data?.length) return local;
-  return res.data.map((row) => mapAgendaRow(row as Record<string, unknown>, turma)).filter((row): row is SchoolEvent => !!row);
+  const published = await loadPublishedAgenda(schoolId);
+  const cloud = published.rows.map((row) => mapAgendaRow({
+    ...row,
+    event_date: row.date,
+    event_type: row.type,
+    class_codes: row.classes,
+  }, turma)).filter((row): row is SchoolEvent => !!row);
+  if (!cloud.length) return local;
+  return cloud;
 }
 
 function calendarEvents(days: Record<string, {type?: string; label?: string}>): SchoolEvent[] {
   return Object.keys(days)
     .filter((iso) => {
       const type = String(days[iso]?.type || '');
-      return type === 'evento' || type === 'sabado' || type.includes('feriado') || type.startsWith('inicio_');
+      return type && type !== 'letivo' && type !== 'domingo' && type !== 'sabado_nao_letivo';
     })
     .map((iso) => ({
       id: 'cal-' + iso,

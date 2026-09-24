@@ -171,7 +171,10 @@ function TeacherHome({data, photo, quote, go}: {data: TeacherSnapshot; photo: st
       <Icon name="next" />
     </button>
     <div className="quote"><span>“</span><em>{quote.text}</em><small>{quote.author}</small></div>
-    <div className="features">{features.map((feature) => <button key={feature.route} className="feature surface" onClick={() => go(feature.route)}><div className={`icon-box ${feature.color}`}><Icon name={feature.icon} /></div><Icon name="next" className="feature-arrow" /><h3>{feature.title}</h3><p>{feature.description}</p></button>)}</div>
+    <div className="features">{features.map((feature) => {
+      const next = feature.route === 'calendar' ? data.events.find((event) => event.date >= new Date().toISOString().slice(0, 10)) : null;
+      return <button key={feature.route} className="feature surface" onClick={() => go(feature.route)}><div className={`icon-box ${feature.color}`}><Icon name={feature.icon} /></div><Icon name="next" className="feature-arrow" /><h3>{feature.title}</h3><p>{next ? `${next.date.slice(8, 10)}/${next.date.slice(5, 7)} · ${next.title}` : feature.description}</p></button>;
+    })}</div>
     <button className="inform-banner" onClick={() => go('notices')}><div className="icon-box purple"><Icon name="notices" /></div><div><h3>Informes</h3><p>{data.notices[0]?.title || 'Comunicados publicados para a escola.'}</p></div><Icon name="next" /></button>
   </>;
 }

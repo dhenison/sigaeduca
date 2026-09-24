@@ -5502,7 +5502,9 @@ function getCalendarDays() {
     const isClean2026 = days && Object.keys(days).length > 0 && Object.keys(days)[0].startsWith('2026') && hasJuly2026;
     
     if (!days || !isClean2026) {
-        days = {};
+        const keys = days ? Object.keys(days) : [];
+        const legacy = keys.length > 0 && !String(keys[0]).startsWith('2026');
+        if (!days || legacy) days = {};
         const year = 2026;
         
         // Seed May 2026 (weekdays letivo; sábados desmarcados; domingos trancados)
@@ -5513,12 +5515,14 @@ function getCalendarDays() {
             const date = new Date(year, month - 1, d);
             const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
             
-            if (dayOfWeek === 0) {
-                days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
-            } else if (dayOfWeek === 6) {
-                days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
-            } else {
-                days[dateStr] = { type: 'letivo', label: 'Dia Letivo' };
+            if (!days[dateStr]) {
+                if (dayOfWeek === 0) {
+                    days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
+                } else if (dayOfWeek === 6) {
+                    days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
+                } else {
+                    days[dateStr] = { type: 'letivo', label: 'Dia Letivo' };
+                }
             }
         }
         
@@ -5530,15 +5534,16 @@ function getCalendarDays() {
             const date = new Date(year, month - 1, d);
             const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
             
-            if (dayOfWeek === 0) {
-                days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
-            } else if (dayOfWeek === 6) {
-                days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
-            } else if (dateStr === '2026-07-24') {
-                // Dia de teste / operação letiva em julho
-                days[dateStr] = { type: 'letivo', label: 'Dia Letivo' };
-            } else {
-                days[dateStr] = { type: 'feriado_recesso', label: 'Férias Escolares' };
+            if (!days[dateStr]) {
+                if (dayOfWeek === 0) {
+                    days[dateStr] = { type: 'domingo', label: 'Domingo (Não Letivo)', locked: true };
+                } else if (dayOfWeek === 6) {
+                    days[dateStr] = { type: 'sabado_nao_letivo', label: 'Sábado (Não Letivo)' };
+                } else if (dateStr === '2026-07-24') {
+                    days[dateStr] = { type: 'letivo', label: 'Dia Letivo' };
+                } else {
+                    days[dateStr] = { type: 'feriado_recesso', label: 'Férias Escolares' };
+                }
             }
         }
         

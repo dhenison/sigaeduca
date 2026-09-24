@@ -1,5 +1,5 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
-import {clearSession} from './siga';
+import {clearSession, loadPublishedAgenda} from './siga';
 import type {Notice, SchoolEvent} from './siga';
 
 const SUPABASE_URL = 'https://digjzihjboflcuftmokj.supabase.co';
@@ -181,7 +181,7 @@ function calendarEvents(days: Record<string, {type?: string; label?: string}>): 
   return Object.keys(days)
     .filter((iso) => {
       const type = String(days[iso]?.type || '');
-      return type === 'evento' || type === 'sabado' || type.includes('feriado') || type.startsWith('inicio_');
+      return type && type !== 'letivo' && type !== 'domingo' && type !== 'sabado_nao_letivo';
     })
     .map((iso) => ({
       id: 'cal-' + iso,
@@ -271,18 +271,17 @@ async function loadAgendaEvents(schoolId: string): Promise<SchoolEvent[]> {
 
 async function loadEvents(schoolId: string): Promise<SchoolEvent[]> {
   const local = readJson<Record<string, {type?: string; label?: string}>>('siga_calendar_days', {});
-  let days = local;
-  if (schoolId) {
-    const res = await sb().from('calendar_days').select('day_date, day_type, label').eq('school_id', schoolId);
-    if (!res.error && res.data) {
-      days = {...local};
-      res.data.forEach((row) => {
-        const iso = String(row.day_date || '').slice(0, 10);
-        if (iso) days[iso] = {type: row.day_type || '', label: row.label || ''};
-      });
-    }
-  }
-  const agenda = await loadAgendaEvents(schoolId);
+  const published = await loadPublishedAgenda(schoolId);
+  const days = {...local, ...published.days};
+  const cloudAgenda = published.rows.map((row) => ({
+    id: String(row.id || row.date),
+    title: String(row.title || 'Atividade'),
+    date: String(row.date || '').slice(0, 10),
+    time: '',
+    category: String(row.type || 'Evento escolar'),
+    description: String(row.description || ''),
+  })).filter((row) => row.date);
+  const agenda = cloudAgenda.length ? cloudAgenda : await loadAgendaEvents(schoolId);
   return [...agenda, ...calendarEvents(days)].sort((a, b) => a.date.localeCompare(b.date));
 }
 

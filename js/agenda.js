@@ -143,6 +143,11 @@
       .order('event_date', { ascending: true })
       .then(function (res) {
         if (res.error || !Array.isArray(res.data)) return getEvents();
+        if (!res.data.length) {
+          var kept = getEvents();
+          if (kept.length) syncAgendaCloud(kept);
+          return kept;
+        }
         var list = res.data.map(cloudEventToLocal).map(normalizeEvent);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
         return list;
