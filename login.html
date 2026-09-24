@@ -4,6 +4,11 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>SIGA EDUCA - Login</title>
+<link rel="manifest" href="/manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+<meta name="theme-color" content="#00236f"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="SIGA EDUCA"/>
 <script>
 /* Detecta loop de redirect e bloqueia novos replaces no login */
 (function () {
@@ -232,6 +237,15 @@
             © 2026 SIGA EDUCA — Dhenison Carlos
         </div>
 </main>
+<div id="pwa-install-banner" class="hidden fixed inset-x-3 bottom-3 z-[300] bg-white border border-border-subtle rounded-2xl shadow-2xl p-4 flex items-center gap-3">
+<img alt="Logo EGAP" class="w-14 h-14 rounded-xl object-contain bg-white" src="/icons/icon-192.png"/>
+<div class="flex-1 min-w-0">
+<p class="font-bold text-on-surface leading-tight">SIGA EDUCA</p>
+<p id="pwa-install-text" class="text-xs text-text-secondary mt-1">Baixe o aplicativo na tela inicial do celular.</p>
+</div>
+<button type="button" id="pwa-install-btn" class="shrink-0 bg-primary text-white text-sm font-semibold px-3 py-2 rounded-lg">Baixar aplicativo</button>
+<button type="button" id="pwa-install-close" class="shrink-0 w-8 h-8 text-text-secondary" aria-label="Fechar">×</button>
+</div>
 
 <!-- Modal Recuperar Acesso -->
 <div id="modal-recuperar" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -300,5 +314,5 @@ Usar no login
 <script src="js/siga-staff-data.js?v=20260921d"></script>
 <script src="js/siga-db.js?v=20260924d"></script>
 <script src="js/portal-aluno-app.js?v=20260724x"></script>
-<script src="js/login.js?v=20260923i"></script>
+<script src="js/login.js?v=20260924f"></script>
 </body></html>

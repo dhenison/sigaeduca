@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [react(), VitePWA({
     registerType: 'autoUpdate',
     manifest: {
-      name: 'SIGA EDUCA — Portal do Aluno',
+      name: 'SIGA EDUCA',
       short_name: 'SIGA EDUCA',
       lang: 'pt-BR',
       start_url: '/portal/',

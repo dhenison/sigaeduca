@@ -196,6 +196,10 @@
                 session.role = 'Professor(a)';
             }
             setSession(session);
+            if (!isComputer()) {
+                goProfessorDestination('/portal/');
+                return;
+            }
             showProfessorDestination();
             return;
         }
@@ -872,6 +876,53 @@
         toast('E-mail e senha preenchidos. Toque em Entrar na conta.');
     }
 
+    function isComputer() {
+        var wide = window.matchMedia('(min-width: 1024px)').matches;
+        var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        return wide && fine;
+    }
+
+    function setupPwaInstall() {
+        if (isComputer()) return;
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) return;
+        try { if (localStorage.getItem('siga_pwa_install_done') === '1') return; } catch (e) { /* ignore */ }
+        var banner = document.getElementById('pwa-install-banner');
+        var btn = document.getElementById('pwa-install-btn');
+        var close = document.getElementById('pwa-install-close');
+        var text = document.getElementById('pwa-install-text');
+        if (!banner || !btn) return;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () { /* ignore */ });
+        }
+        var deferred = null;
+        var ios = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+        function show() { banner.classList.remove('hidden'); }
+        function hide(done) {
+            banner.classList.add('hidden');
+            if (done) {
+                try { localStorage.setItem('siga_pwa_install_done', '1'); } catch (e) { /* ignore */ }
+            }
+        }
+        if (close) close.addEventListener('click', function () { hide(true); });
+        if (ios) {
+            if (text) text.textContent = 'No iPhone, toque em Compartilhar e depois em Adicionar à Tela de Início.';
+            btn.textContent = 'Entendi';
+            btn.addEventListener('click', function () { hide(true); });
+            show();
+        } else {
+            window.addEventListener('beforeinstallprompt', function (event) {
+                event.preventDefault();
+                deferred = event;
+                show();
+            });
+            btn.addEventListener('click', function () {
+                if (!deferred) return;
+                deferred.prompt();
+                deferred.userChoice.finally(function () { hide(true); deferred = null; });
+            });
+        }
+    }
+
     function bindUi() {
         var form = document.getElementById('login-form');
         if (form) {
@@ -947,5 +998,6 @@
             saveStudents(cleaned);
         } catch (ePurge) { /* ignore */ }
         bindUi();
+        setupPwaInstall();
     });
 })();
