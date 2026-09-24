@@ -337,7 +337,7 @@ function ensurePainelAdminScript(done) {
         return;
     }
     const s = document.createElement('script');
-    s.src = 'js/painel-admin.js';
+    s.src = 'js/painel-admin.js?v=20260924d';
     s.dataset.sigaPainelAdmin = '1';
     s.onload = done;
     s.onerror = done;

@@ -652,8 +652,6 @@
     function applySchoolMenuPermissions() {
         if (isSystemAdmin() && /paineladmin(?:\.html)?/i.test(location.pathname + location.href)) return;
 
-        ensureAdminContextBanner();
-
         var schoolId = localStorage.getItem(ACTIVE_SCHOOL_KEY);
         if (!schoolId) return;
         var school = getSchools().find(function (s) { return String(s.id) === String(schoolId); });
@@ -678,25 +676,6 @@
             toast('Esta aba não está liberada para esta escola.', 'error');
             location.href = 'painelprincipal.html';
         }
-    }
-
-    /** Banner: admin em contexto de escola — voltar ao seletor */
-    function ensureAdminContextBanner() {
-        if (!isSystemAdmin()) return;
-        if (/paineladmin(?:\.html)?/i.test(location.pathname + location.href)) return;
-        var name = localStorage.getItem('siga_school_name') || '';
-        if (!localStorage.getItem(ACTIVE_SCHOOL_KEY)) return;
-        if (document.getElementById('siga-admin-school-banner')) return;
-        var bar = document.createElement('div');
-        bar.id = 'siga-admin-school-banner';
-        bar.className = 'fixed top-0 inset-x-0 z-[9998] bg-primary text-white px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-sm shadow';
-        bar.innerHTML =
-            '<span><strong>Admin</strong> · Escola: <strong id="siga-admin-school-banner-name"></strong></span>' +
-            '<a href="paineladmin.html" class="underline font-semibold hover:opacity-90">Trocar escola / Painel Admin</a>';
-        document.body.appendChild(bar);
-        document.body.style.paddingTop = '40px';
-        var nameEl = document.getElementById('siga-admin-school-banner-name');
-        if (nameEl) nameEl.textContent = name || '—';
     }
 
     function initPainelAdminPage() {
