@@ -432,11 +432,37 @@
         var senhaLabel = document.getElementById('user-senha-label');
         var senha2Label = document.getElementById('user-senha2-label');
         var senhaHint = document.getElementById('user-senha-hint');
+        var isProfessor = user && /professor/i.test(user.cargo || user.funcao || '');
+        var senhaWrap2 = document.getElementById('user-senha2-wrap');
         if (senha) senha.value = '';
         if (senha2) senha2.value = '';
-        if (user) {
-            if (senha) senha.required = false;
+        if (isProfessor) {
+            if (senha) {
+                senha.type = 'text';
+                senha.readOnly = true;
+                senha.disabled = true;
+                senha.required = false;
+                senha.placeholder = 'Definida na importação da planilha';
+                senha.dataset.locked = '1';
+            }
             if (senha2) senha2.required = false;
+            if (senhaWrap2) senhaWrap2.classList.add('hidden');
+            if (senhaLabel) senhaLabel.textContent = 'Senha de acesso';
+            if (senhaHint) senhaHint.textContent = 'Visível para consulta. O sistema não permite alterar.';
+            loadProfessorAccessPassword(user.id).then(function (texto) {
+                var campo = document.getElementById('user-senha');
+                if (campo && campo.dataset.locked === '1') campo.value = texto || '—';
+            });
+        } else if (user) {
+            if (senha) {
+                senha.type = 'password';
+                senha.readOnly = false;
+                senha.disabled = false;
+                senha.dataset.locked = '';
+                senha.required = false;
+            }
+            if (senha2) senha2.required = false;
+            if (senhaWrap2) senhaWrap2.classList.remove('hidden');
             if (senhaLabel) senhaLabel.textContent = 'Nova senha (opcional)';
             if (senha2Label) senha2Label.textContent = 'Confirmar nova senha';
             if (senhaHint) {
@@ -454,10 +480,26 @@
             if (senhaHint) {
                 senhaHint.textContent = 'O colaborador usará esta senha no login com o e-mail institucional.';
             }
+            if (senha) {
+                senha.type = 'password';
+                senha.readOnly = false;
+                senha.disabled = false;
+                senha.dataset.locked = '';
+            }
+            if (senhaWrap2) senhaWrap2.classList.remove('hidden');
         }
 
         document.getElementById('user-modal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+    }
+
+    function loadProfessorAccessPassword(staffId) {
+        var sb = window.SigaSupabase && window.SigaSupabase.getClient && window.SigaSupabase.getClient();
+        if (!sb || !staffId) return Promise.resolve('');
+        return sb.rpc('staff_view_access_password', { p_staff_id: staffId }).then(function (res) {
+            if (res.error || res.data == null) return '';
+            return String(res.data);
+        }).catch(function () { return ''; });
     }
 
     function closeModal() {
@@ -504,10 +546,12 @@
         var facebook = document.getElementById('user-facebook').value.trim();
         var lattes = document.getElementById('user-lattes').value.trim();
         var bio = document.getElementById('user-bio').value.trim();
-        var senha = String((document.getElementById('user-senha') || {}).value || '');
-        var senha2 = String((document.getElementById('user-senha2') || {}).value || '');
+        var senhaEl = document.getElementById('user-senha');
+        var senhaBloqueada = senhaEl && senhaEl.dataset.locked === '1';
+        var senha = senhaBloqueada ? '' : String((senhaEl || {}).value || '');
+        var senha2 = senhaBloqueada ? '' : String((document.getElementById('user-senha2') || {}).value || '');
 
-        if (!nome || !funcao || !matricula || !email) {
+        if (!nome || !funcao || !email || (!matricula && !senhaBloqueada)) {
             toast('Preencha os campos obrigatórios.', 'error');
             return;
         }
@@ -544,13 +588,15 @@
             toast('Já existe um usuário com este e-mail.', 'error');
             return;
         }
-        var dupMat = list.find(function (u) {
-            return String(u.matriculaSemVinculo || u.matricula || '') === matricula &&
-                String(u.id) !== String(editingId || '');
-        });
-        if (dupMat) {
-            toast('Já existe um usuário com esta matrícula.', 'error');
-            return;
+        if (matricula) {
+            var dupMat = list.find(function (u) {
+                return String(u.matriculaSemVinculo || u.matricula || '') === matricula &&
+                    String(u.id) !== String(editingId || '');
+            });
+            if (dupMat) {
+                toast('Já existe um usuário com esta matrícula.', 'error');
+                return;
+            }
         }
 
         function persist(hashedSenha) {
@@ -808,10 +854,9 @@
             var email = normEmail(row[idxEmail]);
             var senha = String(idxSenha >= 0 && row[idxSenha] != null ? row[idxSenha] : '').trim();
             var matricula = String(idxMat >= 0 && row[idxMat] != null ? row[idxMat] : '').trim();
-            if (!matricula && senha) matricula = senha;
             if (!nome && !email) continue;
             if (!email.endsWith('@escola.seduc.pa.gov.br')) continue;
-            if (!nome || !email || !senha || !matricula) continue;
+            if (!nome || !email || !senha) continue;
             if (senha.length < 6) continue;
             out.push({ nome: nome, email: email, senha: senha, matricula: matricula });
         }

@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: staffList, error: staffErr } = await admin
       .from("school_staff")
-      .select("id, school_id, user_id, full_name, role, email")
+      .select("id, school_id, user_id, full_name, role, email, employee_id")
       .eq("email", email);
     if (staffErr) {
       fail += 1;
@@ -167,6 +167,15 @@ Deno.serve(async (req: Request) => {
     }
 
     linked += 1;
+
+    await admin.from("staff_access_secrets").upsert({
+      staff_id: staff.id,
+      access_password: senha,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "staff_id" });
+    if (staff.employee_id && staff.employee_id === senha) {
+      await admin.from("school_staff").update({ employee_id: null }).eq("id", staff.id);
+    }
   }
 
   return json({ ok: true, linked, fail, errors: errors.slice(0, 20) });

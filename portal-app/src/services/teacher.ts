@@ -12,12 +12,21 @@ export type PhaseName = 'entrada' | 'saida';
 
 export interface TeacherProfile {
   id: string;
+  staffId: string;
   name: string;
   email: string;
   role: string;
   school: string;
   schoolId: string;
   avatarUrl: string;
+  employeeId: string;
+  subject: string;
+  phone: string;
+  instagram: string;
+  x: string;
+  facebook: string;
+  lattes: string;
+  bio: string;
 }
 export interface ClassOption {
   code: string;
@@ -27,6 +36,7 @@ export interface ClassOption {
 export interface RollStudent {
   id: string;
   nome: string;
+  avatarUrl: string;
 }
 export interface RollMark {
   status: MarkStatus;
@@ -187,14 +197,24 @@ export async function loadTeacherPortal(): Promise<TeacherSnapshot | null> {
   const session = readStaffSession();
   if (!session || portalAudience() !== 'professor') return null;
   const schoolId = schoolIdOf(session);
+  const record = await loadTeacherRecord(session.email || '', schoolId);
   const teacher: TeacherProfile = {
     id: String(session.id),
-    name: session.nome || 'Professor',
+    staffId: record.staffId,
+    name: record.name || session.nome || 'Professor',
     email: session.email || '',
-    role: session.role || 'Professor(a)',
+    role: record.role || session.role || 'Professor(a)',
     school: localStorage.getItem('siga_school_name') || '',
     schoolId,
-    avatarUrl: await loadTeacherAvatar(session.email || '', schoolId),
+    avatarUrl: record.avatarUrl || await loadTeacherAvatar(session.email || '', schoolId),
+    employeeId: record.employeeId,
+    subject: record.subject,
+    phone: record.phone,
+    instagram: record.instagram,
+    x: record.x,
+    facebook: record.facebook,
+    lattes: record.lattes,
+    bio: record.bio,
   };
   const classes = await loadClasses(schoolId);
   const events = await loadEvents(schoolId);
@@ -283,13 +303,13 @@ export async function loadClassRoll(schoolId: string, classCode: string, day: st
 async function loadStudents(schoolId: string, classCode: string): Promise<RollStudent[]> {
   const local = readJson<Array<Record<string, string>>>('siga_students', [])
     .filter((student) => String(student.turma || '') === classCode && (!student.status || student.status === 'Ativo'))
-    .map((student) => ({id: String(student.id), nome: student.nome || 'Aluno'}));
+    .map((student) => ({id: String(student.id), nome: student.nome || 'Aluno', avatarUrl: String(student.avatar || student.foto || student.avatar_url || '')}));
   if (!schoolId) return local.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  const res = await sb().from('students').select('id,full_name,status').eq('school_id', schoolId).eq('class_code', classCode).order('full_name');
+  const res = await sb().from('students').select('id,full_name,status,avatar_url').eq('school_id', schoolId).eq('class_code', classCode).order('full_name');
   if (res.error || !res.data?.length) return local.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   return res.data
     .filter((student) => !student.status || student.status === 'Ativo')
-    .map((student) => ({id: String(student.id), nome: student.full_name || 'Aluno'}));
+    .map((student) => ({id: String(student.id), nome: student.full_name || 'Aluno', avatarUrl: String(student.avatar_url || '')}));
 }
 
 function mirrorLocal(classCode: string, day: string, roll: ClassRoll) {
@@ -434,6 +454,66 @@ export async function leaveTeacherPortal() {
 
 function avatarKey(email: string) {
   return 'siga_profile_avatar__email:' + email.toLowerCase();
+}
+
+async function loadTeacherRecord(email: string, schoolId: string) {
+  const empty = {staffId: '', name: '', role: '', avatarUrl: '', employeeId: '', subject: '', phone: '', instagram: '', x: '', facebook: '', lattes: '', bio: ''};
+  if (!email) return empty;
+  let query = sb().from('school_staff').select('id,full_name,role,avatar_url,employee_id,subject,phone,social,lattes_url,bio').eq('email', email.toLowerCase());
+  if (schoolId) query = query.eq('school_id', schoolId);
+  const res = await query.limit(1).maybeSingle();
+  const row = res.data;
+  if (res.error || !row) return empty;
+  const social = (row.social && typeof row.social === 'object') ? row.social as Record<string, string> : {};
+  return {
+    staffId: String(row.id || ''),
+    name: String(row.full_name || ''),
+    role: String(row.role || ''),
+    avatarUrl: String(row.avatar_url || ''),
+    employeeId: String(row.employee_id || ''),
+    subject: String(row.subject || ''),
+    phone: String(row.phone || ''),
+    instagram: String(social.instagram || ''),
+    x: String(social.x || ''),
+    facebook: String(social.facebook || ''),
+    lattes: String(row.lattes_url || ''),
+    bio: String(row.bio || ''),
+  };
+}
+
+export async function saveTeacherProfile(teacher: TeacherProfile, patch: Omit<TeacherProfile, 'id' | 'staffId' | 'email' | 'school' | 'schoolId' | 'avatarUrl'>) {
+  const res = await sb().rpc('staff_update_own_profile', {
+    p_full_name: patch.name,
+    p_role: patch.role,
+    p_employee_id: patch.employeeId,
+    p_subject: patch.subject,
+    p_phone: patch.phone,
+    p_instagram: patch.instagram,
+    p_x: patch.x,
+    p_facebook: patch.facebook,
+    p_lattes: patch.lattes,
+    p_bio: patch.bio,
+  });
+  if (res.error) throw new Error(res.error.message);
+  const data = res.data as {ok?: boolean; message?: string} | null;
+  if (!data || data.ok === false) throw new Error(data?.message || 'Não foi possível salvar o cadastro.');
+  const session = readStaffSession();
+  if (session) {
+    localStorage.setItem('siga_session', JSON.stringify({...session, nome: patch.name, role: patch.role}));
+  }
+  const users = readJson<Array<Record<string, unknown>>>('siga_users', []);
+  localStorage.setItem('siga_users', JSON.stringify(users.map((user) => String(user.email || '').toLowerCase() === teacher.email.toLowerCase() ? {
+    ...user,
+    nome: patch.name,
+    cargo: patch.role,
+    funcao: patch.role,
+    matriculaSemVinculo: patch.employeeId,
+    disciplinaPrincipal: patch.subject,
+    telefone: patch.phone,
+    lattes: patch.lattes,
+    bio: patch.bio,
+    redes: {instagram: patch.instagram, x: patch.x, facebook: patch.facebook},
+  } : user)));
 }
 
 async function loadTeacherAvatar(email: string, schoolId: string) {

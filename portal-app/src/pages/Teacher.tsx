@@ -12,6 +12,7 @@ import {
   loadClassRoll,
   loadTeacherPortal,
   saveTeacherAvatar,
+  saveTeacherProfile,
   type ClassRoll,
   type MarkStatus,
   type PhaseName,
@@ -171,17 +172,69 @@ function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; 
       setSaving(false);
     }
   }
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(teacher);
+  const roles = ['Professor(a)', 'Coordenador', 'Secretario(a) Escolar', 'Vice-diretor Pedagógico', 'Vice-diretor Administrativo', 'Diretor'];
+  function field(key: keyof typeof form, label: string, placeholder = '') {
+    return <label className="profile-edit"><span>{label}</span><input value={form[key]} placeholder={placeholder} onChange={(event) => setForm({...form, [key]: event.target.value})} /></label>;
+  }
+  async function save() {
+    setSaving(true);
+    try {
+      await saveTeacherProfile(teacher, form);
+      notify('Cadastro salvo. A alteração também aparece no sistema web.');
+      setEditing(false);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Não foi possível salvar.');
+    } finally {
+      setSaving(false);
+    }
+  }
+  const details: [string, string][] = [
+    ['E-mail institucional', teacher.email],
+    ['Função', form.role],
+    ['Matrícula sem vínculo', form.employeeId],
+    ['Disciplina principal', form.subject],
+    ['Telefone', form.phone],
+    ['Instagram', form.instagram],
+    ['X', form.x],
+    ['Facebook', form.facebook],
+    ['Currículo Lattes', form.lattes],
+    ['Bio', form.bio],
+    ['Escola', teacher.school],
+  ];
   return <section className="surface padded narrow profile">
-    <div className="avatar">{photo ? <img src={photo} alt="" /> : studentInitials(teacher.name)}</div>
-    <h2>{teacher.name}</h2>
-    <p>Professor</p>
+    <div className="avatar">{photo ? <img src={photo} alt="" /> : studentInitials(form.name || teacher.name)}</div>
+    <h2>{form.name || teacher.name}</h2>
+    <p>{form.role || 'Professor'}</p>
     <div className="photo-actions">
       <button type="button" disabled={saving} onClick={() => camera.current?.click()}>Tirar foto</button>
       <button type="button" disabled={saving} onClick={() => gallery.current?.click()}>Enviar foto</button>
     </div>
     <input className="file-input" ref={camera} type="file" accept="image/*" capture="user" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
     <input className="file-input" ref={gallery} type="file" accept="image/*" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
-    {[['E-mail institucional', teacher.email], ['Função', teacher.role], ['Escola', teacher.school]].filter(([, value]) => value).map(([label, value]) => <div className="profile-field" key={label}><small>{label}</small><b>{value}</b></div>)}
+    {editing ? <div className="profile-form">
+      {field('name', 'Nome completo')}
+      <label className="profile-edit"><span>Função</span><select value={form.role} onChange={(event) => setForm({...form, role: event.target.value})}>{roles.map((role) => <option key={role}>{role}</option>)}</select></label>
+      {field('employeeId', 'Matrícula sem vínculo')}
+      {field('subject', 'Disciplina principal', 'Ex: Matemática')}
+      {field('phone', 'Telefone', '(91) 98888-7777')}
+      {field('instagram', 'Instagram')}
+      {field('x', 'X')}
+      {field('facebook', 'Facebook')}
+      {field('lattes', 'Currículo Lattes', 'https://lattes.cnpq.br/...')}
+      <label className="profile-edit"><span>Bio</span><textarea rows={4} value={form.bio} onChange={(event) => setForm({...form, bio: event.target.value})} /></label>
+      <div className="profile-field"><small>E-mail institucional</small><b>{teacher.email}</b></div>
+      <div className="profile-field"><small>Senha</small><b>Definida na importação. Não pode ser alterada aqui.</b></div>
+      <div className="photo-actions">
+        <button type="button" disabled={saving} onClick={() => { setForm(teacher); setEditing(false); }}>Cancelar</button>
+        <button type="button" className="save" disabled={saving} onClick={save}>{saving ? 'Salvando…' : 'Salvar'}</button>
+      </div>
+    </div> : <>
+      {details.filter(([, value]) => value).map(([label, value]) => <div className="profile-field" key={label}><small>{label}</small><b>{value}</b></div>)}
+      <div className="profile-field"><small>Senha</small><b>Definida na importação. Não pode ser alterada aqui.</b></div>
+      <div className="photo-actions"><button type="button" onClick={() => { setForm(teacher); setEditing(true); }}>Editar dados</button></div>
+    </>}
   </section>;
 }
 
@@ -276,8 +329,10 @@ function RollCard({title, phase, open, onToggle, roll, saving, onMark, onReason,
   onReason: (phase: PhaseName, studentId: string, justification: string) => void;
   onConsolidate: () => void;
 }) {
+  const [zoom, setZoom] = useState<{nome: string; url: string} | null>(null);
   const locked = phase === 'entrada' ? roll.entradaConsolidada : roll.saidaConsolidada;
   const records = roll[phase];
+  const marks: [MarkStatus, string][] = [['P', 'Presença'], ['F', 'Falta'], ['FJ', 'Falta justificada']];
   return <section className="roll-slot">
     <button type="button" className={`call-toggle ${locked ? 'done' : 'pending'}`} aria-expanded={locked ? false : open} onClick={() => { if (!locked) onToggle(); }}>
       <span>{locked ? `${title} realizada` : `Realizar ${title.toLowerCase()}`}</span>
@@ -290,14 +345,20 @@ function RollCard({title, phase, open, onToggle, roll, saving, onMark, onReason,
       const mark = records[student.id] || blankMark();
       const frozen = locked || isFacialLocked(mark);
       return <article className="roll-student" key={student.id}>
-        <b>{student.nome}</b>
+        <div className="roll-line">
+          <button type="button" className="roll-avatar" aria-label={student.avatarUrl ? `Ampliar foto de ${student.nome}` : `Foto de ${student.nome}`} disabled={!student.avatarUrl} onClick={() => student.avatarUrl && setZoom({nome: student.nome, url: student.avatarUrl})}>
+            {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : studentInitials(student.nome)}
+          </button>
+          <b>{student.nome}</b>
+          <div className="roll-options">{marks.map(([status, label]) => <label key={status} title={label}><input type="radio" name={`${phase}-${student.id}`} checked={mark.hasMark ? mark.status === status : status === 'P'} disabled={frozen} onChange={() => onMark(phase, student.id, status)} /><span className="roll-short">{status}</span><span className="roll-long">{label}</span></label>)}</div>
+        </div>
         {isFacialLocked(mark) && <small>Reconhecimento facial</small>}
-        <div className="roll-options">{(['P', 'F', 'FJ'] as MarkStatus[]).map((status) => <label key={status}><input type="radio" name={`${phase}-${student.id}`} checked={mark.hasMark ? mark.status === status : status === 'P'} disabled={frozen} onChange={() => onMark(phase, student.id, status)} />{status === 'P' ? 'Presença' : status === 'F' ? 'Falta' : 'Justificada'}</label>)}</div>
         {mark.status === 'FJ' && !frozen && <input className="roll-reason" placeholder="Motivo da falta justificada" value={mark.justification} onChange={(event) => onReason(phase, student.id, event.target.value)} />}
         {mark.status === 'FJ' && frozen && mark.justification && <p>{mark.justification}</p>}
       </article>;
     })}
     <button className="primary" disabled={saving || !roll.students.length} onClick={onConsolidate}>{saving ? 'Salvando...' : phase === 'entrada' ? 'Consolidar Entrada' : 'Consolidar Saída'}</button>
     </div>}
+    {zoom && <button type="button" className="photo-zoom" aria-label="Fechar foto" onClick={() => setZoom(null)}><img src={zoom.url} alt={zoom.nome} /></button>}
   </section>;
 }

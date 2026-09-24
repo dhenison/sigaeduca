@@ -58,7 +58,7 @@
             full_name: String(u.nome || u.full_name || '').trim(),
             email: String(u.email || '').trim().toLowerCase(),
             role: String(u.cargo || u.funcao || u.role || 'servidor').trim(),
-            employee_id: String(u.matriculaSemVinculo || u.matricula || u.employee_id || '').trim(),
+            employee_id: nullIfEmpty(u.matriculaSemVinculo || u.matricula || u.employee_id),
             subject: nullIfEmpty(u.disciplinaPrincipal || u.subject),
             phone: nullIfEmpty(u.telefone || u.phone),
             social: u.redes || u.social || {},
