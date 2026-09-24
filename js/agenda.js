@@ -56,6 +56,36 @@
     }
   }
 
+  function calendarAgendaType(type) {
+    if (type === 'feriado_recesso') return 'Feriado / Recesso';
+    if (type === 'evento' || type === 'sabado') return 'Evento Escolar';
+    if (String(type || '').indexOf('inicio_') === 0) return 'Evento Escolar';
+    return '';
+  }
+
+  function calendarEvents() {
+    var days = typeof window.getCalendarDays === 'function' ? window.getCalendarDays() : {};
+    return Object.keys(days).map(function (date) {
+      var info = days[date] || {};
+      var type = calendarAgendaType(info.type);
+      if (!type) return null;
+      return normalizeEvent({
+        id: 'cal_' + date,
+        title: info.label || type,
+        type: type,
+        date: date,
+        desc: 'Definido no Calendário Letivo.',
+        scope: 'geral',
+        turmas: [],
+        fromCalendar: true
+      });
+    }).filter(Boolean);
+  }
+
+  function visibleEvents() {
+    return getEvents().concat(calendarEvents());
+  }
+
   function saveEvents(list) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list || []));
     syncAgendaCloud(list || []);
@@ -229,7 +259,7 @@
   }
 
   function eventsForDay(isoDate) {
-    return getEvents().filter(function (e) {
+    return visibleEvents().filter(function (e) {
       return e.date === isoDate && eventMatchesFilters(e);
     });
   }
@@ -487,7 +517,7 @@
   }
 
   function turmasLabel(evt) {
-    if (isGlobalEvent(evt)) return 'Agenda Geral';
+    if (isGlobalEvent(evt) && evt.fromCalendar) return 'Calendário Letivo';
     return (evt.turmas || []).join(', ') || 'Turmas específicas';
   }
 
@@ -525,7 +555,7 @@
 
       var eventsHtml = dayEvents.slice(0, 3).map(function (evt) {
         var st = getTypeStyle(evt.type);
-        var prefix = isGlobalEvent(evt) ? '[Geral] ' : '';
+        var prefix = evt.fromCalendar ? '[Calendário] ' : (isGlobalEvent(evt) ? '[Geral] ' : '');
         return '<button type="button" data-edit-event="' + escapeHtml(evt.id) + '" ' +
           'class="w-full text-left mt-1 p-1.5 ' + st.bg + ' ' + st.text + ' rounded text-[10px] font-bold border-l-2 ' + st.border + ' truncate hover:brightness-95" ' +
           'title="' + escapeHtml(evt.title + ' — ' + turmasLabel(evt)) + '">' +
@@ -554,7 +584,7 @@
     var box = document.getElementById('agenda-proximos-eventos');
     if (!box) return;
     var today = todayISO();
-    var list = getEvents()
+    var list = visibleEvents()
       .filter(eventMatchesFilters)
       .filter(function (e) { return e.date >= today; })
       .sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); })
@@ -616,7 +646,7 @@
       if (fimEl) fimEl.value = fim;
     }
 
-    return getEvents()
+    return visibleEvents()
       .filter(eventMatchesFilters)
       .filter(function (e) {
         if (!e.date) return false;
@@ -661,8 +691,8 @@
         ' · ' + escapeHtml(turmasLabel(evt)) + '</p>' +
         (evt.desc ? '<p class="text-label-sm text-outline mt-1 line-clamp-2">' + escapeHtml(evt.desc) + '</p>' : '') +
         '</div>' +
-        '<button type="button" data-edit-event="' + escapeHtml(evt.id) + '" class="p-2 text-outline hover:text-primary hover:bg-primary/10 rounded-lg shrink-0" title="Editar">' +
-        '<span class="material-symbols-outlined text-[20px]">edit</span></button></div>';
+        '<button type="button" data-edit-event="' + escapeHtml(evt.id) + '" class="p-2 text-outline hover:text-primary hover:bg-primary/10 rounded-lg shrink-0" title="' + (evt.fromCalendar ? 'Data do Calendário Letivo' : 'Editar') + '">' +
+        '<span class="material-symbols-outlined text-[20px]">' + (evt.fromCalendar ? 'calendar_month' : 'edit') + '</span></button></div>';
     }).join('');
   }
 
@@ -797,6 +827,11 @@
       var btn = e.target.closest('[data-edit-event]');
       if (!btn) return;
       var id = btn.getAttribute('data-edit-event');
+      var calendarEvt = calendarEvents().find(function (item) { return item.id === id; });
+      if (calendarEvt) {
+        showAgendaToast('Esta data vem do Calendário Letivo. Para mudar, edite no Calendário. Atividades da escola continuam sendo incluídas aqui na Agenda.', 'info');
+        return;
+      }
       closeAgendaCompleta();
       openEditAtividade(id);
     });
