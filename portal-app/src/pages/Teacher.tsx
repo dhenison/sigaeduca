@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, type ReactNode} from 'react';
+import {useEffect, useState, type ReactNode} from 'react';
 import {IonApp, IonContent, IonLabel, IonModal, IonPage, IonRefresher, IonRefresherContent, IonSkeletonText, IonTabBar, IonTabButton, IonToast} from '@ionic/react';
 import {Brand, Empty, Icon, Credit, type IconName} from '../components/UI';
 import {Calendar, Notices, Schedule} from './Academic';
@@ -183,8 +183,6 @@ function TeacherMore({go, logout}: {go: (route: string) => void; logout: () => v
 
 function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; photo: string; onPhoto: (value: string) => void; notify: (message: string) => void}) {
   const {teacher} = data;
-  const camera = useRef<HTMLInputElement>(null);
-  const gallery = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [photoMenu, setPhotoMenu] = useState(false);
   async function onFile(file?: File) {
@@ -236,13 +234,15 @@ function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; 
   return <section className="surface padded narrow profile">
     <button type="button" className="avatar profile-avatar" aria-expanded={photoMenu} aria-label="Alterar foto" disabled={saving} onClick={() => setPhotoMenu((open) => !open)}>{photo ? <img src={photo} alt="" /> : studentInitials(form.name || teacher.name)}</button>
     {photoMenu && <div className="photo-menu">
-      <button type="button" disabled={saving} onClick={() => camera.current?.click()}>Tirar foto</button>
-      <button type="button" disabled={saving} onClick={() => gallery.current?.click()}>Carregar foto</button>
+      <label>Tirar foto
+        <input type="file" accept="image/*" capture="environment" disabled={saving} onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
+      </label>
+      <label>Carregar foto
+        <input type="file" accept="image/*" disabled={saving} onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
+      </label>
     </div>}
     <h2>{form.name || teacher.name}</h2>
     <p>{form.role || 'Professor'}</p>
-    <input className="file-input" ref={camera} type="file" accept="image/*" capture="environment" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
-    <input className="file-input" ref={gallery} type="file" accept="image/*" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
     {editing ? <div className="profile-form">
       {field('name', 'Nome completo')}
       <label className="profile-edit"><span>Função</span><select value={form.role} onChange={(event) => setForm({...form, role: event.target.value})}>{roles.map((role) => <option key={role}>{role}</option>)}</select></label>
