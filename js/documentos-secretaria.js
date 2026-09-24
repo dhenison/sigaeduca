@@ -1156,7 +1156,7 @@
       "background-image:url('" + bg + "');" +
       'background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm;' +
       '}' +
-      '.print-content{box-sizing:border-box;height:100%;padding:52mm 18mm 36mm 18mm;display:flex;flex-direction:column}' +
+      '.print-content{box-sizing:border-box;height:100%;padding:64mm 18mm 46mm 18mm;display:flex;flex-direction:column}' +
       '.protocol-tag{font-family:Consolas,monospace;font-size:9pt;color:#333;text-align:right;margin:0 0 10px}' +
       '.doc-title{font-size:14pt;font-weight:700;text-align:center;text-transform:uppercase;margin:4px 0 18px;letter-spacing:.45px}' +
       '.doc-text{text-indent:1.6cm;margin:0 0 14px;font-size:12pt;text-align:justify;line-height:1.45}' +
@@ -1172,9 +1172,10 @@
       '.receipt-row:last-child{border-bottom:none;padding-bottom:0}' +
       '.receipt-label{font-weight:700;color:#111;flex-shrink:0}' +
       '.receipt-note{margin-top:10px;font-size:9pt;color:#444;text-align:justify;line-height:1.35}' +
-      '.verification-strip{margin-top:auto;padding:7px 9px;border:1px dashed #94a3b8;background:rgba(248,250,252,.9);border-radius:6px;color:#334155;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;font-size:7.5pt;line-height:1.3}' +
+      '.doc-footer{position:absolute;left:18mm;right:18mm;bottom:10mm}' +
+      '.verification-strip{margin:0 0 6px;padding:7px 9px;border:1px dashed #94a3b8;background:rgba(248,250,252,.9);border-radius:6px;color:#334155;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;font-size:7.5pt;line-height:1.3}' +
       '.verification-link{max-width:190px;font-family:Consolas,monospace;font-size:6.5pt;word-break:break-all}' +
-      '.meta-footer{margin-top:8px;font-size:7pt;color:#444;border-top:1px solid #bbb;padding-top:5px;line-height:1.25;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}' +
+      '.meta-footer{margin-top:0;font-size:7pt;color:#444;border-top:1px solid #bbb;padding-top:5px;line-height:1.25;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}' +
       '.meta-footer-main{flex:1}' +
       '.meta-footer-qr{width:58px;flex-shrink:0;text-align:center}' +
       '.meta-footer-qr img{width:52px;height:52px;display:block;margin:0 auto 2px;border:1px solid #d1d5db;border-radius:4px;padding:2px;background:#fff}' +
@@ -1422,6 +1423,7 @@
           '<span class="signature-desc"><b>' +
           escapeHtml(doc.solicitante || 'Assinatura do Solicitante') +
           '</b><br>Assinatura do Solicitante</span></div></div>') +
+      '<div class="doc-footer">' +
       (!isReq
         ? '<div class="verification-strip"><div>' +
           '<strong>Autenticidade digital:</strong> utilize o QR Code ou informe o protocolo <b>' +
@@ -1447,7 +1449,7 @@
           '" alt="QR Code de validação"><span>Validar</span></div>'
         : '') +
       '</div>' +
-      '</div></div>'
+      '</div></div></div>'
     );
   }
 
