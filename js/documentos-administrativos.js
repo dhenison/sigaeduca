@@ -990,9 +990,9 @@
 
     function getTimbradoUrl() {
         try {
-            return new URL('assets/timbrado-a4.jpg', window.location.href).href;
+            return new URL('assets/timbrado-a4.jpg?v=20260924k', window.location.href).href;
         } catch (e) {
-            return 'assets/timbrado-a4.jpg';
+            return 'assets/timbrado-a4.jpg?v=20260924k';
         }
     }
 
@@ -1024,12 +1024,15 @@
             : data.vinculo === 'nao_estavel' ? 'Não estável'
             : data.vinculo === 'temporario' ? 'Temporário' : '—';
 
+        var bg = getTimbradoUrl().replace(/'/g, "\\'");
         var html = [
             '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><title>Requerimento Padrão</title>',
             '<style>',
-            '@page{size:A4;margin:14mm}',
-            'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11.5px;line-height:1.45;margin:0}',
-            '.sheet{max-width:190mm;margin:0 auto}',
+            '@page{size:A4;margin:0}',
+            'html,body{margin:0;padding:0;background:#fff}',
+            'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11.5px;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+            '.page{width:210mm;min-height:297mm;box-sizing:border-box;background-image:url(\'' + bg + '\');background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
+            '.sheet{max-width:190mm;margin:0 auto;padding:18mm 0}',
             '.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}',
             '.head h1{font-size:13px;margin:0 0 2px;letter-spacing:.04em}',
             '.head h2{font-size:16px;margin:6px 0 2px}',
@@ -1048,8 +1051,8 @@
             '.sign{text-align:center;padding-top:28px;border-top:1px solid #111}',
             '.sign small{display:block;margin-top:4px;color:#444}',
             '.meta{margin-top:18px}',
-            '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}',
-            '</style></head><body><div class="sheet">',
+            '@media print{html,body{margin:0!important;padding:0!important}.page{page-break-inside:avoid}}',
+            '</style></head><body><div class="page"><div class="sheet">',
             '<div class="head">',
             '<h1>GOVERNO DO ESTADO DO PARÁ</h1>',
             '<p>SECRETARIA DE ESTADO DE EDUCAÇÃO</p>',
@@ -1081,7 +1084,7 @@
             '<div class="sign">Assinatura do Requerente<small>(conforme identidade)</small></div>',
             '<div class="sign">Assinatura da Chefia Imediata<small>(usar carimbo)</small></div>',
             '</div>',
-            '</div></body></html>'
+            '</div></div></body></html>'
         ].join('');
 
         printViaIframe(html);

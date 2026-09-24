@@ -1244,8 +1244,8 @@ function getOccPrintStyles() {
             '.occ-list{margin:0;padding-left:18px;font-size:12pt}' +
             '.occ-list li{margin-bottom:3px}';
     }
-    var bg = 'assets/timbrado-a4.jpg';
-    try { bg = new URL('assets/timbrado-a4.jpg', window.location.href).href; } catch (e) {}
+    var bg = 'assets/timbrado-a4.jpg?v=20260924k';
+    try { bg = new URL('assets/timbrado-a4.jpg?v=20260924k', window.location.href).href; } catch (e) {}
     return '@page{size:A4;margin:0}body{font-family:Arial,sans-serif}.print-page{width:210mm;height:297mm;background:url(\'' + bg + '\') no-repeat center top/210mm 297mm}';
 }
 

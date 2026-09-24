@@ -1133,9 +1133,9 @@
 
   function getTimbradoBackgroundUrl() {
     try {
-      return new URL('assets/timbrado-a4.jpg', window.location.href).href;
+      return new URL('assets/timbrado-a4.jpg?v=20260924k', window.location.href).href;
     } catch (e) {
-      return 'assets/timbrado-a4.jpg';
+      return 'assets/timbrado-a4.jpg?v=20260924k';
     }
   }
 
