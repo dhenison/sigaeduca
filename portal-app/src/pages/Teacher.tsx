@@ -186,6 +186,7 @@ function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; 
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [photoMenu, setPhotoMenu] = useState(false);
   async function onFile(file?: File) {
     if (!file) return;
     setSaving(true);
@@ -193,6 +194,7 @@ function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; 
       const dataUrl = await compressAvatar(file);
       await saveTeacherAvatar(teacher, dataUrl);
       onPhoto(dataUrl);
+      setPhotoMenu(false);
       notify('Foto salva no aplicativo e no cadastro da web.');
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Não foi possível salvar a foto.');
@@ -232,14 +234,14 @@ function TeacherProfile({data, photo, onPhoto, notify}: {data: TeacherSnapshot; 
     ['Escola', teacher.school],
   ];
   return <section className="surface padded narrow profile">
-    <div className="avatar">{photo ? <img src={photo} alt="" /> : studentInitials(form.name || teacher.name)}</div>
-    <h2>{form.name || teacher.name}</h2>
-    <p>{form.role || 'Professor'}</p>
-    <div className="photo-actions">
+    <button type="button" className="avatar profile-avatar" aria-expanded={photoMenu} aria-label="Alterar foto" disabled={saving} onClick={() => setPhotoMenu((open) => !open)}>{photo ? <img src={photo} alt="" /> : studentInitials(form.name || teacher.name)}</button>
+    {photoMenu && <div className="photo-menu">
       <button type="button" disabled={saving} onClick={() => camera.current?.click()}>Tirar foto</button>
       <button type="button" disabled={saving} onClick={() => gallery.current?.click()}>Carregar foto</button>
-    </div>
-    <input className="file-input" ref={camera} type="file" accept="image/*" capture="user" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
+    </div>}
+    <h2>{form.name || teacher.name}</h2>
+    <p>{form.role || 'Professor'}</p>
+    <input className="file-input" ref={camera} type="file" accept="image/*" capture="environment" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
     <input className="file-input" ref={gallery} type="file" accept="image/*" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ''; }} />
     {editing ? <div className="profile-form">
       {field('name', 'Nome completo')}
