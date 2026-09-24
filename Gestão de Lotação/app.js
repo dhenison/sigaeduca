@@ -652,7 +652,7 @@ function scheduleLotacaoCloudPersist() {
 
 /**
  * Após carregar o espelho local, prioriza o mapa no Supabase (mesma escola do SIGA).
- * Se o banco estiver vazio, faz bootstrap com o localStorage atual.
+ * Se o banco estiver vazio, a tela fica em branco e o cache local é limpo.
  */
 function syncLotacaoFromCloud() {
     var sync = window.SigaLotacaoSync;
@@ -665,9 +665,9 @@ function syncLotacaoFromCloud() {
     }).then(function (res) {
         if (!res || !res.ok) return;
 
-        if (res.source === 'cloud' && Array.isArray(res.data)) {
+        if ((res.source === 'cloud' || res.source === 'empty') && Array.isArray(res.data)) {
             appState.data = res.data;
-            if (Array.isArray(res.professores) && res.professores.length) {
+            if (Array.isArray(res.professores)) {
                 appState.professores = res.professores;
             }
             try {

@@ -209,8 +209,7 @@
     }
 
     /**
-     * Prioridade: cloud (se houver linhas) → local.
-     * Se cloud vazio e local tem dados → bootstrap (envia local para o banco).
+     * Prioridade: cloud. Banco vazio deixa o mapa e o cadastro em branco.
      */
     function hydrate(options) {
         var opts = options || {};
@@ -267,28 +266,13 @@
                 };
             }
 
-            // Cloud vazio: sobe o mapa local (bootstrap)
-            if (localData.length) {
-                return persist(localData, localProfs, { year: year, replace: true }).then(function (pushRes) {
-                    return {
-                        ok: true,
-                        source: 'local_bootstrapped',
-                        synced: !!(pushRes && pushRes.ok),
-                        message: pushRes && pushRes.message,
-                        data: localData,
-                        professores: localProfs,
-                        schoolId: ready.schoolId,
-                        year: year
-                    };
-                });
-            }
-
+            writeLocal([], []);
             return {
                 ok: true,
                 source: 'empty',
                 synced: true,
                 data: [],
-                professores: cloudProfs.length ? cloudProfs : localProfs,
+                professores: [],
                 schoolId: ready.schoolId,
                 year: year
             };
