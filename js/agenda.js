@@ -855,7 +855,12 @@
     if (typeof getClasses === 'function') getClasses();
     populateFilterTurmas();
     bindEvents();
-    loadAgendaFromCloud().then(function () { renderAll(); });
+    loadAgendaFromCloud().then(function () {
+      renderAll();
+      if (typeof window.getCalendarDays === 'function' && typeof window.saveCalendarDays === 'function') {
+        window.saveCalendarDays(window.getCalendarDays());
+      }
+    });
   }
 
   window.openNovaAtividadeAgenda = openNovaAtividade;

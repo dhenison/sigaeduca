@@ -107,6 +107,14 @@ function schoolIdOf(session: StaffSession) {
   return String(session.schoolId || localStorage.getItem('siga_active_school') || '');
 }
 
+async function resolveTeacherSchool(email: string, hinted: string) {
+  if (!email) return hinted;
+  const res = await sb().from('school_staff').select('school_id').eq('email', email.toLowerCase());
+  const ids = (res.data || []).map((row) => String(row.school_id || '')).filter(Boolean);
+  if (hinted && ids.includes(hinted)) return hinted;
+  return ids[0] || hinted;
+}
+
 export function blankMark(): RollMark {
   return {status: 'P', justification: '', locked: false, source: 'manual', markedAt: null, hasMark: false};
 }
@@ -196,7 +204,7 @@ function calendarEvents(days: Record<string, {type?: string; label?: string}>): 
 export async function loadTeacherPortal(): Promise<TeacherSnapshot | null> {
   const session = readStaffSession();
   if (!session || portalAudience() !== 'professor') return null;
-  const schoolId = schoolIdOf(session);
+  const schoolId = await resolveTeacherSchool(session.email || '', schoolIdOf(session));
   const record = await loadTeacherRecord(session.email || '', schoolId);
   const teacher: TeacherProfile = {
     id: String(session.id),
@@ -243,37 +251,10 @@ async function loadClasses(schoolId: string): Promise<ClassOption[]> {
     .sort((a, b) => a.code.localeCompare(b.code, 'pt-BR'));
 }
 
-async function loadAgendaEvents(schoolId: string): Promise<SchoolEvent[]> {
-  const local = readJson<Array<Record<string, unknown>>>('siga_agenda_events', []).map((row) => {
-    const date = String(row.date || row.event_date || '').slice(0, 10);
-    if (!date) return null;
-    return {
-      id: String(row.id || date),
-      title: String(row.title || 'Atividade'),
-      date,
-      time: '',
-      category: String(row.type || row.event_type || 'Evento escolar'),
-      description: String(row.desc || row.description || ''),
-    };
-  }).filter((row): row is SchoolEvent => !!row);
-  if (!schoolId) return local;
-  const res = await sb().from('agenda_events').select('id, title, event_type, event_date, description').eq('school_id', schoolId);
-  if (res.error || !res.data?.length) return local;
-  return res.data.map((row) => ({
-    id: String(row.id),
-    title: row.title || 'Atividade',
-    date: String(row.event_date || '').slice(0, 10),
-    time: '',
-    category: row.event_type || 'Evento escolar',
-    description: row.description || '',
-  })).filter((row) => row.date);
-}
-
 async function loadEvents(schoolId: string): Promise<SchoolEvent[]> {
-  const local = readJson<Record<string, {type?: string; label?: string}>>('siga_calendar_days', {});
+  if (!schoolId) return [];
   const published = await loadPublishedAgenda(schoolId);
-  const days = {...local, ...published.days};
-  const cloudAgenda = published.rows.map((row) => ({
+  const agenda = published.rows.map((row) => ({
     id: String(row.id || row.date),
     title: String(row.title || 'Atividade'),
     date: String(row.date || '').slice(0, 10),
@@ -281,8 +262,7 @@ async function loadEvents(schoolId: string): Promise<SchoolEvent[]> {
     category: String(row.type || 'Evento escolar'),
     description: String(row.description || ''),
   })).filter((row) => row.date);
-  const agenda = cloudAgenda.length ? cloudAgenda : await loadAgendaEvents(schoolId);
-  return [...agenda, ...calendarEvents(days)].sort((a, b) => a.date.localeCompare(b.date));
+  return [...agenda, ...calendarEvents(published.days)].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 async function loadNotices(schoolId: string): Promise<Notice[]> {

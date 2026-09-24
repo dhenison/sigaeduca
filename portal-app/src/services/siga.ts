@@ -297,9 +297,8 @@ export async function loadPublishedAgenda(schoolId: string): Promise<{days: Reco
 }
 
 async function loadCalendar(schoolId: string) {
-  const local = readJson<Record<string, {type?: string; label?: string}>>('siga_calendar_days', {});
   const published = await loadPublishedAgenda(schoolId);
-  return {...local, ...published.days};
+  return published.days;
 }
 
 function mapAgendaRow(row: Record<string, unknown>, turma: string): SchoolEvent | null {
@@ -319,19 +318,14 @@ function mapAgendaRow(row: Record<string, unknown>, turma: string): SchoolEvent 
 }
 
 async function loadAgenda(schoolId: string, turma: string): Promise<SchoolEvent[]> {
-  const local = readJson<Array<Record<string, unknown>>>('siga_agenda_events', [])
-    .map((row) => mapAgendaRow(row, turma))
-    .filter((row): row is SchoolEvent => !!row);
-  if (!schoolId) return local;
+  if (!schoolId) return [];
   const published = await loadPublishedAgenda(schoolId);
-  const cloud = published.rows.map((row) => mapAgendaRow({
+  return published.rows.map((row) => mapAgendaRow({
     ...row,
     event_date: row.date,
     event_type: row.type,
     class_codes: row.classes,
   }, turma)).filter((row): row is SchoolEvent => !!row);
-  if (!cloud.length) return local;
-  return cloud;
 }
 
 function calendarEvents(days: Record<string, {type?: string; label?: string}>): SchoolEvent[] {
