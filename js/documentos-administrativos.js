@@ -990,9 +990,9 @@
 
     function getTimbradoUrl() {
         try {
-            return new URL('assets/timbrado-a4.jpg?v=20260924k', window.location.href).href;
+            return new URL('assets/timbrado-a4.jpg?v=20260924m', window.location.href).href;
         } catch (e) {
-            return 'assets/timbrado-a4.jpg?v=20260924k';
+            return 'assets/timbrado-a4.jpg?v=20260924m';
         }
     }
 
@@ -1032,7 +1032,7 @@
             'html,body{margin:0;padding:0;background:#fff}',
             'body{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:11.5px;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
             '.page{width:210mm;min-height:297mm;box-sizing:border-box;background-image:url(\'' + bg + '\');background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
-            '.sheet{max-width:190mm;margin:0 auto;padding:18mm 0}',
+            '.sheet{box-sizing:border-box;width:210mm;margin:0 auto;padding:36mm 14mm 16mm}',
             '.head{text-align:center;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}',
             '.head h1{font-size:13px;margin:0 0 2px;letter-spacing:.04em}',
             '.head h2{font-size:16px;margin:6px 0 2px}',

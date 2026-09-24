@@ -326,11 +326,10 @@
     }).join('');
     var logo = new URL('assets/historico/image1.jpeg', window.location.href).href;
     var brasao = new URL('assets/historico/image2.png', window.location.href).href;
-    var timbre = new URL('assets/timbrado-a4.jpg?v=20260924k', window.location.href).href.replace(/'/g, "\\'");
     var css =
       '@page{size:A4 portrait;margin:6mm}' +
       'html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif}' +
-      "body{-webkit-print-color-adjust:exact;print-color-adjust:exact;background-image:url('" + timbre + "');background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}" +
+      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
       '.sheet{width:198mm;margin:0 auto;font-size:7.5pt;line-height:1.15}' +
       '.head{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:center}' +
       '.head img{width:58px;height:58px;object-fit:contain}' +
