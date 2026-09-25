@@ -10,7 +10,7 @@
     var TIPO_REQ = 'Requerimento Padrão';
     var TIPO_OFICIO = 'Ofício';
     var TIPO_MEMORANDO = 'Memorando';
-    var DE_PADRAO = 'Escola Estadual Dr Romildo Veloso e Silva';
+    var DE_PADRAO = 'Escola Estadual Prof. Geraldo Ângelo Pereira';
     var OFICIO_START = 35;
     var MEMORANDO_START = 47;
     var MESES_PT = [
@@ -440,7 +440,7 @@
             d = now.getDate();
         }
         var mes = MESES_PT[m - 1] || '';
-        return 'Ourilândia do Norte, ' + d + ' de ' + mes + ' de ' + y;
+        return 'Tucumã - PA, ' + d + ' de ' + mes + ' de ' + y;
     }
 
     function tituloDocumento(kind, numero, ano) {
@@ -875,9 +875,7 @@
         if (title) title.textContent = editingId ? ('Editar ' + label) : ('Novo ' + label);
         var hint = $('adm-om-hint');
         if (hint) {
-            hint.textContent = kind === 'memorando'
-                ? 'Modelo no papel timbrado da escola. Numeração inicia em 47 e avança a cada novo memorando.'
-                : 'Modelo no papel timbrado da escola. Numeração inicia em 35 e avança a cada novo ofício.';
+            hint.textContent = 'Papel timbrado da Escola Estadual Prof. Geraldo Ângelo Pereira. O número pode ser editado.';
         }
         var modal = $('adm-om-modal');
         if (modal) modal.classList.remove('hidden');
