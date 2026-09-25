@@ -1006,9 +1006,27 @@
         doc.open();
         doc.write(html);
         doc.close();
+        iframe.style.cssText = 'position:fixed;left:-12000px;top:0;width:210mm;height:297mm;border:0';
         setTimeout(function () {
-            try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch (e) { /* ignore */ }
-        }, 350);
+            try {
+                var probe = doc.querySelector('.mm-probe');
+                var flow = doc.querySelector('.content');
+                var px = probe ? probe.offsetHeight : 0;
+                if (flow && px) {
+                    var firstPage = 241 * px;
+                    if (flow.scrollHeight > firstPage + 8) {
+                        doc.body.classList.add('multi');
+                        var numeracao = doc.querySelector('.numeracao');
+                        if (numeracao) numeracao.textContent = '';
+                        var style = doc.createElement('style');
+                        style.textContent = '@page{@bottom-center{content:"Página " counter(page);font-family:Arial,sans-serif;font-size:9pt;color:#333}}';
+                        doc.head.appendChild(style);
+                    }
+                }
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (e) { /* ignore */ }
+        }, 450);
     }
 
     function printRequerimento(data) {
@@ -1101,25 +1119,28 @@
         var html = [
             '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><title>', escapeHtml(titulo), '</title>',
             '<style>',
-            '@page{size:A4;margin:0}',
+            '@page{size:A4;margin:14mm 16mm 16mm 16mm}',
+            '@page:first{margin-top:40mm}',
             'html,body{margin:0;padding:0;background:#fff}',
             'body{font-family:Arial,Helvetica,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-            '.page{width:210mm;height:297mm;box-sizing:border-box;position:relative;overflow:hidden;',
+            '.mm-probe{position:absolute;height:1mm;width:1mm;visibility:hidden}',
+            '.timbre{position:absolute;top:0;left:0;width:210mm;height:297mm;z-index:-1;pointer-events:none;',
             "background-image:url('" + bg + "');",
             'background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
-            '.content{box-sizing:border-box;height:100%;padding:48mm 18mm 34mm 18mm;display:flex;flex-direction:column}',
-            '.local{text-align:right;font-size:12pt;font-weight:700;margin:0 0 18px}',
-            '.titulo{text-align:left;font-size:13pt;font-weight:700;letter-spacing:.03em;margin:0 0 20px;text-transform:uppercase}',
-            '.meta{font-size:12pt;line-height:1.55;margin:0 0 16px}',
+            'body.multi .numeracao{position:fixed;bottom:5mm;left:0;right:0;text-align:center;font-size:9pt;color:#333}',
+            '.content{box-sizing:border-box}',
+            '.local{text-align:right;font-size:11pt;font-weight:700;margin:0 0 8px}',
+            '.titulo{text-align:left;font-size:12pt;font-weight:700;letter-spacing:.02em;margin:0 0 8px;text-transform:uppercase}',
+            '.meta{font-size:11pt;line-height:1.35;margin:0 0 8px}',
             '.meta .lbl{font-weight:700}',
-            '.corpo{flex:1;border:none;padding:0;font-size:12pt;line-height:1.55;text-align:justify;min-height:90mm;background:transparent}',
-            '.corpo p{margin:0 0 0.85em;text-align:justify;text-indent:1.25cm}',
+            '.corpo{border:none;padding:0;font-size:11pt;line-height:1.32;text-align:justify;background:transparent}',
+            '.corpo p{margin:0 0 0.45em;text-align:justify;text-indent:1.15cm}',
             '.corpo b,.corpo strong{font-weight:700}',
-            '.fecho{margin-top:36px;text-align:center}',
-            '.fecho .linha{width:58%;margin:0 auto;border-top:1px solid #111;padding-top:8px}',
+            '.fecho{margin-top:14px;text-align:center}',
+            '.fecho .linha{width:52%;margin:0 auto;border-top:1px solid #111;padding-top:4px}',
             '.fecho .cargo{font-size:11pt;margin:0}',
-            '@media print{html,body{margin:0!important;padding:0!important}.page{page-break-inside:avoid}}',
-            '</style></head><body><div class="page"><div class="content">',
+            '@media print{html,body{margin:0!important;padding:0!important}}',
+            '</style></head><body><div class="mm-probe"></div><div class="timbre"></div><div class="numeracao"></div><div class="content">',
             '<p class="local">', escapeHtml(local), '</p>',
             '<h1 class="titulo">', escapeHtml(titulo), '</h1>',
             '<div class="meta">',
@@ -1130,7 +1151,7 @@
             '<div class="fecho">',
             '<div class="linha"><p class="cargo">Gestão Escolar</p></div>',
             '</div>',
-            '</div></div></body></html>'
+            '</div></body></html>'
         ].join('');
 
         printViaIframe(html);
