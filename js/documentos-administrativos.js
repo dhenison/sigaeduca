@@ -1019,9 +1019,20 @@
         doc.open();
         doc.write(html);
         doc.close();
-        setTimeout(function () {
+        var imagens = Array.prototype.slice.call(doc.images || []);
+        var prontas = imagens.map(function (img) {
+            if (img.complete && img.naturalWidth) return Promise.resolve();
+            return new Promise(function (resolve) {
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+            });
+        });
+        Promise.race([
+            Promise.all(prontas),
+            new Promise(function (resolve) { setTimeout(resolve, 2500); })
+        ]).then(function () {
             try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch (e) { /* ignore */ }
-        }, 400);
+        });
     }
 
     function printRequerimento(data) {
@@ -1170,8 +1181,9 @@
             var ultima = index === paginas.length - 1;
             var pagina = varias ? ' · ' + (index + 1) + '/' + paginas.length : '';
             var rodape = rodapeBase + pagina + '</small></div><img src="' + qr + '" alt="QR Code do protocolo"></div>';
-            return '<section class="folha' + (index === 0 ? ' primeira' : '') + (ultima ? ' ultima' : '') + '"><div class="miolo">' +
-                htmlPagina + '</div>' + (ultima ? fecho : '') + rodape + '</section>';
+            var timbre = index === 0 ? '<img class="timbre-img" src="' + bg + '" alt="">' : '';
+            return '<section class="folha' + (index === 0 ? ' primeira' : '') + (ultima ? ' ultima' : '') + '">' +
+                timbre + '<div class="miolo">' + htmlPagina + '</div>' + (ultima ? fecho : '') + rodape + '</section>';
         }).join('');
 
         var html = [
@@ -1182,7 +1194,8 @@
             'body{font-family:Arial,Helvetica,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
             '.folha{width:210mm;height:297mm;box-sizing:border-box;position:relative;overflow:hidden;page-break-after:always;background:#fff}',
             '.folha:last-child{page-break-after:auto}',
-            '.folha.primeira{background-image:url(\'' + bg + '\');background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
+            '.timbre-img{position:absolute;top:0;left:0;width:210mm;height:297mm;object-fit:fill;z-index:0}',
+            '.miolo,.fecho,.rodape{position:relative;z-index:1}',
             '.miolo{box-sizing:border-box;padding:16mm 16mm 18mm}',
             '.folha.primeira .miolo{padding-top:40mm}',
             '.local{text-align:right;font-size:11pt;font-weight:700;margin:0 0 8px}',
@@ -1199,7 +1212,7 @@
             '.rodape span{display:block;font-size:7pt;letter-spacing:.04em;text-transform:uppercase;color:#444}',
             '.rodape b{display:block;font-family:Consolas,monospace;font-size:9pt;letter-spacing:.03em;color:#111}',
             '.rodape small{display:block;font-size:7pt;color:#333}',
-            '.rodape img{width:48px;height:48px;display:block}',
+            '.rodape img{width:52px;height:52px;display:block;flex-shrink:0;background:#fff}',
             '</style></head><body>', folhas, '</body></html>'
         ].join('');
 
