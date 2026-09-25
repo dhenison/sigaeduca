@@ -64,6 +64,7 @@
 
     var editingId = null;
     var editingKind = null; // 'requerimento' | 'oficio' | 'memorando'
+    var editingProtocol = '';
     var filterState = { tipo: '', usuario: '', data: '', requerente: '' };
     var HIST_TABS = [
         { value: '', label: 'Todos' },
@@ -87,6 +88,14 @@
 
     function uid() {
         return 'adm-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    }
+
+    function novoProtocoloAdmin(kind) {
+        var prefix = kind === 'memorando' ? 'MEM' : 'OFI';
+        var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        var out = '';
+        for (var i = 0; i < 10; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+        return 'SIGA-' + prefix + '-' + new Date().getFullYear() + '-' + out;
     }
 
     function getSession() {
@@ -856,6 +865,7 @@
         data.corpo = sanitizeCorpoHtml($('adm-om-corpo') ? $('adm-om-corpo').innerHTML : '');
         var n = parseInt($('adm-om-numero') && $('adm-om-numero').value, 10);
         data.numero = isNaN(n) ? null : n;
+        if (editingProtocol) data.protocolo = editingProtocol;
         return data;
     }
 
@@ -863,6 +873,7 @@
         kind = kind === 'memorando' ? 'memorando' : 'oficio';
         editingId = doc && doc.id ? doc.id : null;
         editingKind = kind;
+        editingProtocol = doc && doc.dados && doc.dados.protocolo ? doc.dados.protocolo : '';
         var data = doc && doc.dados
             ? Object.assign(emptyOmForm(kind), doc.dados, { kind: kind, tipo: kind === 'memorando' ? TIPO_MEMORANDO : TIPO_OFICIO })
             : emptyOmForm(kind);
@@ -884,6 +895,7 @@
     function closeOmForm() {
         editingId = null;
         editingKind = null;
+        editingProtocol = '';
         var modal = $('adm-om-modal');
         if (modal) modal.classList.add('hidden');
     }
@@ -897,6 +909,7 @@
     function saveOmForm(andPrint) {
         var kind = editingKind === 'memorando' ? 'memorando' : 'oficio';
         var data = readOmForm();
+        if (!data.protocolo) data.protocolo = novoProtocoloAdmin(kind);
         var err = validateOmForm(data);
         if (err) {
             toast(err, 'error');
@@ -1126,8 +1139,8 @@
             box.innerHTML = html;
             return box.offsetHeight;
         }
-        var limitePrimeira = (297 - 40 - 18) * mm;
-        var limiteSeguinte = (297 - 16 - 18) * mm;
+        var limitePrimeira = (297 - 40 - 52) * mm;
+        var limiteSeguinte = (297 - 16 - 52) * mm;
         var paginas = [];
         var atual = cabeca;
         var limite = limitePrimeira;
@@ -1141,22 +1154,24 @@
                 atual = tentativa;
             }
         });
-        if (altura(atual + fecho) > limite && atual) {
-            paginas.push(atual);
-            atual = fecho;
-        } else {
-            atual += fecho;
-        }
         paginas.push(atual);
+        if (!data.protocolo) data.protocolo = editingProtocol || novoProtocoloAdmin(kind);
+        var protocolo = data.protocolo;
+        var qr = 'https://api.qrserver.com/v1/create-qr-code/?size=92x92&ecc=M&data=' +
+            encodeURIComponent('https://sigaeduca.com/validar-documento.html?protocolo=' + protocolo);
+        var rodapeBase = '<div class="rodape"><div><span>Protocolo SIGA EDUCA</span><b>' + escapeHtml(protocolo) +
+            '</b><small>sigaeduca.com/validar-documento.html';
         probe.remove();
         box.remove();
         medida.remove();
 
         var varias = paginas.length > 1;
         var folhas = paginas.map(function (htmlPagina, index) {
-            var numero = varias ? '<div class="num">' + (index + 1) + '/' + paginas.length + '</div>' : '';
-            return '<section class="folha' + (index === 0 ? ' primeira' : '') + '"><div class="miolo">' +
-                htmlPagina + '</div>' + numero + '</section>';
+            var ultima = index === paginas.length - 1;
+            var pagina = varias ? ' · ' + (index + 1) + '/' + paginas.length : '';
+            var rodape = rodapeBase + pagina + '</small></div><img src="' + qr + '" alt="QR Code do protocolo"></div>';
+            return '<section class="folha' + (index === 0 ? ' primeira' : '') + (ultima ? ' ultima' : '') + '"><div class="miolo">' +
+                htmlPagina + '</div>' + (ultima ? fecho : '') + rodape + '</section>';
         }).join('');
 
         var html = [
@@ -1176,10 +1191,15 @@
             '.meta .lbl{font-weight:700}',
             '.corpo p{margin:0 0 0.45em;text-align:justify;text-indent:1.15cm;font-size:11pt;line-height:1.32}',
             '.corpo b,.corpo strong{font-weight:700}',
-            '.fecho{margin-top:14px;text-align:center}',
+            '.folha.ultima .fecho{position:absolute;left:16mm;right:16mm;bottom:34mm;margin:0;text-align:center}',
             '.fecho .linha{width:52%;margin:0 auto;border-top:1px solid #111;padding-top:4px}',
             '.fecho .cargo{font-size:11pt;margin:0}',
-            '.num{position:absolute;left:0;right:0;bottom:8mm;text-align:center;font-size:9pt;color:#333}',
+            '.num{position:absolute;left:0;right:0;bottom:28mm;text-align:center;font-size:8pt;color:#444}',
+            '.rodape{position:absolute;left:12mm;right:12mm;bottom:7mm;display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #bbb;padding-top:3px;background:rgba(255,255,255,.9)}',
+            '.rodape span{display:block;font-size:7pt;letter-spacing:.04em;text-transform:uppercase;color:#444}',
+            '.rodape b{display:block;font-family:Consolas,monospace;font-size:9pt;letter-spacing:.03em;color:#111}',
+            '.rodape small{display:block;font-size:7pt;color:#333}',
+            '.rodape img{width:48px;height:48px;display:block}',
             '</style></head><body>', folhas, '</body></html>'
         ].join('');
 
