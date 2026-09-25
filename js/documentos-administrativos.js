@@ -1006,27 +1006,9 @@
         doc.open();
         doc.write(html);
         doc.close();
-        iframe.style.cssText = 'position:fixed;left:-12000px;top:0;width:210mm;height:297mm;border:0';
         setTimeout(function () {
-            try {
-                var probe = doc.querySelector('.mm-probe');
-                var flow = doc.querySelector('.content');
-                var px = probe ? probe.offsetHeight : 0;
-                if (flow && px) {
-                    var firstPage = 241 * px;
-                    if (flow.scrollHeight > firstPage + 8) {
-                        doc.body.classList.add('multi');
-                        var numeracao = doc.querySelector('.numeracao');
-                        if (numeracao) numeracao.textContent = '';
-                        var style = doc.createElement('style');
-                        style.textContent = '@page{@bottom-center{content:"Página " counter(page);font-family:Arial,sans-serif;font-size:9pt;color:#333}}';
-                        doc.head.appendChild(style);
-                    }
-                }
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch (e) { /* ignore */ }
-        }, 450);
+            try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch (e) { /* ignore */ }
+        }, 400);
     }
 
     function printRequerimento(data) {
@@ -1116,42 +1098,89 @@
         var para = escapeHtml(data.para || '');
         var de = escapeHtml(data.de || DE_PADRAO);
 
+        var cabeca = '<p class="local">' + escapeHtml(local) + '</p>' +
+            '<h1 class="titulo">' + escapeHtml(titulo) + '</h1>' +
+            '<div class="meta"><div><span class="lbl">DE:</span> ' + de + '</div>' +
+            '<div><span class="lbl">PARA:</span> ' + (para || '&nbsp;') + '</div></div>';
+        var fecho = '<div class="fecho"><div class="linha"><p class="cargo">Gestão Escolar</p></div></div>';
+        var blocos = [];
+        var holder = document.createElement('div');
+        holder.innerHTML = corpo || '<p>&nbsp;</p>';
+        Array.prototype.forEach.call(holder.children, function (node) {
+            blocos.push(node.outerHTML);
+        });
+        if (!blocos.length) blocos.push('<p>&nbsp;</p>');
+
+        var probe = document.createElement('div');
+        probe.style.cssText = 'position:absolute;left:-20000px;top:0;height:1mm;width:178mm;visibility:hidden';
+        document.body.appendChild(probe);
+        var mm = probe.offsetHeight || 3.78;
+        var medida = document.createElement('style');
+        medida.textContent = '.adm-medida{font-family:Arial,Helvetica,sans-serif;color:#111}.adm-medida .local{text-align:right;font-size:11pt;font-weight:700;margin:0 0 8px}.adm-medida .titulo{font-size:12pt;font-weight:700;margin:0 0 8px}.adm-medida .meta{font-size:11pt;line-height:1.35;margin:0 0 8px}.adm-medida .corpo p{margin:0 0 0.45em;text-indent:1.15cm;font-size:11pt;line-height:1.32}.adm-medida .fecho{margin-top:14px}';
+        document.head.appendChild(medida);
+        var box = document.createElement('div');
+        box.className = 'adm-medida';
+        box.style.cssText = 'position:absolute;left:-20000px;top:0;width:178mm;visibility:hidden';
+        document.body.appendChild(box);
+        function altura(html) {
+            box.innerHTML = html;
+            return box.offsetHeight;
+        }
+        var limitePrimeira = (297 - 40 - 18) * mm;
+        var limiteSeguinte = (297 - 16 - 18) * mm;
+        var paginas = [];
+        var atual = cabeca;
+        var limite = limitePrimeira;
+        blocos.forEach(function (bloco) {
+            var tentativa = atual + '<div class="corpo">' + bloco + '</div>';
+            if (altura(tentativa) > limite && atual !== cabeca && atual !== '') {
+                paginas.push(atual);
+                atual = '<div class="corpo">' + bloco + '</div>';
+                limite = limiteSeguinte;
+            } else {
+                atual = tentativa;
+            }
+        });
+        if (altura(atual + fecho) > limite && atual) {
+            paginas.push(atual);
+            atual = fecho;
+        } else {
+            atual += fecho;
+        }
+        paginas.push(atual);
+        probe.remove();
+        box.remove();
+        medida.remove();
+
+        var varias = paginas.length > 1;
+        var folhas = paginas.map(function (htmlPagina, index) {
+            var numero = varias ? '<div class="num">' + (index + 1) + '/' + paginas.length + '</div>' : '';
+            return '<section class="folha' + (index === 0 ? ' primeira' : '') + '"><div class="miolo">' +
+                htmlPagina + '</div>' + numero + '</section>';
+        }).join('');
+
         var html = [
             '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><title>', escapeHtml(titulo), '</title>',
             '<style>',
-            '@page{size:A4;margin:14mm 16mm 16mm 16mm}',
-            '@page:first{margin-top:40mm}',
+            '@page{size:A4;margin:0}',
             'html,body{margin:0;padding:0;background:#fff}',
             'body{font-family:Arial,Helvetica,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-            '.mm-probe{position:absolute;height:1mm;width:1mm;visibility:hidden}',
-            '.timbre{position:absolute;top:0;left:0;width:210mm;height:297mm;z-index:-1;pointer-events:none;',
-            "background-image:url('" + bg + "');",
-            'background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
-            'body.multi .numeracao{position:fixed;bottom:5mm;left:0;right:0;text-align:center;font-size:9pt;color:#333}',
-            '.content{box-sizing:border-box}',
+            '.folha{width:210mm;height:297mm;box-sizing:border-box;position:relative;overflow:hidden;page-break-after:always;background:#fff}',
+            '.folha:last-child{page-break-after:auto}',
+            '.folha.primeira{background-image:url(\'' + bg + '\');background-repeat:no-repeat;background-position:center top;background-size:210mm 297mm}',
+            '.miolo{box-sizing:border-box;padding:16mm 16mm 18mm}',
+            '.folha.primeira .miolo{padding-top:40mm}',
             '.local{text-align:right;font-size:11pt;font-weight:700;margin:0 0 8px}',
             '.titulo{text-align:left;font-size:12pt;font-weight:700;letter-spacing:.02em;margin:0 0 8px;text-transform:uppercase}',
             '.meta{font-size:11pt;line-height:1.35;margin:0 0 8px}',
             '.meta .lbl{font-weight:700}',
-            '.corpo{border:none;padding:0;font-size:11pt;line-height:1.32;text-align:justify;background:transparent}',
-            '.corpo p{margin:0 0 0.45em;text-align:justify;text-indent:1.15cm}',
+            '.corpo p{margin:0 0 0.45em;text-align:justify;text-indent:1.15cm;font-size:11pt;line-height:1.32}',
             '.corpo b,.corpo strong{font-weight:700}',
             '.fecho{margin-top:14px;text-align:center}',
             '.fecho .linha{width:52%;margin:0 auto;border-top:1px solid #111;padding-top:4px}',
             '.fecho .cargo{font-size:11pt;margin:0}',
-            '@media print{html,body{margin:0!important;padding:0!important}}',
-            '</style></head><body><div class="mm-probe"></div><div class="timbre"></div><div class="numeracao"></div><div class="content">',
-            '<p class="local">', escapeHtml(local), '</p>',
-            '<h1 class="titulo">', escapeHtml(titulo), '</h1>',
-            '<div class="meta">',
-            '<div><span class="lbl">DE:</span> ', de, '</div>',
-            '<div><span class="lbl">PARA:</span> ', para || '&nbsp;', '</div>',
-            '</div>',
-            '<div class="corpo">', corpo || '&nbsp;', '</div>',
-            '<div class="fecho">',
-            '<div class="linha"><p class="cargo">Gestão Escolar</p></div>',
-            '</div>',
-            '</div></body></html>'
+            '.num{position:absolute;left:0;right:0;bottom:8mm;text-align:center;font-size:9pt;color:#333}',
+            '</style></head><body>', folhas, '</body></html>'
         ].join('');
 
         printViaIframe(html);
