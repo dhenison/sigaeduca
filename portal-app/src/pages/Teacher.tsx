@@ -391,7 +391,7 @@ function RollCard({title, phase, open, onToggle, roll, saving, onMark, onReason,
             {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : studentInitials(student.nome)}
           </button>
           <b>{student.nome}</b>
-          <div className="roll-options">{marks.map(([status, label]) => <label key={status} title={label}><input type="radio" name={`${phase}-${student.id}`} aria-label={label} checked={mark.hasMark ? mark.status === status : status === 'P'} disabled={frozen} onChange={() => onMark(phase, student.id, status)} />{status}</label>)}</div>
+          <div className="roll-options">{marks.map(([status, label]) => <label key={status} title={label}><input type="radio" name={`${phase}-${student.id}`} aria-label={label} checked={mark.status === status} disabled={frozen} onChange={() => onMark(phase, student.id, status)} />{status}</label>)}</div>
         </div>
         {isFacialLocked(mark) && <small>Reconhecimento facial</small>}
         {mark.status === 'FJ' && !frozen && <input className="roll-reason" placeholder="Motivo da falta justificada" value={mark.justification} onChange={(event) => onReason(phase, student.id, event.target.value)} />}

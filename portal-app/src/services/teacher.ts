@@ -156,7 +156,7 @@ export function copyEntradaToSaida(studentIds: string[], entrada: Record<string,
       locked: false,
       source: 'manual',
       markedAt: null,
-      hasMark: true,
+      hasMark: false,
     };
   });
   return next;
@@ -303,7 +303,9 @@ export async function loadClassRoll(schoolId: string, classCode: string, day: st
     callId: callRes.data.id,
     students,
     entrada,
-    saida,
+    saida: callRes.data.entrada_consolidada && !callRes.data.saida_consolidada
+      ? copyEntradaToSaida(students.map((student) => student.id), entrada, saida)
+      : saida,
     entradaConsolidada: !!callRes.data.entrada_consolidada,
     saidaConsolidada: !!callRes.data.saida_consolidada,
   };
@@ -360,7 +362,8 @@ export async function consolidateRoll(schoolId: string, classCode: string, day: 
   };
   const call = await ensureCall(schoolId, classCode, day, next);
   next.callId = call;
-  const rows = [...marksToRows(schoolId, call, 'entrada', next.entrada, ids), ...marksToRows(schoolId, call, 'saida', next.saida, ids)];
+  // A outra etapa pode conter apenas o rascunho copiado da entrada.
+  const rows = marksToRows(schoolId, call, phase, next[phase], ids);
   for (let i = 0; i < rows.length; i += 80) {
     const res = await sb().from('attendance_marks').upsert(rows.slice(i, i + 80), {onConflict: 'call_id,student_id,phase'});
     if (res.error) throw new Error(res.error.message);

@@ -102,6 +102,7 @@ interface Session {
 }
 interface Mark {
   status?: string;
+  _hasMark?: boolean;
   locked?: boolean;
   marked_at?: string | null;
   justification?: string | null;
@@ -345,6 +346,8 @@ function calendarEvents(days: Record<string, {type?: string; label?: string}>): 
 }
 
 function localAttendance(turma: string, studentId: string, year: number) {
+  const savedMark = (mark?: Mark | null) =>
+    mark && (mark.locked || mark._hasMark || mark.marked_at) ? mark : null;
   const days: Record<string, DayMarks> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i) || '';
@@ -357,8 +360,8 @@ function localAttendance(turma: string, studentId: string, year: number) {
     const rec = readJson<{entrada?: {records?: Record<string, Mark>}; saida?: {records?: Record<string, Mark>}} | null>(key, null);
     if (!rec) continue;
     days[iso] = {
-      entrada: rec.entrada?.records?.[studentId] || null,
-      saida: rec.saida?.records?.[studentId] || null,
+      entrada: savedMark(rec.entrada?.records?.[studentId]),
+      saida: savedMark(rec.saida?.records?.[studentId]),
     };
   }
   return days;
