@@ -48,7 +48,9 @@
   }
 
   function isHistoricoEscolar(tipo) {
-    return tipo === (window.HISTORICO_ESCOLAR_TIPO || 'Histórico Escolar do Ensino Médio');
+    return typeof window.isHistoricoEscolarTipo === 'function'
+      ? window.isHistoricoEscolarTipo(tipo)
+      : tipo === 'Histórico Escolar do Ensino Médio';
   }
 
   function isDeclaracao(tipo) {
@@ -634,8 +636,10 @@
     if (isHistoricoEscolar(tipo)) {
       hide(grupoNasc);
       show(grupoHistorico);
-      if (grupoHistorico && !grupoHistorico.querySelector('[data-h="aluno"]') && typeof window.renderHistoricoEscolarEditor === 'function') {
-        window.renderHistoricoEscolarEditor(grupoHistorico, null);
+      if (grupoHistorico && typeof window.renderHistoricoEscolarEditor === 'function' &&
+          (!grupoHistorico.querySelector('[data-h="aluno"]') || grupoHistorico.dataset.historicoModelo !== window.historicoEscolarModelo(tipo))) {
+        const draft = grupoHistorico.querySelector('[data-h="aluno"]') ? window.collectHistoricoEscolar(grupoHistorico) : null;
+        window.renderHistoricoEscolarEditor(grupoHistorico, draft, tipo);
       }
       preencherHistoricoDoAluno();
       return;
@@ -748,6 +752,7 @@
   }
 
   function salvarHistoricoEscolar(alunoId) {
+    const tipo = document.getElementById('sec-doc-tipo')?.value || window.HISTORICO_ESCOLAR_TIPOS.nova;
     const box = document.getElementById('sec-grupo-historico');
     const historico = typeof window.collectHistoricoEscolar === 'function'
       ? window.collectHistoricoEscolar(box)
@@ -782,6 +787,7 @@
 
     if (existente) {
       gravar(Object.assign({}, existente, {
+        tipo: tipo,
         alunoId: aluno ? aluno.id : (existente.alunoId || null),
         alunoNome: historico.aluno,
         alunoCpf: historico.cpf || (aluno && aluno.cpf) || '',
@@ -797,7 +803,7 @@
       return;
     }
 
-    gerarProtocoloSecAsync(window.HISTORICO_ESCOLAR_TIPO).then(function (protocolo) {
+    gerarProtocoloSecAsync(tipo).then(function (protocolo) {
       gravar({
         id: uid(),
         protocolo: protocolo,
@@ -807,7 +813,7 @@
         alunoTurma: aluno ? (aluno.turma || '') : '',
         alunoSerie: aluno ? (resolveSerie(aluno) || '') : '',
         alunoTurno: aluno ? (aluno.turno || '') : '',
-        tipo: window.HISTORICO_ESCOLAR_TIPO,
+        tipo: tipo,
         dataEmissao: hoje,
         dataValidade: computeDataValidadeIso(hoje),
         status: 'concluido',
@@ -835,13 +841,13 @@
     abrirModalNovoDocSecretaria();
     SEC_HISTORICO_EDIT_ID = doc.id;
     const tipo = document.getElementById('sec-doc-tipo');
-    if (tipo) tipo.value = doc.tipo;
+    if (tipo) tipo.value = doc.tipo === window.HISTORICO_ESCOLAR_TIPO ? window.HISTORICO_ESCOLAR_TIPOS.nova : doc.tipo;
     const alunoSel = document.getElementById('sec-doc-aluno-id');
     if (alunoSel && doc.alunoId) alunoSel.value = doc.alunoId;
     mostrarCamposDinamicosSec();
     const box = document.getElementById('sec-grupo-historico');
     if (box && typeof window.renderHistoricoEscolarEditor === 'function') {
-      window.renderHistoricoEscolarEditor(box, doc.historico || null);
+      window.renderHistoricoEscolarEditor(box, doc.historico || null, doc.tipo);
     }
   }
 

@@ -79,296 +79,140 @@
     }
   ];
 
-  function esc(value) {
-    return String(value == null ? '' : value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  var TIPOS = {antiga: 'Histórico Matriz Antiga', nova: 'Histórico Nova Matriz'};
+  var ANTIGA = [
+    {area: 'BASE NACIONAL COMUM', itens: [
+      ['arte','2399　 ARTES'], ['biologia','2034　 BIOLOGIA'], ['edfis','1008　 EDUCAÇÃO FÍSICA'],
+      ['filosofia','2043　 FILOSOFIA'], ['fisica','2036　 FÍSICA'], ['geografia','2003　 GEOGRAFIA'],
+      ['historia','2002　 HISTÓRIA'], ['portugues','2001　 LÍNGUA PORTUGUESA'],
+      ['matematica','2006　 MATEMÁTICA'], ['quimica','2035　 QUÍMICA'], ['sociologia','2038　 SOCIOLOGIA']]},
+    {area: 'PARTE DIVERSIFICADA', itens: [['espanhol','2135　 ESPANHOL'], ['amazonicos','2135　 ESTUDOS AMAZÔNICOS'], ['ingles','2012　 INGLÊS']]},
+    {area: 'FORMAÇÃO PARA O MUNDO DO TRABALHO FMT ITINERÂNCIA', itens: [
+      ['portugues2','2485　 LÍNGUA PORTUGUESA II'], ['ambiental','2746 - EDUCAÇÃO AMBIENTAL, SUSTENTABILIDADE E CLIMA'],
+      ['humanas','2750 - CIÊNCIAS HUMANAS E SOCIAIS APLICADAS'], ['eletiva','2748 - ELETIVA'], ['projeto','2726 - PROJETO DE VIDA']]}
+  ];
+  var DEP_KEYS = ['componente','ch','nota','frequencia','escola','cidade','ano'];
+  function esc(v) {return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function modelo(tipo, data) {
+    if (tipo === TIPOS.antiga) return 'antiga';
+    if (tipo === TIPOS.nova || tipo === TIPO) return 'nova';
+    return data && data.modelo === 'antiga' ? 'antiga' : 'nova';
   }
-
-  function triplo(source, key) {
-    var row = source && source[key];
-    if (!Array.isArray(row)) return ['', '', ''];
-    return [row[0] || '', row[1] || '', row[2] || ''];
-  }
-
-  function vazio() {
-    var notas = {};
-    FORMACAO.forEach(function (bloco) {
-      bloco.itens.forEach(function (item) { notas[item[0]] = ['', '', '']; });
-    });
-    APROF.forEach(function (bloco) {
-      bloco.itens.forEach(function (item) { notas[item[0]] = ['', '', '']; });
-    });
-    return {
-      aluno: '',
-      documentos: '',
-      pai: '',
-      rg: '',
-      mae: '',
-      cpf: '',
-      nascimento: '',
-      naturalidade: 'TUCUMÃ',
-      uf: 'PA',
-      notas: notas,
-      frequencia: ['', '', ''],
-      carga: ['', '', ''],
-      resultado: ['', '', ''],
-      series: [
-        { ano: '', escola: '', cidade: '' },
-        { ano: '', escola: '', cidade: '' },
-        { ano: '', escola: '', cidade: '' }
-      ],
-      dependencia: '',
-      observacoes: '',
-      localData: ''
-    };
-  }
-
-  function mesclar(data) {
-    var base = vazio();
+  function triplo(v) {return [0,1,2].map(function(i) {return Array.isArray(v) && v[i] != null ? String(v[i]) : '';});}
+  function normalizar(data, tipo) {
     var src = data || {};
-    Object.keys(base).forEach(function (key) {
-      if (key === 'notas' || key === 'series' || key === 'frequencia' || key === 'carga' || key === 'resultado') return;
-      if (src[key] != null && String(src[key]).length) base[key] = src[key];
-    });
-    Object.keys(base.notas).forEach(function (key) {
-      base.notas[key] = triplo(src.notas, key);
-    });
-    base.frequencia = triplo({ f: src.frequencia }, 'f');
-    base.carga = triplo({ f: src.carga }, 'f');
-    base.resultado = triplo({ f: src.resultado }, 'f');
-    for (var i = 0; i < 3; i++) {
-      var serie = (src.series && src.series[i]) || {};
-      base.series[i] = {
-        ano: serie.ano || '',
-        escola: serie.escola || '',
-        cidade: serie.cidade || ''
-      };
+    var h = {modelo: modelo(tipo, src), notas: {}, series: [], dependencias: []};
+    ['aluno','documentos','pai','rg','mae','cpf','nascimento','dependencia','observacoes','localData'].forEach(function(k) {h[k] = src[k] == null ? '' : String(src[k]);});
+    h.naturalidade = src.naturalidade == null ? 'TUCUMÃ' : String(src.naturalidade);
+    h.uf = src.uf == null ? 'PA' : String(src.uf);
+    FORMACAO.concat(APROF, ANTIGA).forEach(function(b) {b.itens.forEach(function(item) {h.notas[item[0]] = triplo(src.notas && src.notas[item[0]]);});});
+    ['frequencia','carga','resultado'].forEach(function(k) {h[k] = triplo(src[k]);});
+    for (var i=0;i<3;i++) {
+      var s = src.series && src.series[i] || {};
+      h.series.push({ano:s.ano || '', escola:s.escola || '', cidade:s.cidade || ''});
+      var rows = [];
+      for (var j=0;j<3;j++) {
+        var row = {}, old = src.dependencias && src.dependencias[i] && src.dependencias[i][j] || {};
+        DEP_KEYS.forEach(function(k) {row[k] = old[k] == null ? '' : String(old[k]);});
+        rows.push(row);
+      }
+      h.dependencias.push(rows);
     }
-    return base;
+    return h;
   }
-
-  function dataHojeBr() {
-    var d = new Date();
-    var p = function (n) { return String(n).padStart(2, '0'); };
-    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear();
+  function asset(name) {return new URL('assets/historico/'+name, window.location.href).href;}
+  function styles() {return `
+    .he-sheet,.he-sheet *{box-sizing:border-box}
+    .he-sheet{position:relative;isolation:isolate;width:190mm;min-height:274mm;margin:0 auto;border:0.7mm solid #111;color:#111;background:white;font-family:Arial,Helvetica,sans-serif;font-size:8pt;line-height:1.15;display:flex;flex-direction:column}
+    .he-watermark{position:absolute;z-index:-1;left:10%;top:51mm;width:80%;height:183mm;object-fit:fill;pointer-events:none}
+    .he-head{height:29mm;display:flex;align-items:center;justify-content:space-between;text-align:center;padding:1mm 5mm;border-bottom:0.6mm solid #111}
+    .he-head img{width:20mm;height:23mm;object-fit:contain}.he-head div{flex:1;font-size:8pt;line-height:1.8}.he-head strong{display:block;font-size:11pt;margin-top:2mm;line-height:1.15}
+    .he-school{text-align:center;border-bottom:0.4mm solid #111;padding:1mm 0;font-size:10pt}.he-school small{display:flex;justify-content:space-evenly;font-size:7.5pt;margin-top:1mm}
+    .he-resolution{text-align:center;font-size:8pt;border-bottom:0.4mm solid #111;padding:.5mm}
+    .he-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0;background:transparent}.he-table td,.he-table th{border:.3mm solid #111;padding:.35mm .6mm;vertical-align:middle;overflow-wrap:anywhere;height:4.1mm}.he-table tr>*:first-child{border-left:0}.he-table tr>*:last-child{border-right:0}
+    .he-table th{background:#d9d9d9;font-weight:bold;text-align:center}.he-ident td{height:4.7mm}.he-ident .he-field{display:flex;align-items:center;gap:1mm}.he-ident label{white-space:nowrap;flex-shrink:0}.he-value{white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;flex:1}
+    .he-area{text-align:center;font-weight:bold;font-size:6.3pt}.he-group{text-align:center;font-size:6.5pt}.he-subject{font-size:7pt}.he-ap .he-subject{font-size:6.3pt}.he-grade{text-align:center;font-size:8pt}
+    .he-summary{text-align:right}.he-section{text-align:center;font-weight:bold;background:#d9d9d9}.he-grid thead th{height:4.3mm}.he-grid thead th:first-child{font-size:9pt}.he-series{text-align:center;font-size:7.5pt}.he-deps{text-align:center;font-size:6.5pt}.he-deps th{height:8mm;font-weight:normal}.he-deps td{height:4mm}
+    .he-notes{border-top:.3mm solid #111;min-height:11.5mm;background:repeating-linear-gradient(transparent 0,transparent 3.7mm,#111 3.7mm,#111 3.9mm);font-size:7.5pt;line-height:3.9mm;padding:0 .6mm}.he-notes b{display:block;height:3.9mm}.he-notes .he-value{display:block;min-height:7.8mm}.he-approval{text-align:center;font-size:7pt;border-top:.5mm solid #111;padding:1mm}
+    .he-footer{flex:1;display:flex;flex-direction:column;justify-content:space-between;min-height:32mm}.he-legend{font-size:6.8pt;line-height:1.5;padding:3mm 0 0}.he-signatures{display:flex;align-items:flex-end;justify-content:space-around;text-align:center;font-size:7.5pt;padding:6mm 3mm 3mm;gap:4mm}.he-signature{width:45%;border-top:.25mm solid #111;padding-top:1mm}.he-date{width:42%;font-weight:bold}
+    .he-input{display:block;width:100%;min-width:0;border:0;border-radius:0;background:rgba(255,255,255,.3);color:inherit;font:inherit;line-height:inherit;padding:0;margin:0;outline-offset:1px}.he-input:focus{outline:2px solid #16734b;background:#fff}.he-grade .he-input,.he-series .he-input,.he-deps .he-input{text-align:center}.he-input::placeholder{color:#666}textarea.he-input{resize:vertical;min-height:7.8mm;line-height:3.9mm}
+    .he-nova .he-footer{min-height:27mm}.he-nova .he-signatures{padding-top:4mm}.he-ident tr:first-child td:last-child .he-field{flex-wrap:wrap}.he-ident tr:first-child td:last-child .he-value:not(:empty){flex-basis:100%}.he-scroll{max-width:100%;overflow-x:auto;padding:8px 0}.he-help{font-size:12px;margin:0 0 8px}.he-model-title{font-size:16px;margin:0 0 8px}
+    @media print{.he-sheet{-webkit-print-color-adjust:exact;print-color-adjust:exact;break-inside:avoid}.he-input{background:transparent}}
+  `;}
+  function sheet(h, edit) {
+    function field(k,v,placeholder,multi) {
+      if (!edit) return '<span class="he-value">'+esc(v)+'</span>';
+      var attrs = ' class="he-input" data-h="'+esc(k)+'" aria-label="'+esc(k.replace(/:/g,' '))+'"';
+      if (multi) return '<textarea'+attrs+' rows="2">'+esc(v)+'</textarea>';
+      return '<input'+attrs+' type="text" value="'+esc(v)+'"'+(placeholder?' placeholder="'+esc(placeholder)+'"':'')+'>';
+    }
+    function grades(k) {return h.notas[k].map(function(v,i) {return '<td class="he-grade">'+field('nota:'+k+':'+i,v,'*')+'</td>';}).join('');}
+    function summary(label,k) {return '<tr><td colspan="3" class="he-summary">'+label+'</td>'+h[k].map(function(v,i) {return '<td class="he-grade">'+field(k+':'+i,v)+'</td>';}).join('')+'</tr>';}
+    function ident(label,k,span) {return '<td colspan="'+span+'"><div class="he-field"><label>'+label+'</label>'+field(k,h[k])+'</div></td>';}
+    var antiga = h.modelo === 'antiga', rows = '';
+    if (antiga) {
+      ANTIGA.forEach(function(b) {b.itens.forEach(function(item,i) {
+        rows += '<tr>'+(i===0?'<td class="he-area" rowspan="'+b.itens.length+'">'+esc(b.area)+'</td>':'')+'<td colspan="2" class="he-subject">'+esc(item[1])+'</td>'+grades(item[0])+'</tr>';
+      });});
+    } else {
+      var first=true;
+      FORMACAO.forEach(function(b) {b.itens.forEach(function(item,i) {
+        rows += '<tr>'+(first?'<td class="he-area" rowspan="12">FORMAÇÃO GERAL BÁSICA</td>':'')+(i===0?'<td class="he-group" rowspan="'+b.itens.length+'">'+esc(b.area)+'</td>':'')+'<td class="he-subject">'+esc(item[1])+'</td>'+grades(item[0])+'</tr>';
+        first=false;
+      });});
+      rows += '<tr><td colspan="3" class="he-section">APROFUNDAMENTOS CURRICULARES</td><td></td><td></td><td></td></tr>';
+      APROF.forEach(function(b) {b.itens.forEach(function(item,i) {
+        rows += '<tr class="he-ap">'+(i===0?'<td class="he-area" rowspan="'+b.itens.length+'">'+esc(b.sigla)+'<br>'+esc(b.area)+'</td>':'')+'<td colspan="2" class="he-subject">'+esc(item[1])+'</td>'+grades(item[0])+'</tr>';
+      });});
+    }
+    var series = h.series.map(function(s,i) {return '<tr><td>'+(i+1)+'ª</td><td>'+field('serie-ano:'+i,s.ano)+'</td><td>'+field('serie-escola:'+i,s.escola)+'</td><td>'+field('serie-cidade:'+i,s.cidade)+'</td></tr>';}).join('');
+    var deps = '';
+    if (antiga) {
+      deps = '<table class="he-table he-deps"><colgroup><col style="width:10%"><col style="width:27%"><col style="width:5%"><col style="width:10%"><col style="width:9%"><col style="width:14%"><col style="width:14%"><col style="width:11%"></colgroup><thead><tr><td colspan="8"><b>DEPENDÊNCIA DE ESTUDOS</b></td></tr><tr><th>SÉRIE</th><th>COMPONENTES<br>CURRICULARES</th><th>CH</th><th>NOTA<br>RESULTADO</th><th>FREQ.<br>ANUAL</th><th>ESCOLA</th><th>CIDADE/UF</th><th>ANO</th></tr></thead><tbody>';
+      h.dependencias.forEach(function(group,i) {group.forEach(function(row,j) {deps += '<tr>'+(j===0?'<td rowspan="3">'+(i+1)+'ª</td>':'')+DEP_KEYS.map(function(k) {return '<td>'+field('dep:'+i+':'+j+':'+k,row[k])+'</td>';}).join('')+'</tr>';});});
+      deps += '</tbody></table>';
+    } else {
+      deps = '<div class="he-notes"><b>DEPENDÊNCIA DE ESTUDOS:</b>'+field('dependencia',h.dependencia,'',true)+'</div><div class="he-notes"><b>OBSERVAÇÕES:</b>'+field('observacoes',h.observacoes,'',true)+'</div>';
+    }
+    return '<article class="he-sheet he-'+h.modelo+'"><img class="he-watermark" src="'+asset('image3.jpeg')+'" alt="">'+
+      '<header class="he-head"><img src="'+asset('image1.jpeg')+'" alt="Logo EGAP"><div>GOVERNO DO ESTADO DO PARÁ<br>SECRETARIA ESPECIAL DE ESTADO DE PROMOÇÃO SOCIAL<br>SECRETARIA DE ESTADO DE EDUCAÇÃO<strong>HISTÓRICO ESCOLAR DO ENSINO MÉDIO</strong></div><img src="'+asset('image2.png')+'" alt="Brasão do Pará"></header>'+
+      '<div class="he-school">ESCOLA ESTADUAL PROF GERALDO ÂNGELO PEREIRA<small><span>CIDADE: <b>TUCUMÃ</b></span><span>UF: <b>PARÁ</b></span><span>E-mail: <b>escola2300@escola.seduc.pa.gov.br</b></span></small></div>'+
+      '<div class="he-resolution">MATRIZ CURRICULAR RESOLUÇÃO N° 595 DE 23 DE DEZEMBRO DE 2025</div>'+
+      '<table class="he-table he-ident"><colgroup>'+Array(12).fill('<col>').join('')+'</colgroup><tbody><tr>'+ident('ALUNO:','aluno',9)+ident('DOCUMENTOS DO ALUNO:','documentos',3)+'</tr><tr>'+ident('PAI:','pai',9)+ident('RG:','rg',3)+'</tr><tr>'+ident('MÃE:','mae',9)+ident('CPF:','cpf',3)+'</tr><tr>'+ident('DATA DE NASCIMENTO:','nascimento',4)+ident('NATURALIDADE:','naturalidade',6)+ident('UF:','uf',2)+'</tr></tbody></table>'+
+      '<table class="he-table he-grid"><colgroup><col style="width:10%"><col style="width:13%"><col style="width:38%"><col style="width:13%"><col style="width:13%"><col style="width:13%"></colgroup><thead><tr><th colspan="3" rowspan="2">COMPONENTES CURRICULARES</th><th colspan="3">SÉRIES</th></tr><tr><th>1ª</th><th>2ª</th><th>3ª</th></tr></thead><tbody>'+rows+summary('FREQUÊNCIA ANUAL %','frequencia')+summary('CARGA HORÁRIA ANUAL','carga')+summary('RESULTADO FINAL','resultado')+'</tbody></table>'+
+      '<table class="he-table he-series"><colgroup><col style="width:10%"><col style="width:13%"><col style="width:38%"><col style="width:39%"></colgroup><thead><tr><th>SÉRIES</th><th>ANO</th><th>ESTABELECIMENTO DE ENSINO</th><th>CIDADE / UF</th></tr></thead><tbody>'+series+'</tbody></table>'+deps+
+      '<div class="he-approval">NOTA DE APROVAÇÃO IGUAL OU SUPERIOR A 5,0</div><footer class="he-footer"><div class="he-legend"><b>LEGENDA:</b><br><b>APV:</b> <u>APROVADO.</u> <b>REP:</b> <u>REPROVADO.</u> <b>RPF:</b> <u>REPROVADO POR FALTA.</u> <b>APD:</b> <u>APROVADO COM DEPENDÊNCIA.</u> <b>EM AND.:</b> <u>EM ANDAMENTO.</u><br><b>APR:</b> <u>ALUNO APROVADO CONFORME RESOLUÇÃO 20/2021 do CEE/PA.</u> <b>APC:</b> <u>APROVADO PELO CONSELHO DE CLASSE.</u></div><div class="he-signatures"><div class="he-signature">DIRETOR(A)</div><div class="he-date">'+field('localData',h.localData)+'</div></div></footer></article>';
   }
-
-  function campo(key, value, placeholder) {
-    return '<input class="h-in" data-h="' + esc(key) + '" value="' + esc(value) + '"' +
-      (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + ' type="text"/>';
-  }
-
-  function notasEdit(key, valores) {
-    return [0, 1, 2].map(function (i) {
-      return '<td class="h-nota">' + campo('nota:' + key + ':' + i, valores[i], '*') + '</td>';
-    }).join('');
-  }
-
-    function linhaResumo(rotulo, key, valores) {
-    return '<tr><td class="h-label" colspan="3">' + rotulo + '</td>' +
-      [0, 1, 2].map(function (i) {
-        return '<td class="h-nota">' + campo(key + ':' + i, valores[i], '') + '</td>';
-      }).join('') + '</tr>';
-  }
-
-  function renderEditor(container, data) {
+  function renderEditor(container, data, tipo) {
     if (!container) return;
-    var h = mesclar(data);
-    if (!h.localData) h.localData = 'TUCUMÃ/PA ' + dataHojeBr();
-
-    var fgRows = [];
-    var fgCount = 0;
-    FORMACAO.forEach(function (bloco) { fgCount += bloco.itens.length; });
-    var fgIndex = 0;
-    FORMACAO.forEach(function (bloco) {
-      bloco.itens.forEach(function (item, idx) {
-        var cells = '';
-        if (fgIndex === 0) {
-          cells += '<td class="h-vert" rowspan="' + fgCount + '">FORMAÇÃO GERAL BÁSICA</td>';
-        }
-        if (idx === 0) {
-          cells += '<td class="h-area" rowspan="' + bloco.itens.length + '">' + esc(bloco.area) + '</td>';
-        }
-        cells += '<td class="h-disc">' + esc(item[1]) + '</td>' + notasEdit(item[0], h.notas[item[0]]);
-        fgRows.push('<tr>' + cells + '</tr>');
-        fgIndex += 1;
-      });
-    });
-
-    var apRows = [];
-    APROF.forEach(function (bloco) {
-      bloco.itens.forEach(function (item, idx) {
-        var cells = '';
-        if (idx === 0) {
-          cells += '<td class="h-area" rowspan="' + bloco.itens.length + '"><b>' + esc(bloco.sigla) + '</b><br>' + esc(bloco.area) + '</td>';
-        }
-        cells += '<td class="h-disc" colspan="2">' + esc(item[1]) + '</td>' + notasEdit(item[0], h.notas[item[0]]);
-        apRows.push('<tr>' + cells + '</tr>');
-      });
-    });
-
-    var seriesRows = ['1ª', '2ª', '3ª'].map(function (rotulo, i) {
-      var serie = h.series[i];
-      return '<tr><td class="h-center">' + rotulo + '</td>' +
-        '<td>' + campo('serie-ano:' + i, serie.ano, 'Ano') + '</td>' +
-        '<td colspan="2">' + campo('serie-escola:' + i, serie.escola, 'Estabelecimento de ensino') + '</td>' +
-        '<td>' + campo('serie-cidade:' + i, serie.cidade, 'Cidade / UF') + '</td></tr>';
-    }).join('');
-
-    container.innerHTML =
-      '<style>.h-sheet{font-size:11px;color:#111;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}.h-head{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:center}.h-head img{width:64px;height:64px;object-fit:contain}.h-head div{flex:1;line-height:1.25}.h-escola,.h-matriz{text-align:center;font-weight:700;margin-top:4px}.h-table{width:100%;border-collapse:collapse;margin-top:6px}.h-table td,.h-table th{border:1px solid #111;padding:2px 4px;vertical-align:middle}.h-table th{text-align:center;font-size:10px}.h-in{width:100%;border:0;background:transparent;font:inherit;padding:2px;outline:none}.h-in:focus{background:#f4f8f5}.h-k,.h-label,.h-sec{font-weight:700;white-space:nowrap}.h-sec{text-align:center}.h-vert{width:22px;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-weight:700;font-size:10px}.h-area{width:120px;font-size:10px;font-weight:700;text-align:center}.h-nota{width:72px}.h-nota .h-in{text-align:center}.h-legenda{font-size:10px;margin:8px 0 0}.h-bloco{border:1px solid #111;border-top:0;padding:4px}.h-assina{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}.h-linha{display:block;width:220px;border-top:1px solid #111;margin-bottom:2px}</style>' +
-      '<p class="text-[11px] text-text-secondary mb-2">Preencha o histórico. Os campos com * recebem a nota de cada série. O que ficar em branco sai em branco na impressão.</p>' +
-      '<div class="h-sheet">' +
-      '<div class="h-head">' +
-      '<img alt="Brasão do Pará" src="assets/historico/image2.png"/>' +
-      '<div><strong>GOVERNO DO ESTADO DO PARÁ</strong><br>SECRETARIA ESPECIAL DE ESTADO DE PROMOÇÃO SOCIAL<br>SECRETARIA DE ESTADO DE EDUCAÇÃO<br><b>HISTÓRICO ESCOLAR DO ENSINO MÉDIO</b></div>' +
-      '<img alt="Logo da Escola Estadual Prof. Geraldo Ângelo Pereira" src="assets/historico/image1.jpeg"/>' +
-      '</div>' +
-      '<div class="h-escola">ESCOLA ESTADUAL PROF GERALDO ÂNGELO PEREIRA<br>CIDADE: TUCUMÃ &nbsp; UF: PARÁ &nbsp; E-mail: escola.2300@escola.seduc.pa.gov.br</div>' +
-      '<div class="h-matriz">MATRIZ CURRICULAR RESOLUÇÃO N° 595 DE 23 DE DEZEMBRO DE 2025</div>' +
-      '<table class="h-table"><tbody>' +
-      '<tr><td class="h-k">ALUNO:</td><td colspan="3">' + campo('aluno', h.aluno, 'Nome do aluno') + '</td><td class="h-k">DOCUMENTOS DO ALUNO:</td><td colspan="2">' + campo('documentos', h.documentos, '') + '</td></tr>' +
-      '<tr><td class="h-k">PAI:</td><td colspan="3">' + campo('pai', h.pai, '') + '</td><td class="h-k">RG:</td><td colspan="2">' + campo('rg', h.rg, '') + '</td></tr>' +
-      '<tr><td class="h-k">MÃE:</td><td colspan="3">' + campo('mae', h.mae, '') + '</td><td class="h-k">CPF:</td><td colspan="2">' + campo('cpf', h.cpf, '') + '</td></tr>' +
-      '<tr><td class="h-k" colspan="2">DATA DE NASCIMENTO:</td><td>' + campo('nascimento', h.nascimento, 'dd/mm/aaaa') + '</td><td class="h-k">NATURALIDADE:</td><td>' + campo('naturalidade', h.naturalidade, '') + '</td><td class="h-k">UF:</td><td>' + campo('uf', h.uf, '') + '</td></tr>' +
-      '</tbody></table>' +
-      '<table class="h-table h-grid"><thead><tr><th colspan="3">COMPONENTES CURRICULARES</th><th colspan="3">SÉRIES</th></tr>' +
-      '<tr><th colspan="3"></th><th>1ª</th><th>2ª</th><th>3ª</th></tr></thead><tbody>' +
-      fgRows.join('') +
-      '<tr><td class="h-sec" colspan="3">APROFUNDAMENTOS CURRICULARES</td><td></td><td></td><td></td></tr>' +
-      apRows.join('') +
-      linhaResumo('FREQÜÊNCIA ANUAL %', 'frequencia', h.frequencia) +
-      linhaResumo('CARGA HORÁRIA ANUAL', 'carga', h.carga) +
-      linhaResumo('RESULTADO FINAL', 'resultado', h.resultado) +
-      '</tbody></table>' +
-      '<table class="h-table"><thead><tr><th>SÉRIES</th><th>ANO</th><th colspan="2">ESTABELECIMENTO DE ENSINO</th><th>CIDADE / UF</th></tr></thead><tbody>' +
-      seriesRows +
-      '</tbody></table>' +
-      '<div class="h-bloco"><b>DEPENDÊNCIA DE ESTUDOS:</b><br>' + campo('dependencia', h.dependencia, '') + '</div>' +
-      '<div class="h-bloco"><b>OBSERVAÇÕES:</b><br>' + campo('observacoes', h.observacoes, '') + '</div>' +
-      '<p class="h-legenda">NOTA DE APROVAÇÃO IGUAL OU SUPERIOR A 5,0<br>LEGENDA: APV: APROVADO. REP: REPROVADO. RPF: REPROVADO POR FALTA. APD: APROVADO COM DEPENDÊNCIA. EM AND.: EM ANDAMENTO. APR: ALUNO APROVADO CONFORME RESOLUÇÃO 20/2021 do CEE/PA. APC: APROVADO PELO CONSELHO DE CLASSE.</p>' +
-      '<div class="h-assina"><div><span class="h-linha"></span>DIRETOR(A)</div><div>' + campo('localData', h.localData, 'TUCUMÃ/PA dd/mm/aaaa') + '</div></div>' +
-      '</div>';
+    var h = normalizar(data, tipo);
+    if (!data && !h.localData) h.localData = 'TUCUMÃ/PA '+new Date().toLocaleDateString('pt-BR');
+    // Guarde os campos de ambas as matrizes ao alternar o modelo.
+    container._historicoData = h;
+    container.dataset.historicoModelo = h.modelo;
+    container.innerHTML = '<style>'+styles()+'</style><h3 class="he-model-title">'+TIPOS[h.modelo]+'</h3><p class="he-help">Preencha as notas e os demais campos. Campos vazios permanecem em branco na impressão.</p><div class="he-scroll">'+sheet(h,true)+'</div>';
   }
-
-  function ler(container, key) {
-    var el = container.querySelector('[data-h="' + key + '"]');
-    return el ? String(el.value || '').trim() : '';
-  }
-
   function collect(container) {
-    var h = vazio();
+    var h = normalizar(container && container._historicoData);
     if (!container) return h;
-    ['aluno', 'documentos', 'pai', 'rg', 'mae', 'cpf', 'nascimento', 'naturalidade', 'uf', 'dependencia', 'observacoes', 'localData'].forEach(function (key) {
-      h[key] = ler(container, key);
-    });
-    Object.keys(h.notas).forEach(function (key) {
-      h.notas[key] = [0, 1, 2].map(function (i) { return ler(container, 'nota:' + key + ':' + i); });
-    });
-    h.frequencia = [0, 1, 2].map(function (i) { return ler(container, 'frequencia:' + i); });
-    h.carga = [0, 1, 2].map(function (i) { return ler(container, 'carga:' + i); });
-    h.resultado = [0, 1, 2].map(function (i) { return ler(container, 'resultado:' + i); });
-    h.series = [0, 1, 2].map(function (i) {
-      return {
-        ano: ler(container, 'serie-ano:' + i),
-        escola: ler(container, 'serie-escola:' + i),
-        cidade: ler(container, 'serie-cidade:' + i)
-      };
+    container.querySelectorAll('[data-h]').forEach(function(el) {
+      var parts = el.dataset.h.split(':'), value = el.value.trim(), key = parts[0];
+      if (key === 'nota') h.notas[parts[1]][Number(parts[2])] = value;
+      else if (key === 'dep') h.dependencias[Number(parts[1])][Number(parts[2])][parts[3]] = value;
+      else if (key.indexOf('serie-') === 0) h.series[Number(parts[1])][key.slice(6)] = value;
+      else if (parts.length === 2) h[key][Number(parts[1])] = value;
+      else h[key] = value;
     });
     return h;
   }
-
-  function celula(valor) {
-    return '<td class="hn">' + esc(valor) + '</td>';
-  }
-
   function buildPrintHtml(doc) {
-    var h = mesclar(doc && doc.historico);
-    function linhaDisc(nome, key, extra) {
-      var vals = h.notas[key] || ['', '', ''];
-      return '<tr>' + (extra || '') + '<td class="hd">' + esc(nome) + '</td>' +
-        vals.map(celula).join('') + '</tr>';
-    }
-    var fg = '';
-    var fgCount = 0;
-    FORMACAO.forEach(function (b) { fgCount += b.itens.length; });
-    var started = false;
-    FORMACAO.forEach(function (bloco) {
-      bloco.itens.forEach(function (item, idx) {
-        var extra = '';
-        if (!started) {
-          extra += '<td class="hv" rowspan="' + fgCount + '">FORMAÇÃO GERAL BÁSICA</td>';
-          started = true;
-        }
-        if (idx === 0) extra += '<td class="ha" rowspan="' + bloco.itens.length + '">' + esc(bloco.area) + '</td>';
-        fg += linhaDisc(item[1], item[0], extra);
-      });
-    });
-    var ap = '';
-    APROF.forEach(function (bloco) {
-      bloco.itens.forEach(function (item, idx) {
-        var extra = idx === 0
-          ? '<td class="ha" rowspan="' + bloco.itens.length + '"><b>' + esc(bloco.sigla) + '</b><br>' + esc(bloco.area) + '</td>'
-          : '';
-        var vals = h.notas[item[0]] || ['', '', ''];
-        ap += '<tr>' + extra + '<td class="hd" colspan="2">' + esc(item[1]) + '</td>' + vals.map(celula).join('') + '</tr>';
-      });
-    });
-    function resumo(rotulo, lista) {
-      return '<tr><td class="hl" colspan="3">' + rotulo + '</td>' + (lista || ['', '', '']).map(celula).join('') + '</tr>';
-    }
-    var series = ['1ª', '2ª', '3ª'].map(function (rotulo, i) {
-      var s = h.series[i];
-      return '<tr><td>' + rotulo + '</td><td>' + esc(s.ano) + '</td><td colspan="2">' + esc(s.escola) + '</td><td>' + esc(s.cidade) + '</td></tr>';
-    }).join('');
-    var logo = new URL('assets/historico/image1.jpeg', window.location.href).href;
-    var brasao = new URL('assets/historico/image2.png', window.location.href).href;
-    var css =
-      '@page{size:A4 portrait;margin:6mm}' +
-      'html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif}' +
-      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-      '.sheet{width:198mm;margin:0 auto;font-size:7.5pt;line-height:1.15}' +
-      '.head{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:center}' +
-      '.head img{width:58px;height:58px;object-fit:contain}' +
-      '.head div{flex:1;font-size:8pt}' +
-      '.escola,.matriz{text-align:center;font-weight:700;margin-top:2px}' +
-      'table{width:100%;border-collapse:collapse;margin-top:3px}' +
-      'td,th{border:1px solid #111;padding:1px 3px;vertical-align:middle}' +
-      'th{font-size:7pt;text-align:center}' +
-      '.hv{width:18px;writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-weight:700;font-size:6.5pt}' +
-      '.ha{width:92px;font-size:6.2pt;font-weight:700;text-align:center}' +
-      '.hd{font-size:6.5pt}.hn{width:42px;text-align:center;font-size:7pt;height:12px}' +
-      '.hl{font-weight:700;font-size:7pt}.k{font-weight:700;white-space:nowrap;width:1%}' +
-      '.leg{font-size:6.2pt;margin:4px 0 0}.bloco{min-height:16px;border:1px solid #111;border-top:0;padding:2px 4px}' +
-      '.assina{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;font-size:8pt}' +
-      '.linha{display:block;width:220px;border-top:1px solid #111;margin-bottom:2px}';
-    var body =
-      '<div class="sheet"><div class="head"><img src="' + brasao + '" alt=""><div>' +
-      '<strong>GOVERNO DO ESTADO DO PARÁ</strong><br>SECRETARIA ESPECIAL DE ESTADO DE PROMOÇÃO SOCIAL<br>' +
-      'SECRETARIA DE ESTADO DE EDUCAÇÃO<br><b>HISTÓRICO ESCOLAR DO ENSINO MÉDIO</b></div>' +
-      '<img src="' + logo + '" alt=""></div>' +
-      '<div class="escola">ESCOLA ESTADUAL PROF GERALDO ÂNGELO PEREIRA<br>CIDADE: TUCUMÃ &nbsp; UF: PARÁ &nbsp; E-mail: escola.2300@escola.seduc.pa.gov.br</div>' +
-      '<div class="matriz">MATRIZ CURRICULAR RESOLUÇÃO N° 595 DE 23 DE DEZEMBRO DE 2025</div>' +
-      '<table><tr><td class="k">ALUNO:</td><td colspan="3">' + esc(h.aluno) + '</td><td class="k">DOCUMENTOS DO ALUNO:</td><td>' + esc(h.documentos) + '</td></tr>' +
-      '<tr><td class="k">PAI:</td><td colspan="3">' + esc(h.pai) + '</td><td class="k">RG:</td><td>' + esc(h.rg) + '</td></tr>' +
-      '<tr><td class="k">MÃE:</td><td colspan="3">' + esc(h.mae) + '</td><td class="k">CPF:</td><td>' + esc(h.cpf) + '</td></tr>' +
-      '<tr><td class="k" colspan="2">DATA DE NASCIMENTO:</td><td>' + esc(h.nascimento) + '</td><td class="k">NATURALIDADE:</td><td>' + esc(h.naturalidade) + '</td><td class="k">UF: ' + esc(h.uf) + '</td></tr></table>' +
-      '<table><thead><tr><th colspan="3">COMPONENTES CURRICULARES</th><th colspan="3">SÉRIES</th></tr>' +
-      '<tr><th colspan="3"></th><th>1ª</th><th>2ª</th><th>3ª</th></tr></thead><tbody>' +
-      fg + '<tr><td class="hl" colspan="3">APROFUNDAMENTOS CURRICULARES</td><td></td><td></td><td></td></tr>' + ap + resumo('FREQÜÊNCIA ANUAL %', h.frequencia) + resumo('CARGA HORÁRIA ANUAL', h.carga) + resumo('RESULTADO FINAL', h.resultado) +
-      '</tbody></table>' +
-      '<table><thead><tr><th>SÉRIES</th><th>ANO</th><th colspan="2">ESTABELECIMENTO DE ENSINO</th><th>CIDADE / UF</th></tr></thead><tbody>' + series + '</tbody></table>' +
-      '<div class="bloco"><b>DEPENDÊNCIA DE ESTUDOS:</b> ' + esc(h.dependencia) + '</div>' +
-      '<div class="bloco"><b>OBSERVAÇÕES:</b> ' + esc(h.observacoes) + '</div>' +
-      '<p class="leg">NOTA DE APROVAÇÃO IGUAL OU SUPERIOR A 5,0<br>LEGENDA: APV: APROVADO. REP: REPROVADO. RPF: REPROVADO POR FALTA. APD: APROVADO COM DEPENDÊNCIA. EM AND.: EM ANDAMENTO.<br>APR: ALUNO APROVADO CONFORME RESOLUÇÃO 20/2021 do CEE/PA. APC: APROVADO PELO CONSELHO DE CLASSE.</p>' +
-      '<div class="assina"><div><span class="linha"></span>DIRETOR(A)</div><div>' + esc(h.localData) + '</div></div></div>';
-    return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Histórico Escolar</title><style>' + css + '</style></head><body>' + body + '</body></html>';
+    var h = normalizar(doc && doc.historico, doc && doc.tipo);
+    return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+esc(TIPOS[h.modelo])+'</title><style>@page{size:A4 portrait;margin:10mm}html,body{margin:0;padding:0;background:white}'+styles()+'</style></head><body>'+sheet(h,false)+'</body></html>';
   }
-
   window.HISTORICO_ESCOLAR_TIPO = TIPO;
+  window.HISTORICO_ESCOLAR_TIPOS = TIPOS;
+  window.historicoEscolarModelo = modelo;
+  window.isHistoricoEscolarTipo = function(tipo) {return tipo === TIPO || tipo === TIPOS.antiga || tipo === TIPOS.nova;};
   window.renderHistoricoEscolarEditor = renderEditor;
   window.collectHistoricoEscolar = collect;
   window.buildHistoricoEscolarPrintHtml = buildPrintHtml;
