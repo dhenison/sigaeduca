@@ -224,9 +224,9 @@
   // ─── School / students / classes ───────────────────────────────────────────
   function getSecSchoolInfo() {
     const nome = localStorage.getItem('siga_school_name')
-      || 'Escola Estadual Dr. Romildo Veloso e Silva';
-    const localEmissao = localStorage.getItem('siga_school_city_state')
-      || 'Ourilândia do Norte - PA';
+      || 'Escola Estadual Prof. Geraldo Ângelo Pereira';
+    const localEmissao = /geraldo\s+[âa]ngelo\s+pereira/i.test(nome) ? 'Tucumã/PA' : localStorage.getItem('siga_school_city_state')
+      || 'Tucumã/PA';
     return { nome: nome, localEmissao: localEmissao };
   }
 
@@ -1407,7 +1407,7 @@
 
     const isReq = isRequerimento(doc.tipo);
     const now = new Date();
-    const localEmissao = localEmissaoDocumento || 'Ourilândia do Norte - PA';
+    const localEmissao = localEmissaoDocumento || 'Tucumã/PA';
     return (
       '<div class="print-page">' +
       '<div class="print-content">' +

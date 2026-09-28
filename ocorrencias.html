@@ -1218,8 +1218,8 @@ function escapeHtmlOcc(str) {
 function getOccSchoolInfo() {
     if (typeof getSecSchoolInfo === 'function') return getSecSchoolInfo();
     return {
-        nome: localStorage.getItem('siga_school_name') || 'Escola Estadual Dr. Romildo Veloso e Silva',
-        localEmissao: localStorage.getItem('siga_school_city_state') || 'Ourilândia do Norte - PA'
+        nome: localStorage.getItem('siga_school_name') || 'Escola Estadual Prof. Geraldo Ângelo Pereira',
+        localEmissao: /geraldo\s+[âa]ngelo\s+pereira/i.test(localStorage.getItem('siga_school_name') || 'Geraldo Ângelo Pereira') ? 'Tucumã/PA' : localStorage.getItem('siga_school_city_state') || 'Tucumã/PA'
     };
 }
 
@@ -1268,7 +1268,7 @@ function imprimirOcorrencia(id) {
 
     var school = getOccSchoolInfo();
     var escolaEsc = escapeHtmlOcc(school.nome);
-    var localEsc = escapeHtmlOcc(school.localEmissao || 'Ourilândia do Norte - PA');
+    var localEsc = escapeHtmlOcc(school.localEmissao || 'Tucumã/PA');
     var isTratado = (o.status === 'Tratado' || o.status === 'Resolvida');
     var displayStatus = isTratado ? 'Tratado' : 'Em Análise';
     var turmaLabel = (typeof resolveTurmaDisplay === 'function') ? resolveTurmaDisplay(o.turma) : (o.turma || '—');
