@@ -1,3 +1,4 @@
+-- A função student_recover_access_by_cpf deste arquivo foi superada por docs/sql/36_fechar_recuperacao_senha.sql.
 -- A senha da planilha é a senha de acesso.
 -- Ela fica numa tabela fechada, sem leitura pela API.
 -- A recuperação devolve essa senha e não cria outra.

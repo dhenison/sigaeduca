@@ -11,6 +11,12 @@ pnpm-lock.yaml
 Gestão de Lotação/tmp/
 Gestao de Lotacao/tmp/
 
+# Planilhas com senha de servidores — nunca versionar
+Gestão de Lotação/Professores - Matricula.xlsx
+Gestão de Lotação/Professores - Matricula ROMILDO.xlsx
+Gestao de Lotacao/Professores - Matricula.xlsx
+Gestao de Lotacao/Professores - Matricula ROMILDO.xlsx
+
 # Ambiente e secrets — nunca versionar
 .env
 .env.*

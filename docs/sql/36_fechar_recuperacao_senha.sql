@@ -1,19 +1,7 @@
--- A função student_recover_access_by_cpf deste arquivo foi superada por docs/sql/36_fechar_recuperacao_senha.sql.
--- Endurece a busca da senha do aluno sem tirar a consulta por CPF.
--- 1) search_path fixo nas funções apontadas pelo Security Advisor
--- 2) a função de trava da senha não fica chamável pela API
--- 3) além do limite por CPF, há limite por origem da requisição
-
-ALTER FUNCTION public.keep_student_password_from_sheet()
-  SET search_path TO 'public';
-
-ALTER FUNCTION public.map_staff_role_to_membership(p_role text)
-  SET search_path TO 'public';
-
-REVOKE ALL ON FUNCTION public.keep_student_password_from_sheet() FROM PUBLIC, anon, authenticated;
-
-ALTER TABLE public.student_recover_attempts
-  ADD COLUMN IF NOT EXISTS ip_hash text;
+-- SUPERADA por docs/sql/37_consulta_aluno_cpf_nascimento.sql. Não aplicar este arquivo de novo.
+-- A recuperação pelo CPF não devolve mais nome, e-mail nem senha.
+-- Qualquer CPF válido recebe a mesma resposta: procurar a secretaria.
+-- O limite de tentativas continua valendo.
 
 CREATE OR REPLACE FUNCTION public.student_recover_access_by_cpf(p_cpf text)
 RETURNS jsonb
@@ -26,14 +14,11 @@ DECLARE
   cpf_key text;
   attempts int;
   ip_attempts int;
-  st public.students%ROWTYPE;
   i int;
   sum1 int;
   sum2 int;
   d1 int;
   d2 int;
-  email_out text;
-  senha text;
   headers text;
   ip text;
   ip_key text;
@@ -41,7 +26,7 @@ BEGIN
   cpf_digits := regexp_replace(coalesce(p_cpf, ''), '\D', '', 'g');
 
   IF length(cpf_digits) <> 11 OR cpf_digits ~ '^(\d)\1{10}$' THEN
-    RETURN jsonb_build_object('ok', false, 'reason', 'nao_encontrado');
+    RETURN jsonb_build_object('ok', false, 'reason', 'procure_secretaria');
   END IF;
 
   sum1 := 0;
@@ -51,7 +36,7 @@ BEGIN
   d1 := sum1 % 11;
   d1 := CASE WHEN d1 < 2 THEN 0 ELSE 11 - d1 END;
   IF d1 <> substring(cpf_digits, 10, 1)::int THEN
-    RETURN jsonb_build_object('ok', false, 'reason', 'nao_encontrado');
+    RETURN jsonb_build_object('ok', false, 'reason', 'procure_secretaria');
   END IF;
 
   sum2 := 0;
@@ -61,7 +46,7 @@ BEGIN
   d2 := sum2 % 11;
   d2 := CASE WHEN d2 < 2 THEN 0 ELSE 11 - d2 END;
   IF d2 <> substring(cpf_digits, 11, 1)::int THEN
-    RETURN jsonb_build_object('ok', false, 'reason', 'nao_encontrado');
+    RETURN jsonb_build_object('ok', false, 'reason', 'procure_secretaria');
   END IF;
 
   cpf_key := encode(digest(convert_to(cpf_digits, 'UTF8'), 'sha256'), 'hex');
@@ -105,42 +90,12 @@ BEGIN
   INSERT INTO public.student_recover_attempts (cpf_hash, ip_hash)
   VALUES (cpf_key, ip_key);
 
-  SELECT * INTO st
-  FROM public.students
-  WHERE regexp_replace(coalesce(cpf, ''), '\D', '', 'g') = cpf_digits
-    AND coalesce(status, 'Ativo') = 'Ativo'
-    AND email IS NOT NULL
-    AND btrim(email) <> ''
-  ORDER BY updated_at DESC NULLS LAST
-  LIMIT 1;
-
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('ok', false, 'reason', 'nao_encontrado');
-  END IF;
-
-  email_out := lower(btrim(st.email));
-
-  SELECT btrim(access_password) INTO senha
-  FROM public.student_access_secrets
-  WHERE student_id = st.id;
-
-  IF senha IS NULL OR senha = '' THEN
-    RETURN jsonb_build_object(
-      'ok', true,
-      'nome', st.full_name,
-      'email', email_out,
-      'reason', 'planilha'
-    );
-  END IF;
-
-  RETURN jsonb_build_object(
-    'ok', true,
-    'nome', st.full_name,
-    'email', email_out,
-    'senha', senha
-  );
+  RETURN jsonb_build_object('ok', false, 'reason', 'procure_secretaria');
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.student_recover_access_by_cpf(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.student_recover_access_by_cpf(text) TO anon, authenticated;
+
 COMMENT ON FUNCTION public.student_recover_access_by_cpf(text) IS
-  'Devolve a senha da planilha após validar o CPF. Limite de 5 tentativas por CPF e 20 por origem, em 30 minutos.';
+  'Não devolve senha, nome nem e-mail. Orienta a procurar a secretaria. Limite de 5 tentativas por CPF e 20 por origem, em 30 minutos.';

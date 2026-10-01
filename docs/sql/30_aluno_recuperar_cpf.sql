@@ -1,3 +1,4 @@
+-- SUPERADA por docs/sql/36_fechar_recuperacao_senha.sql. Não aplicar este arquivo de novo.
 -- Recuperação do acesso do aluno pelo CPF.
 -- A senha antiga não volta: o banco só guarda o hash. A função emite uma senha nova
 -- e devolve nome, e-mail institucional e essa senha. O hash não sai da função.

@@ -672,7 +672,10 @@
                 if (el) el.value = '';
             });
         var senhaAluno = document.getElementById('rec-aluno-senha');
-        if (senhaAluno) senhaAluno.textContent = '—';
+        if (senhaAluno) {
+            senhaAluno.textContent = '';
+            delete senhaAluno.dataset.real;
+        }
     }
 
     function setRecoverTipo(tipo) {
@@ -690,7 +693,7 @@
         if (formS) formS.classList.toggle('hidden', recoverTipo !== 'servidor');
         if (formA) formA.classList.toggle('hidden', recoverTipo !== 'aluno');
         var btnLoc = document.getElementById('btn-localizar-acesso');
-        if (btnLoc) btnLoc.textContent = recoverTipo === 'aluno' ? 'Buscar pelo CPF' : 'Localizar Acesso';
+        if (btnLoc) btnLoc.textContent = recoverTipo === 'aluno' ? 'Buscar acesso' : 'Localizar Acesso';
         showRecoverStep('form');
     }
 
@@ -710,8 +713,13 @@
 
     function localizarAcesso() {
         var cpfA = digits((document.getElementById('rec-cpf-aluno') || {}).value);
+        var nascA = parseBrDate((document.getElementById('rec-nasc-aluno') || {}).value);
         if (cpfA.length !== 11) {
             toast('Informe o CPF completo.', 'error');
+            return;
+        }
+        if (!nascA) {
+            toast('Informe a data de nascimento.', 'error');
             return;
         }
         var sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
@@ -723,7 +731,7 @@
         }
         var btn = document.getElementById('btn-localizar-acesso');
         if (btn) btn.disabled = true;
-        sb.rpc('student_recover_access_by_cpf', { p_cpf: cpfA }).then(function (res) {
+        sb.rpc('student_recover_access_by_cpf', { p_cpf: cpfA, p_birth_date: nascA }).then(function (res) {
             if (btn) btn.disabled = false;
             if (res.error || !res.data) {
                 toast('Não foi possível consultar o banco. Tente novamente.', 'error');
@@ -732,7 +740,9 @@
             var d = res.data;
             if (!d.ok) {
                 if (d.reason === 'limite') toast('Muitas tentativas para este CPF. Aguarde 30 minutos.', 'error');
-                else toast('Não encontramos um aluno ativo com esse CPF.', 'error');
+                else if (d.restantes === 1) toast('Dados não encontrados. Resta 1 tentativa.', 'error');
+                else if (typeof d.restantes === 'number') toast('Dados não encontrados. Restam ' + d.restantes + ' tentativas.', 'error');
+                else toast('Não encontramos um aluno com esses dados.', 'error');
                 return;
             }
             pendingAlunoId = null;
@@ -740,14 +750,18 @@
             var nomeEl = document.getElementById('rec-aluno-nome');
             var emailEl = document.getElementById('rec-aluno-email');
             var senhaEl = document.getElementById('rec-aluno-senha');
+            var aviso = document.getElementById('rec-aluno-aviso');
             if (nomeEl) nomeEl.textContent = d.nome || 'Aluno';
             if (emailEl) emailEl.textContent = d.email || '—';
             if (senhaEl) {
                 senhaEl.textContent = d.senha || '—';
                 senhaEl.dataset.real = d.senha ? '1' : '0';
             }
-            var aviso = document.getElementById('rec-aluno-aviso');
-            if (aviso) aviso.classList.toggle('hidden', !d.senha);
+            if (aviso) {
+                aviso.textContent = d.senha
+                    ? 'Use esta senha para entrar no portal.'
+                    : 'A secretaria ainda não registrou a senha deste aluno.';
+            }
             showRecoverStep('alunoCreds');
             var sec = window.SigaSecurity;
             if (sec && typeof sec.hashPassword === 'function' && d.senha && d.email) {
@@ -873,7 +887,7 @@
         if (user) user.value = email === '—' ? '' : email;
         if (pass) pass.value = senha;
         closeRecoverModal();
-        toast('E-mail e senha preenchidos. Toque em Entrar na conta.');
+        toast(senha ? 'E-mail e senha preenchidos. Toque em Entrar na conta.' : 'E-mail preenchido. A senha ainda não está registrada.');
     }
 
     function isComputer() {
