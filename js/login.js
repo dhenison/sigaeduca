@@ -652,9 +652,8 @@
         var modal = document.getElementById('modal-recuperar');
         if (!modal) return;
         modal.classList.remove('hidden');
-        recoverTipo = 'aluno';
         clearRecoverForms();
-        showRecoverStep('form');
+        setRecoverTipo('aluno');
     }
 
     function closeRecoverModal() {
@@ -666,7 +665,7 @@
     }
 
     function clearRecoverForms() {
-        ['rec-matricula', 'rec-cpf-serv', 'rec-nasc-serv', 'rec-cpf-aluno', 'rec-nasc-aluno', 'rec-nova-senha', 'rec-confirma-senha']
+        ['rec-matricula', 'rec-email-serv', 'rec-cpf-serv', 'rec-nasc-serv', 'rec-cpf-aluno', 'rec-nasc-aluno', 'rec-nova-senha', 'rec-confirma-senha']
             .forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.value = '';
@@ -692,8 +691,14 @@
         }
         if (formS) formS.classList.toggle('hidden', recoverTipo !== 'servidor');
         if (formA) formA.classList.toggle('hidden', recoverTipo !== 'aluno');
+        var sub = document.getElementById('recover-subtitle');
+        if (sub) {
+            sub.textContent = recoverTipo === 'aluno'
+                ? 'Informe o CPF e a data de nascimento cadastrados.'
+                : 'Informe o e-mail institucional e a matrícula.';
+        }
         var btnLoc = document.getElementById('btn-localizar-acesso');
-        if (btnLoc) btnLoc.textContent = recoverTipo === 'aluno' ? 'Buscar acesso' : 'Localizar Acesso';
+        if (btnLoc) btnLoc.textContent = 'Buscar acesso';
         showRecoverStep('form');
     }
 
@@ -711,7 +716,39 @@
         if (target) target.classList.remove('hidden');
     }
 
+    function mostrarCredenciais(d, titulo, avisoSemSenha) {
+        var nomeEl = document.getElementById('rec-aluno-nome');
+        var emailEl = document.getElementById('rec-aluno-email');
+        var senhaEl = document.getElementById('rec-aluno-senha');
+        var aviso = document.getElementById('rec-aluno-aviso');
+        var tituloEl = document.getElementById('rec-cred-titulo');
+        if (tituloEl) tituloEl.textContent = titulo;
+        if (nomeEl) nomeEl.textContent = d.nome || '—';
+        if (emailEl) emailEl.textContent = d.email || '—';
+        if (senhaEl) {
+            senhaEl.textContent = d.senha || '—';
+            senhaEl.dataset.real = d.senha ? '1' : '0';
+        }
+        if (aviso) {
+            aviso.textContent = d.senha
+                ? 'Use esta senha para entrar.'
+                : avisoSemSenha;
+        }
+        showRecoverStep('alunoCreds');
+    }
+
+    function avisoTentativas(d, quem) {
+        if (d.reason === 'limite') return 'Muitas tentativas para este ' + quem + '. Aguarde 30 minutos.';
+        if (d.restantes === 1) return 'Dados não encontrados. Resta 1 tentativa.';
+        if (typeof d.restantes === 'number') return 'Dados não encontrados. Restam ' + d.restantes + ' tentativas.';
+        return 'Não encontramos um ' + quem + ' com esses dados.';
+    }
+
     function localizarAcesso() {
+        if (recoverTipo === 'servidor') {
+            localizarServidor();
+            return;
+        }
         var cpfA = digits((document.getElementById('rec-cpf-aluno') || {}).value);
         var nascA = parseBrDate((document.getElementById('rec-nasc-aluno') || {}).value);
         if (cpfA.length !== 11) {
@@ -739,30 +776,12 @@
             }
             var d = res.data;
             if (!d.ok) {
-                if (d.reason === 'limite') toast('Muitas tentativas para este CPF. Aguarde 30 minutos.', 'error');
-                else if (d.restantes === 1) toast('Dados não encontrados. Resta 1 tentativa.', 'error');
-                else if (typeof d.restantes === 'number') toast('Dados não encontrados. Restam ' + d.restantes + ' tentativas.', 'error');
-                else toast('Não encontramos um aluno com esses dados.', 'error');
+                toast(avisoTentativas(d, 'aluno'), 'error');
                 return;
             }
             pendingAlunoId = null;
             pendingServidorId = null;
-            var nomeEl = document.getElementById('rec-aluno-nome');
-            var emailEl = document.getElementById('rec-aluno-email');
-            var senhaEl = document.getElementById('rec-aluno-senha');
-            var aviso = document.getElementById('rec-aluno-aviso');
-            if (nomeEl) nomeEl.textContent = d.nome || 'Aluno';
-            if (emailEl) emailEl.textContent = d.email || '—';
-            if (senhaEl) {
-                senhaEl.textContent = d.senha || '—';
-                senhaEl.dataset.real = d.senha ? '1' : '0';
-            }
-            if (aviso) {
-                aviso.textContent = d.senha
-                    ? 'Use esta senha para entrar no portal.'
-                    : 'A secretaria ainda não registrou a senha deste aluno.';
-            }
-            showRecoverStep('alunoCreds');
+            mostrarCredenciais(d, 'Aluno localizado', 'A secretaria ainda não registrou a senha deste aluno.');
             var sec = window.SigaSecurity;
             if (sec && typeof sec.hashPassword === 'function' && d.senha && d.email) {
                 sec.hashPassword(d.senha).then(function (hashed) {
@@ -779,6 +798,66 @@
                         });
                     });
                     if (changed) saveStudents(list);
+                });
+            }
+        }).catch(function () {
+            if (btn) btn.disabled = false;
+            toast('Não foi possível consultar o banco. Tente novamente.', 'error');
+        });
+    }
+
+    function localizarServidor() {
+        var emailS = normEmail((document.getElementById('rec-email-serv') || {}).value);
+        var matriculaS = digits((document.getElementById('rec-matricula') || {}).value);
+        if (!emailS || emailS.slice(-24) !== '@escola.seduc.pa.gov.br') {
+            toast('Informe o e-mail institucional.', 'error');
+            return;
+        }
+        if (matriculaS.length < 5) {
+            toast('Informe a matrícula.', 'error');
+            return;
+        }
+        var sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
+            ? window.SigaSupabase.getClient()
+            : null;
+        if (!sb) {
+            toast('Não foi possível consultar o banco agora. Tente novamente.', 'error');
+            return;
+        }
+        var btn = document.getElementById('btn-localizar-acesso');
+        if (btn) btn.disabled = true;
+        sb.rpc('staff_recover_access_by_identity', {
+            p_email: emailS,
+            p_employee_id: matriculaS
+        }).then(function (res) {
+            if (btn) btn.disabled = false;
+            if (res.error || !res.data) {
+                toast('Não foi possível consultar o banco. Tente novamente.', 'error');
+                return;
+            }
+            var d = res.data;
+            if (!d.ok) {
+                toast(avisoTentativas(d, 'professor'), 'error');
+                return;
+            }
+            pendingAlunoId = null;
+            pendingServidorId = null;
+            mostrarCredenciais(d, 'Professor localizado', 'A secretaria ainda não registrou a senha deste professor.');
+            var sec = window.SigaSecurity;
+            if (sec && typeof sec.hashPassword === 'function' && d.senha && d.email) {
+                sec.hashPassword(d.senha).then(function (hashed) {
+                    var users = getUsers();
+                    var changed = false;
+                    users = users.map(function (u) {
+                        if (normEmail(u.email) !== normEmail(d.email)) return u;
+                        changed = true;
+                        return Object.assign({}, u, {
+                            senha: hashed,
+                            precisaDefinirSenha: false,
+                            nome: d.nome || u.nome
+                        });
+                    });
+                    if (changed) saveUsers(users);
                 });
             }
         }).catch(function () {
@@ -967,6 +1046,11 @@
 
         var btnLoc = document.getElementById('btn-localizar-acesso');
         if (btnLoc) btnLoc.addEventListener('click', localizarAcesso);
+
+        var tabAluno = document.getElementById('tab-aluno');
+        var tabServidor = document.getElementById('tab-servidor');
+        if (tabAluno) tabAluno.addEventListener('click', function () { setRecoverTipo('aluno'); });
+        if (tabServidor) tabServidor.addEventListener('click', function () { setRecoverTipo('servidor'); });
 
         var btnSave = document.getElementById('btn-salvar-senha-servidor');
         if (btnSave) btnSave.addEventListener('click', salvarSenhaServidor);
