@@ -225,7 +225,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260724ab"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260724ab"></script><script src="js/siga-security.js?v=20260724ab"></script><script src="js/siga-school-data.js?v=20260724ab"></script><script src="js/siga-db.js?v=20260924d"></script><script src="js/siga-frequencia-supabase.js?v=20260724ab"></script><script src="js/relatorios.js?v=20260724ab"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260724ab"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260724ab"></script><script src="js/siga-security.js?v=20260724ab"></script><script src="js/siga-school-data.js?v=20260724ab"></script><script src="js/siga-db.js?v=20260924d"></script><script src="js/siga-frequencia-supabase.js?v=20260724ab"></script><script src="js/relatorios.js?v=20261002a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -534,6 +534,19 @@
 </span>
 </div>
 </button>
+<!-- Card: Transporte Escolar -->
+<button type="button" id="card-transporte-escolar" class="report-card text-left bg-white rounded-2xl p-6 border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0px_8px_24px_rgba(0,0,0,0.08)] transition-all group cursor-pointer hover:border-primary/40" data-categoria="administrativo">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 bg-primary-light/10 rounded-xl flex items-center justify-center text-primary"><span class="material-symbols-outlined text-3xl">directions_bus</span></div>
+<span class="px-2 py-1 bg-primary-light/20 text-primary text-[10px] font-bold rounded uppercase">Administrativo</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Transporte Escolar</h3>
+<p class="text-body-md font-body-md text-text-secondary mb-6 line-clamp-2">Levantamento dos alunos que utilizam transporte escolar, com endereço, bairro e responsável.</p>
+<div class="flex items-center justify-between pt-4 border-t border-border-subtle">
+<span class="text-label-md text-text-secondary">Filtros por Manhã, Tarde e Noite</span>
+<span class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded-lg group-hover:bg-primary group-hover:text-white transition-all"><span class="material-symbols-outlined text-[18px]">arrow_forward</span><span class="font-label-md text-label-md">Abrir</span></span>
+</div>
+</button>
 <!-- Card 4: Relatório de Ocorrências -->
 <div class="report-card bg-white rounded-2xl p-6 border border-border-subtle shadow-[0px_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0px_8px_24px_rgba(0,0,0,0.08)] transition-all group" data-categoria="disciplina">
 <div class="flex justify-between items-start mb-4">
@@ -678,6 +691,21 @@ Gerar Relatório
 <p class="text-body-md mt-1">Em seguida clique em <strong>Gerar Relatório</strong> para ver a frequência diária dos alunos.</p>
 </div>
 </div>
+<!-- Transporte Escolar detail view -->
+<div id="relatorio-transporte-view" class="hidden space-y-6">
+<button type="button" id="btn-voltar-transporte" class="inline-flex items-center gap-2 text-text-secondary hover:text-primary transition-colors text-label-md font-semibold"><span class="material-symbols-outlined text-[20px]">arrow_back</span>Voltar aos relatórios</button>
+<div class="flex items-center gap-3"><div class="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">directions_bus</span></div><div><h2 class="font-headline-lg text-headline-lg text-on-surface leading-tight">Relatório de Transporte Escolar</h2><p class="text-body-md text-text-secondary">Cadastros respondidos pelos alunos no aplicativo</p></div></div>
+<div class="bg-white rounded-2xl border border-border-subtle shadow-sm p-5 flex flex-wrap items-end gap-4">
+<div class="w-full sm:w-56"><label class="block text-[11px] font-bold uppercase text-text-secondary mb-1.5" for="transporte-turno">Turno</label><select id="transporte-turno" class="w-full bg-surface-container-low border border-border-subtle rounded-xl px-3 py-2.5 text-body-md"><option value="">Todos</option><option>Manhã</option><option>Tarde</option><option>Noite</option></select></div>
+<button type="button" id="btn-carregar-transporte" class="h-[42px] px-5 bg-primary text-white font-bold text-label-md rounded-xl flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">refresh</span>Atualizar</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div class="bg-white rounded-xl border border-border-subtle p-4"><span class="text-label-md text-text-secondary">Responderam</span><b id="transporte-total" class="block text-2xl text-on-surface mt-1">0</b></div>
+<div class="bg-white rounded-xl border border-border-subtle p-4"><span class="text-label-md text-text-secondary">Utilizam</span><b id="transporte-sim" class="block text-2xl text-primary mt-1">0</b></div>
+<div class="bg-white rounded-xl border border-border-subtle p-4"><span class="text-label-md text-text-secondary">Não utilizam</span><b id="transporte-nao" class="block text-2xl text-text-secondary mt-1">0</b></div>
+</div>
+<div class="bg-white rounded-2xl border border-border-subtle overflow-hidden shadow-sm"><div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-surface-container-low"><tr><th class="px-4 py-3 text-left">Aluno</th><th class="px-4 py-3 text-left">Turma</th><th class="px-4 py-3 text-left">Turno</th><th class="px-4 py-3 text-left">Utiliza</th><th class="px-4 py-3 text-left">Responsável</th><th class="px-4 py-3 text-left">Endereço</th><th class="px-4 py-3 text-left">Bairro</th></tr></thead><tbody id="transporte-tbody"></tbody></table></div></div>
+</div>
 </div></main>
 <script id="sidebar-collapsible-script">
         // Micro-interactions and small UI behaviors

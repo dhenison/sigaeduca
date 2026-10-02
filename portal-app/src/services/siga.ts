@@ -79,6 +79,14 @@ export interface OccurrenceItem {
   descricao: string;
   status: string;
 }
+export interface TransportRegistration {
+  registered: boolean;
+  usesTransport: boolean | null;
+  responsibleName: string;
+  address: string;
+  neighborhood: string;
+  updatedAt?: string;
+}
 export interface PortalSnapshot {
   student: Student;
   events: SchoolEvent[];
@@ -144,6 +152,40 @@ export function readSession(): Session | null {
 export function clearSession() {
   localStorage.removeItem('siga_session');
   localStorage.removeItem('siga_portal_aluno_id');
+}
+
+export async function loadTransportRegistration(): Promise<TransportRegistration> {
+  const session = readSession();
+  const empty = {registered: false, usesTransport: null, responsibleName: '', address: '', neighborhood: ''};
+  if (!session?.id || !session.portalToken) return empty;
+  const res = await sb().rpc('student_portal_transport', {
+    p_student_id: session.id,
+    p_token: session.portalToken,
+  });
+  if (res.error || !res.data) return empty;
+  const row = res.data as Record<string, unknown>;
+  return {
+    registered: !!row.registered,
+    usesTransport: row.registered ? !!row.uses_transport : null,
+    responsibleName: String(row.responsible_name || ''),
+    address: String(row.address || ''),
+    neighborhood: String(row.neighborhood || ''),
+    updatedAt: row.updated_at ? String(row.updated_at) : undefined,
+  };
+}
+
+export async function saveTransportRegistration(value: Omit<TransportRegistration, 'registered' | 'updatedAt'>) {
+  const session = readSession();
+  if (!session?.id || !session.portalToken) throw new Error('Entre novamente para salvar o cadastro.');
+  const res = await sb().rpc('student_portal_save_transport', {
+    p_student_id: session.id,
+    p_token: session.portalToken,
+    p_uses_transport: value.usesTransport === true,
+    p_responsible_name: value.usesTransport ? value.responsibleName : null,
+    p_address: value.usesTransport ? value.address : null,
+    p_neighborhood: value.usesTransport ? value.neighborhood : null,
+  });
+  if (res.error) throw new Error(res.error.message || 'Não foi possível salvar o cadastro.');
 }
 
 function initialsSource(name: string) {

@@ -292,15 +292,19 @@
     function showHub() {
         var hub = document.getElementById('relatorios-hub');
         var view = document.getElementById('relatorio-freq-view');
+        var transport = document.getElementById('relatorio-transporte-view');
         if (hub) hub.classList.remove('hidden');
         if (view) view.classList.add('hidden');
+        if (transport) transport.classList.add('hidden');
     }
 
     function showFreqView() {
         var hub = document.getElementById('relatorios-hub');
         var view = document.getElementById('relatorio-freq-view');
+        var transport = document.getElementById('relatorio-transporte-view');
         if (hub) hub.classList.add('hidden');
         if (view) view.classList.remove('hidden');
+        if (transport) transport.classList.add('hidden');
         populateFreqFilters();
         syncPeriodFields();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -625,6 +629,81 @@
         w.document.close();
     }
 
+    function activeSchoolId() {
+        try {
+            var session = JSON.parse(localStorage.getItem('siga_session') || 'null') || {};
+            return localStorage.getItem('siga_active_school') || session.schoolId || '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function showTransportView() {
+        var hub = document.getElementById('relatorios-hub');
+        var freq = document.getElementById('relatorio-freq-view');
+        var view = document.getElementById('relatorio-transporte-view');
+        if (hub) hub.classList.add('hidden');
+        if (freq) freq.classList.add('hidden');
+        if (view) view.classList.remove('hidden');
+        loadTransportReport();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function loadTransportReport() {
+        var tbody = document.getElementById('transporte-tbody');
+        var api = window.SigaSupabase;
+        var schoolId = activeSchoolId();
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-text-secondary">Carregando cadastros…</td></tr>';
+        if (!api || typeof api.getClient !== 'function' || !schoolId) {
+            tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-error">Entre novamente na escola para consultar o relatório.</td></tr>';
+            return;
+        }
+        var turno = (document.getElementById('transporte-turno') || {}).value || '';
+        var query = api.getClient().from('student_transport_registrations')
+            .select('student_name,class_code,shift,uses_transport,responsible_name,address,neighborhood,updated_at')
+            .eq('school_id', schoolId)
+            .order('student_name', { ascending: true });
+        query.then(function (res) {
+            if (res.error) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-error">' + escapeHtml(res.error.message) + '</td></tr>';
+                return;
+            }
+            var rows = res.data || [];
+            if (turno) {
+                rows = rows.filter(function (row) {
+                    return String(row.shift || '').toLocaleLowerCase('pt-BR') === turno.toLocaleLowerCase('pt-BR');
+                });
+            }
+            var sim = rows.filter(function (row) { return row.uses_transport; }).length;
+            var totalEl = document.getElementById('transporte-total');
+            var simEl = document.getElementById('transporte-sim');
+            var naoEl = document.getElementById('transporte-nao');
+            if (totalEl) totalEl.textContent = rows.length;
+            if (simEl) simEl.textContent = sim;
+            if (naoEl) naoEl.textContent = rows.length - sim;
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-10 text-center text-text-secondary">Nenhum aluno respondeu neste turno.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rows.map(function (row) {
+                var yes = !!row.uses_transport;
+                return '<tr class="border-t border-border-subtle">' +
+                    '<td class="px-4 py-3 font-semibold whitespace-nowrap">' + escapeHtml(row.student_name || '—') + '</td>' +
+                    '<td class="px-4 py-3 whitespace-nowrap">' + escapeHtml(row.class_code || '—') + '</td>' +
+                    '<td class="px-4 py-3">' + escapeHtml(row.shift || '—') + '</td>' +
+                    '<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-bold ' +
+                    (yes ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-text-secondary') + '">' +
+                    (yes ? 'Sim' : 'Não') + '</span></td>' +
+                    '<td class="px-4 py-3">' + escapeHtml(yes ? row.responsible_name || '—' : '—') + '</td>' +
+                    '<td class="px-4 py-3 min-w-[220px]">' + escapeHtml(yes ? row.address || '—' : '—') + '</td>' +
+                    '<td class="px-4 py-3">' + escapeHtml(yes ? row.neighborhood || '—' : '—') + '</td></tr>';
+            }).join('');
+        }).catch(function () {
+            tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-error">Não foi possível carregar o relatório.</td></tr>';
+        });
+    }
+
     function bindHubUi() {
         document.querySelectorAll('.rel-cat-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -651,6 +730,14 @@
 
         var cardFreq = document.getElementById('card-freq-consolidada');
         if (cardFreq) cardFreq.addEventListener('click', showFreqView);
+        var cardTransport = document.getElementById('card-transporte-escolar');
+        if (cardTransport) cardTransport.addEventListener('click', showTransportView);
+        var backTransport = document.getElementById('btn-voltar-transporte');
+        if (backTransport) backTransport.addEventListener('click', showHub);
+        var loadTransport = document.getElementById('btn-carregar-transporte');
+        if (loadTransport) loadTransport.addEventListener('click', loadTransportReport);
+        var turnoTransport = document.getElementById('transporte-turno');
+        if (turnoTransport) turnoTransport.addEventListener('change', loadTransportReport);
     }
 
     function bindFreqUi() {
