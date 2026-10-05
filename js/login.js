@@ -809,7 +809,7 @@
     function localizarServidor() {
         var emailS = normEmail((document.getElementById('rec-email-serv') || {}).value);
         var matriculaS = digits((document.getElementById('rec-matricula') || {}).value);
-        if (!emailS || emailS.slice(-24) !== '@escola.seduc.pa.gov.br') {
+        if (!emailS || !emailS.endsWith(DOMAIN_SERVIDOR)) {
             toast('Informe o e-mail institucional.', 'error');
             return;
         }
