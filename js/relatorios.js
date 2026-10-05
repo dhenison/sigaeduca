@@ -813,14 +813,17 @@
             }).join('');
             var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">' +
                 '<title>Frequência de todas as turmas</title><style>' +
-                '@page{size:A4 portrait;margin:12mm}body{font-family:Arial,sans-serif;color:#122;font-size:9px}' +
+                '@page{size:A4 portrait;margin:12mm}body{font-family:Arial,sans-serif;color:#122;font-size:9px;' +
+                '-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
                 'h1{font-size:16px;margin:0 0 4px}.meta{color:#444;margin-bottom:10px}' +
                 '.class-report:not(:first-child){break-before:page;page-break-before:always}' +
                 'table{width:100%;border-collapse:collapse}thead{display:table-header-group}' +
                 'th,td{border:1px solid #bbb;padding:4px;text-align:center}th{background:#e9f4ed}' +
                 'td.student{text-align:left}tr{break-inside:avoid;page-break-inside:avoid}' +
-                'tr.present td{background:#e8f5e9}tr.absent td{background:#fde8e7}' +
-                'tr.pending td{background:#f5f5f5}.foot{margin-top:8px;color:#666}' +
+                'tr.present td{background-color:#e8f5e9!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+                'tr.absent td{background-color:#fde8e7!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+                'tr.pending td{background-color:#f5f5f5!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+                '.foot{margin-top:8px;color:#666}' +
                 '</style></head><body>' + classReports +
                 '<script>window.onload=function(){window.print();}</script></body></html>';
             var printWindow = window.open('', '_blank');
