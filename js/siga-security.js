@@ -85,6 +85,24 @@
         return /administrador do sistema/i.test(String(session.role || ''));
     }
 
+    function isProfessorSession(session) {
+        session = session || getSession();
+        if (!session) return false;
+        if (/professor/i.test(String(session.role || session.cargo || session.funcao || ''))) return true;
+        try {
+            var users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]') || [];
+            var email = String(session.email || '').trim().toLowerCase();
+            var id = String(session.id || '');
+            var staff = users.find(function (user) {
+                return (id && String(user.id || '') === id) ||
+                    (email && String(user.email || '').trim().toLowerCase() === email);
+            });
+            return !!(staff && /professor/i.test(String(staff.cargo || staff.funcao || staff.role || '')));
+        } catch (e) {
+            return false;
+        }
+    }
+
     function pageName() {
         var path = String(global.location && global.location.pathname || '');
         var parts = path.split('/');
@@ -154,6 +172,19 @@
             try { hasSchool = !!localStorage.getItem('siga_active_school'); } catch (e) { /* ignore */ }
             if (!hasSchool) {
                 global.location.replace(appHref('paineladmin.html'));
+                return false;
+            }
+        }
+        // Professores usam exclusivamente o aplicativo. Bloqueia qualquer rota do sistema web,
+        // inclusive quando o endereço é digitado diretamente após o login.
+        if (isProfessorSession(session)) {
+            var isProfessorApp =
+                base === 'portal' ||
+                base.indexOf('app') === 0 ||
+                /\/portal(?:\/|$)/i.test(path) ||
+                /\/app(?:\/|$)/i.test(path);
+            if (!isProfessorApp) {
+                global.location.replace(appHref('portal/index.html'));
                 return false;
             }
         }

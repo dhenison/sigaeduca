@@ -157,18 +157,6 @@
         }
     }
 
-    function showProfessorDestination() {
-        var form = document.getElementById('login-form');
-        var welcome = document.getElementById('login-welcome');
-        var signup = document.getElementById('login-signup');
-        var dest = document.getElementById('professor-destino');
-        if (form) form.classList.add('hidden');
-        if (welcome) welcome.classList.add('hidden');
-        if (signup) signup.classList.add('hidden');
-        if (dest) dest.className = 'flex flex-col gap-3';
-        document.body.classList.add('professor-choice');
-    }
-
     function goProfessorDestination(url) {
         try { sessionStorage.setItem('siga_post_login_dest', url); } catch (e) { /* ignore */ }
         window.location.replace(url);
@@ -196,11 +184,7 @@
                 session.role = 'Professor(a)';
             }
             setSession(session);
-            if (!isComputer()) {
-                goProfessorDestination('/portal/');
-                return;
-            }
-            showProfessorDestination();
+            goProfessorDestination('/portal/');
             return;
         }
         // Caminhos absolutos evitam erro de resolução em /login.html
@@ -1033,11 +1017,6 @@
             e.preventDefault();
             openRecoverModal();
         });
-
-        var goWeb = document.getElementById('prof-go-web');
-        var goApp = document.getElementById('prof-go-app');
-        if (goWeb) goWeb.addEventListener('click', function () { goProfessorDestination('/painelprincipal.html'); });
-        if (goApp) goApp.addEventListener('click', function () { goProfessorDestination('/portal/'); });
 
         var closeBtn = document.getElementById('btn-close-recuperar');
         var backdrop = document.getElementById('modal-recuperar-backdrop');
