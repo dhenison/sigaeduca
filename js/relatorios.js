@@ -788,27 +788,40 @@
         loadAllDayAttendance().then(function (report) {
             var schoolName = localStorage.getItem('siga_school_name') ||
                 'Escola Estadual Prof. Geraldo Angelo Palmeira';
-            var bodyRows = report.rows.map(function (row) {
-                return '<tr><td>' + escapeHtml(row.turma) + '</td><td class="student">' +
-                    escapeHtml(row.aluno) + '</td><td>' + escapeHtml(row.entrada) + '</td><td>' +
-                    escapeHtml(row.saida) + '</td><td><b>' + escapeHtml(row.frequencia) + '</b></td></tr>';
+            var rowsByClass = {};
+            report.rows.forEach(function (row) {
+                if (!rowsByClass[row.turma]) rowsByClass[row.turma] = [];
+                rowsByClass[row.turma].push(row);
+            });
+            var classReports = Object.keys(rowsByClass).map(function (className) {
+                var classRows = rowsByClass[className];
+                var bodyRows = classRows.map(function (row) {
+                    var rowClass = row.frequencia === 'F' ? 'absent' :
+                        (row.frequencia === 'P' || row.frequencia === 'FJ' ? 'present' : 'pending');
+                    return '<tr class="' + rowClass + '"><td class="student">' +
+                        escapeHtml(row.aluno) + '</td><td>' + escapeHtml(row.entrada) + '</td><td>' +
+                        escapeHtml(row.saida) + '</td><td><b>' + escapeHtml(row.frequencia) + '</b></td></tr>';
+                }).join('');
+                return '<section class="class-report"><h1>Frequência diária</h1>' +
+                    '<div class="meta"><b>' + escapeHtml(schoolName) + '</b><br>Data: <b>' +
+                    escapeHtml(formatBr(report.dateIso)) + '</b> · Turma: <b>' +
+                    escapeHtml(className) + '</b> · Alunos: <b>' + classRows.length + '</b></div>' +
+                    '<table><thead><tr><th>Aluno</th><th>Entrada</th><th>Saída</th>' +
+                    '<th>Frequência</th></tr></thead><tbody>' + bodyRows + '</tbody></table>' +
+                    '<div class="foot">P = presença · F = falta · FJ = falta justificada · ' +
+                    'Pendente = uma das fases ainda não foi concluída.</div></section>';
             }).join('');
             var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">' +
                 '<title>Frequência de todas as turmas</title><style>' +
                 '@page{size:A4 portrait;margin:12mm}body{font-family:Arial,sans-serif;color:#122;font-size:9px}' +
                 'h1{font-size:16px;margin:0 0 4px}.meta{color:#444;margin-bottom:10px}' +
+                '.class-report:not(:first-child){break-before:page;page-break-before:always}' +
                 'table{width:100%;border-collapse:collapse}thead{display:table-header-group}' +
                 'th,td{border:1px solid #bbb;padding:4px;text-align:center}th{background:#e9f4ed}' +
-                'td:first-child,td.student{text-align:left}tr{break-inside:avoid}.foot{margin-top:8px;color:#666}' +
-                '</style></head><body><h1>Frequência diária — todas as turmas</h1>' +
-                '<div class="meta"><b>' + escapeHtml(schoolName) + '</b><br>Data: <b>' +
-                escapeHtml(formatBr(report.dateIso)) + '</b> · Turmas: <b>' + report.classCount +
-                '</b> · Alunos: <b>' + report.rows.length + '</b></div>' +
-                '<table><thead><tr><th>Turma</th><th>Aluno</th><th>Entrada</th><th>Saída</th>' +
-                '<th>Frequência</th></tr></thead><tbody>' +
-                (bodyRows || '<tr><td colspan="5">Nenhum aluno encontrado.</td></tr>') +
-                '</tbody></table><div class="foot">P = presença · F = falta · FJ = falta justificada · ' +
-                'Pendente = uma das fases ainda não foi concluída.</div>' +
+                'td.student{text-align:left}tr{break-inside:avoid;page-break-inside:avoid}' +
+                'tr.present td{background:#e8f5e9}tr.absent td{background:#fde8e7}' +
+                'tr.pending td{background:#f5f5f5}.foot{margin-top:8px;color:#666}' +
+                '</style></head><body>' + classReports +
                 '<script>window.onload=function(){window.print();}</script></body></html>';
             var printWindow = window.open('', '_blank');
             if (!printWindow) throw new Error('Permita pop-ups para imprimir o PDF.');
