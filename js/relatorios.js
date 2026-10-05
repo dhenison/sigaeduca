@@ -638,6 +638,188 @@
         }
     }
 
+    function setDailyExportLoading(loading, activeButton) {
+        ['btn-export-dia-excel', 'btn-export-dia-pdf'].forEach(function (id) {
+            var button = document.getElementById(id);
+            if (!button) return;
+            if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+            button.disabled = loading;
+            button.classList.toggle('opacity-60', loading);
+            button.classList.toggle('cursor-wait', loading);
+            button.innerHTML = loading && button === activeButton
+                ? '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>Carregando...'
+                : button.dataset.originalHtml;
+        });
+    }
+
+    function loadAllDayAttendance() {
+        var dateEl = document.getElementById('freq-data');
+        var dateIso = dateEl && dateEl.value;
+        var schoolId = activeSchoolId();
+        var sb = window.SigaSupabase && typeof window.SigaSupabase.getClient === 'function'
+            ? window.SigaSupabase.getClient()
+            : null;
+
+        if (!dateIso) return Promise.reject(new Error('Selecione a data da frequência.'));
+        if (!schoolId) return Promise.reject(new Error('Escola ativa não identificada.'));
+        if (!sb) return Promise.reject(new Error('Não foi possível conectar ao banco de dados.'));
+
+        var prep = window.SigaSchoolData && typeof window.SigaSchoolData.hydrateStudents === 'function'
+            ? window.SigaSchoolData.hydrateStudents()
+            : Promise.resolve({ ok: true });
+
+        return Promise.resolve(prep).then(function () {
+            return sb.from('attendance_calls')
+                .select('id,class_code,entrada_consolidada,saida_consolidada')
+                .eq('school_id', schoolId)
+                .eq('day_date', dateIso)
+                .or('entrada_consolidada.eq.true,saida_consolidada.eq.true');
+        }).then(function (result) {
+            if (result.error) throw result.error;
+            var calls = result.data || [];
+            if (!calls.length) throw new Error('Nenhuma turma possui chamada concluída nesta data.');
+            return sb.from('attendance_marks')
+                .select('call_id,student_id,phase,status,locked,source,marked_at')
+                .in('call_id', calls.map(function (call) { return call.id; }))
+                .then(function (marksResult) {
+                    if (marksResult.error) throw marksResult.error;
+                    return { calls: calls, marks: marksResult.data || [] };
+                });
+        }).then(function (data) {
+            var classes = getClassesSafe();
+            var marksByCallStudent = {};
+            data.marks.forEach(function (mark) {
+                var key = String(mark.call_id) + '|' + String(mark.student_id);
+                if (!marksByCallStudent[key]) marksByCallStudent[key] = {};
+                marksByCallStudent[key][mark.phase] = mark.status;
+            });
+
+            var rows = [];
+            data.calls.forEach(function (call) {
+                var cls = classes.find(function (item) {
+                    return String(item.code || '') === String(call.class_code || '');
+                });
+                var turmaLabel = cls
+                    ? (cls.code + (cls.serie ? ' — ' + cls.serie : '') + (cls.turno ? ' · ' + cls.turno : ''))
+                    : call.class_code;
+
+                studentsOfTurma(call.class_code).forEach(function (student) {
+                    var marks = marksByCallStudent[String(call.id) + '|' + String(student.id)] || {};
+                    var entrada = marks.entrada || (call.entrada_consolidada ? 'F' : '—');
+                    var saida = marks.saida || (call.saida_consolidada ? 'F' : '—');
+                    rows.push({
+                        turma: turmaLabel,
+                        turmaCode: call.class_code,
+                        aluno: student.nome || 'Aluno sem nome',
+                        entrada: entrada,
+                        saida: saida,
+                        frequencia: entrada !== '—' && saida !== '—'
+                            ? consolidarStatusDia(entrada, saida)
+                            : 'Pendente'
+                    });
+                });
+            });
+
+            rows.sort(function (a, b) {
+                return String(a.turma).localeCompare(String(b.turma), 'pt-BR') ||
+                    String(a.aluno).localeCompare(String(b.aluno), 'pt-BR');
+            });
+            return {
+                dateIso: dateIso,
+                rows: rows,
+                classCount: new Set(data.calls.map(function (call) { return String(call.class_code); })).size
+            };
+        });
+    }
+
+    function dailyExportError(error) {
+        var message = error && error.message ? error.message : 'Não foi possível gerar o relatório.';
+        if (typeof showToast === 'function') showToast(message, 'error');
+    }
+
+    function exportAllDayExcel(event) {
+        var button = event && event.currentTarget;
+        setDailyExportLoading(true, button);
+        loadAllDayAttendance().then(function (report) {
+            var aoa = [['Turma', 'Aluno', 'Entrada', 'Saída', 'Frequência']];
+            report.rows.forEach(function (row) {
+                aoa.push([row.turma, row.aluno, row.entrada, row.saida, row.frequencia]);
+            });
+
+            function downloadCsvFallback() {
+                var csv = aoa.map(function (line) {
+                    return line.map(function (cell) {
+                        var value = String(cell == null ? '' : cell);
+                        return /[;"\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
+                    }).join(';');
+                }).join('\n');
+                var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'frequencia_todas_turmas_' + report.dateIso + '.csv';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
+
+            if (typeof loadSheetJsLib !== 'function') {
+                downloadCsvFallback();
+                if (typeof showToast === 'function') showToast('Arquivo CSV gerado para Excel.');
+                return;
+            }
+            return loadSheetJsLib().then(function (XLSX) {
+                var ws = XLSX.utils.aoa_to_sheet(aoa);
+                ws['!cols'] = [{ wch: 28 }, { wch: 42 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
+                var wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Frequência do dia');
+                XLSX.writeFile(wb, 'frequencia_todas_turmas_' + report.dateIso + '.xlsx');
+                if (typeof showToast === 'function') showToast('Frequência de todas as turmas exportada.');
+            }).catch(function () {
+                downloadCsvFallback();
+                if (typeof showToast === 'function') showToast('Excel indisponível — CSV gerado.');
+            });
+        }).catch(dailyExportError).finally(function () {
+            setDailyExportLoading(false);
+        });
+    }
+
+    function exportAllDayPdf(event) {
+        var button = event && event.currentTarget;
+        setDailyExportLoading(true, button);
+        loadAllDayAttendance().then(function (report) {
+            var schoolName = localStorage.getItem('siga_school_name') ||
+                'Escola Estadual Prof. Geraldo Angelo Palmeira';
+            var bodyRows = report.rows.map(function (row) {
+                return '<tr><td>' + escapeHtml(row.turma) + '</td><td class="student">' +
+                    escapeHtml(row.aluno) + '</td><td>' + escapeHtml(row.entrada) + '</td><td>' +
+                    escapeHtml(row.saida) + '</td><td><b>' + escapeHtml(row.frequencia) + '</b></td></tr>';
+            }).join('');
+            var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">' +
+                '<title>Frequência de todas as turmas</title><style>' +
+                '@page{size:A4 portrait;margin:12mm}body{font-family:Arial,sans-serif;color:#122;font-size:9px}' +
+                'h1{font-size:16px;margin:0 0 4px}.meta{color:#444;margin-bottom:10px}' +
+                'table{width:100%;border-collapse:collapse}thead{display:table-header-group}' +
+                'th,td{border:1px solid #bbb;padding:4px;text-align:center}th{background:#e9f4ed}' +
+                'td:first-child,td.student{text-align:left}tr{break-inside:avoid}.foot{margin-top:8px;color:#666}' +
+                '</style></head><body><h1>Frequência diária — todas as turmas</h1>' +
+                '<div class="meta"><b>' + escapeHtml(schoolName) + '</b><br>Data: <b>' +
+                escapeHtml(formatBr(report.dateIso)) + '</b> · Turmas: <b>' + report.classCount +
+                '</b> · Alunos: <b>' + report.rows.length + '</b></div>' +
+                '<table><thead><tr><th>Turma</th><th>Aluno</th><th>Entrada</th><th>Saída</th>' +
+                '<th>Frequência</th></tr></thead><tbody>' +
+                (bodyRows || '<tr><td colspan="5">Nenhum aluno encontrado.</td></tr>') +
+                '</tbody></table><div class="foot">P = presença · F = falta · FJ = falta justificada · ' +
+                'Pendente = uma das fases ainda não foi concluída.</div>' +
+                '<script>window.onload=function(){window.print();}</script></body></html>';
+            var printWindow = window.open('', '_blank');
+            if (!printWindow) throw new Error('Permita pop-ups para imprimir o PDF.');
+            printWindow.document.open();
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }).catch(dailyExportError).finally(function () {
+            setDailyExportLoading(false);
+        });
+    }
+
     function showTransportView() {
         var hub = document.getElementById('relatorios-hub');
         var freq = document.getElementById('relatorio-freq-view');
@@ -754,6 +936,11 @@
         var pdf = document.getElementById('btn-export-freq-pdf');
         if (excel) excel.addEventListener('click', exportFreqExcel);
         if (pdf) pdf.addEventListener('click', exportFreqPdf);
+
+        var dailyExcel = document.getElementById('btn-export-dia-excel');
+        var dailyPdf = document.getElementById('btn-export-dia-pdf');
+        if (dailyExcel) dailyExcel.addEventListener('click', exportAllDayExcel);
+        if (dailyPdf) dailyPdf.addEventListener('click', exportAllDayPdf);
     }
 
     window.initRelatoriosPage = function () {

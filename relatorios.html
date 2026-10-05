@@ -225,7 +225,7 @@
                 document.documentElement.classList.add('ready');
             });
         })();
-</script><script src="js/siga-config.js?v=20260724ab"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260724ab"></script><script src="js/siga-security.js?v=20260724ab"></script><script src="js/siga-school-data.js?v=20260724ab"></script><script src="js/siga-db.js?v=20260924d"></script><script src="js/siga-frequencia-supabase.js?v=20260724ab"></script><script src="js/relatorios.js?v=20261002a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+</script><script src="js/siga-config.js?v=20260724ab"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/siga-supabase.js?v=20260724ab"></script><script src="js/siga-security.js?v=20260724ab"></script><script src="js/siga-school-data.js?v=20260724ab"></script><script src="js/siga-db.js?v=20260924d"></script><script src="js/siga-frequencia-supabase.js?v=20260724ab"></script><script src="js/relatorios.js?v=20261005a"></script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
 <body class="bg-background-page"><script id="sidebar-flicker-prevention">
          (function() {
              const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
@@ -652,6 +652,14 @@ Voltar aos relatórios
 <span class="material-symbols-outlined text-[18px]">play_arrow</span>
 Gerar Relatório
 </button>
+</div>
+<div class="w-full border-t border-border-subtle pt-4 mt-1 flex flex-wrap items-end gap-3">
+<div class="mr-auto">
+<p class="text-label-md font-bold text-on-surface m-0">Todas as turmas com chamada no dia</p>
+<p class="text-[11px] text-text-secondary m-0">Usa a data selecionada acima e inclui turma, aluno, entrada, saída e frequência.</p>
+</div>
+<button type="button" id="btn-export-dia-excel" class="h-[42px] px-4 border border-primary text-primary font-bold text-label-md rounded-xl hover:bg-primary/5 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">table_view</span>Exportar todas · Excel</button>
+<button type="button" id="btn-export-dia-pdf" class="h-[42px] px-4 bg-primary text-white font-bold text-label-md rounded-xl hover:bg-primary/90 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>Exportar todas · PDF</button>
 </div>
 </div>
 </div>
