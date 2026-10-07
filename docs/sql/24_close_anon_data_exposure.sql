@@ -124,7 +124,7 @@ BEGIN
   UPDATE public.students
   SET updated_at = now(),
       portal_session_hash = encode(extensions.digest(convert_to(v_token, 'utf8'), 'sha256'), 'hex'),
-      portal_session_expires = now() + interval '12 hours'
+      portal_session_expires = now() + interval '90 days'
   WHERE id = st.id;
 
   RETURN jsonb_build_object(
