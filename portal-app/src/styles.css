@@ -11,6 +11,12 @@ ion-content::part(scroll){scrollbar-width:none}ion-content::part(scroll)::-webki
 .schedule-card{display:flex;align-items:center;gap:14px;padding:18px;text-decoration:none;color:inherit}
 .schedule-card h3{margin:0}
 .schedule-card p{margin:4px 0 0}
+.schedule-card small{display:block;margin-top:6px;color:#0844b2;font-weight:700;font-size:12px}
+.dark .schedule-card small{color:#9ec2ff}
+.schedule-links{display:grid;gap:14px}
+.schedule-links .schedule-card>div:nth-child(2){flex:1}
+.schedule-card.unavailable{opacity:.66;box-shadow:none}
+.schedule-card:active{transform:scale(.98)}
 .call-day{padding:16px 18px;border-bottom:1px solid var(--line)}
 .call-day:last-child{border-bottom:0}
 .call-day h3{font-size:15px;margin:0 0 8px;text-transform:capitalize}

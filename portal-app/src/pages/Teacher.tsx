@@ -68,7 +68,7 @@ function quoteForThisVisit() {
 const features: {route: string; title: string; icon: IconName; color: string; description: string}[] = [
   {route: 'calendar', title: 'Agenda EGAP', icon: 'calendar', color: 'blue', description: 'Veja as datas do calendário e as atividades da escola.'},
   {route: 'attendance', title: 'Frequência', icon: 'attendance', color: 'green', description: 'Faça a chamada de entrada e de saída da turma.'},
-  {route: 'schedule', title: 'Horário de Aula', icon: 'schedule', color: 'red', description: 'Abra a grade de horários no Drive.'},
+  {route: 'schedule', title: 'Horário de Aula', icon: 'schedule', color: 'red', description: 'Abra o PDF do horário de cada turno.'},
   {route: 'olympics', title: 'Topo do Saber', icon: 'olympics', color: 'orange', description: 'Acompanhe as olimpíadas e os projetos da escola.'},
 ];
 
