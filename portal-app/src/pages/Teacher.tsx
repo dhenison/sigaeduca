@@ -1,4 +1,4 @@
-import {useEffect, useState, type ReactNode} from 'react';
+import {useEffect, useState, type FormEvent, type ReactNode} from 'react';
 import {IonApp, IonContent, IonLabel, IonModal, IonPage, IonRefresher, IonRefresherContent, IonSkeletonText, IonTabBar, IonTabButton, IonToast} from '@ionic/react';
 import {Brand, Empty, Icon, Credit, type IconName} from '../components/UI';
 import {Calendar, Notices, Schedule} from './Academic';
@@ -8,11 +8,15 @@ import {
   compressAvatar,
   consolidateRoll,
   isFacialLocked,
+  hasTeacherCloudSession,
   leaveTeacherPortal,
   loadClassRoll,
   loadTeacherPortal,
+  portalAudience,
+  readStaffSession,
   saveTeacherAvatar,
   saveTeacherProfile,
+  signInTeacher,
   type ClassRoll,
   type MarkStatus,
   type PhaseName,
@@ -90,11 +94,27 @@ export default function TeacherApp() {
   const [quote] = useState(quoteForThisVisit);
   const [theme, setTheme] = useState(() => localStorage.getItem('siga-theme') || 'light');
   const [offline, setOffline] = useState(!navigator.onLine);
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   async function reload() {
-    const next = await loadTeacherPortal();
-    setData(next);
-    setReady(true);
+    try {
+      if (portalAudience() === 'professor' && !await hasTeacherCloudSession()) {
+        setNeedsAuth(true);
+        setData(null);
+        return;
+      }
+      setNeedsAuth(false);
+      setData(await loadTeacherPortal());
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TeacherAuthError' && portalAudience() === 'professor') {
+        setNeedsAuth(true);
+        setData(null);
+        return;
+      }
+      setData(null);
+    } finally {
+      setReady(true);
+    }
   }
   useEffect(() => { reload(); }, []);
   useEffect(() => {
@@ -112,8 +132,8 @@ export default function TeacherApp() {
     return () => window.removeEventListener('hashchange', fn);
   }, []);
   useEffect(() => {
-    if (ready && !data) location.replace('/login.html');
-  }, [ready, data]);
+    if (ready && !data && !needsAuth) location.replace('/login.html');
+  }, [ready, data, needsAuth]);
   useEffect(() => {
     const media = matchMedia('(prefers-color-scheme: dark)');
     const update = () => document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && media.matches));
@@ -145,7 +165,9 @@ export default function TeacherApp() {
     location.replace('/login.html');
   }
 
-  if (!ready || !data) return <IonApp><IonSkeletonText animated style={{width: '100%', height: '100vh'}} /></IonApp>;
+  if (!ready) return <IonApp><IonSkeletonText animated style={{width: '100%', height: '100vh'}} /></IonApp>;
+  if (needsAuth) return <TeacherReauth onDone={() => { setReady(false); void reload(); }} />;
+  if (!data) return <IonApp><IonSkeletonText animated style={{width: '100%', height: '100vh'}} /></IonApp>;
   const selected = tabs.some((tab) => tab.route === route) ? route : 'more';
   let content: ReactNode;
   switch (route) {
@@ -168,6 +190,42 @@ export default function TeacherApp() {
     </IonContent>
     <IonTabBar selectedTab={selected}>{tabs.map((tab) => <IonTabButton key={tab.route} tab={tab.route} selected={selected === tab.route} onClick={() => go(tab.route)}><Icon name={tab.icon} /><IonLabel>{tab.label}</IonLabel></IonTabButton>)}</IonTabBar>
   </IonPage></div><IonModal isOpen={!!sheet} onDidDismiss={() => setSheet(null)} initialBreakpoint={0.8} breakpoints={[0, 0.8, 1]}><div className="sheet"><header><h2>{sheet?.title}</h2><button aria-label="Fechar" onClick={() => setSheet(null)}><Icon name="close" /></button></header>{sheet?.body}</div></IonModal><IonToast isOpen={!!toast} message={toast} duration={2400} onDidDismiss={() => setToast('')} /></IonApp>;
+}
+
+function TeacherReauth({onDone}: {onDone: () => void}) {
+  const session = readStaffSession();
+  const [email, setEmail] = useState(session?.email || '');
+  const [password, setPassword] = useState('');
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await signInTeacher(email, password);
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível confirmar o acesso.');
+      setBusy(false);
+    }
+  }
+  return <IonApp><div className="app-viewport"><IonPage>
+    <header className="app-header"><Brand label="Portal do Professor" /></header>
+    <IonContent><main className="page">
+      <form onSubmit={submit} className="narrow">
+        <section className="surface padded">
+          <h2>Confirme seu acesso</h2>
+          <p>As turmas da frequência só carregam com a sessão do aplicativo. Entre com o e-mail institucional.</p>
+          <label className="field"><Icon name="mail" /><input aria-label="E-mail institucional" type="email" required autoComplete="username" placeholder="E-mail institucional" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+          <label className="field"><Icon name="lock" /><input aria-label="Senha" required type={show ? 'text' : 'password'} autoComplete="current-password" placeholder="Senha" value={password} onChange={(event) => setPassword(event.target.value)} /><button type="button" aria-label={show ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShow((open) => !open)}><Icon name={show ? 'eyeOff' : 'eye'} /></button></label>
+          {error && <div role="status" className="info">{error}</div>}
+          <button className="primary" disabled={busy}>{busy ? 'Entrando…' : 'Entrar e carregar turmas'}</button>
+        </section>
+      </form>
+    </main></IonContent>
+  </IonPage></div></IonApp>;
 }
 
 function TeacherHome({data, photo, quote, go}: {data: TeacherSnapshot; photo: string; quote: {text: string; author: string}; go: (route: string) => void}) {
@@ -349,7 +407,8 @@ function TeacherAttendance({data, notify}: {data: TeacherSnapshot; notify: (mess
     <label className="date-filter surface"><span>Turno</span><select value={turno} onChange={(event) => chooseTurno(event.target.value)}><option value="">Selecione</option>{turnos.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
     <label className="date-filter surface"><span>Turma</span><select value={turma} onChange={(event) => setTurma(event.target.value)}><option value="">Selecione</option>{classes.map((item) => <option key={item.code} value={item.code}>{item.code}{item.serie ? ` — ${item.serie}` : ''}</option>)}</select></label>
     {!data.teacher.schoolId && <Empty title="Escola não vinculada a este acesso." description="Entre novamente com o e-mail institucional para carregar a escola." />}
-    {data.teacher.schoolId && !turma && <Empty title="Escolha o dia, o turno e a turma." description="A chamada de entrada abre primeiro. A saída aparece depois da consolidação." />}
+    {data.teacher.schoolId && !data.classes.length && <Empty title="Nenhuma turma ativa encontrada." description="A escola ainda não tem turma ativa vinculada a este acesso." />}
+    {data.teacher.schoolId && data.classes.length > 0 && !turma && <Empty title="Escolha o dia, o turno e a turma." description="A chamada de entrada abre primeiro. A saída aparece depois da consolidação." />}
     {loading && <p className="muted">Carregando a turma...</p>}
     {roll && !loading && <>
       <RollCard title="Chamada de entrada" phase="entrada" open={openPhase === 'entrada'} onToggle={() => setOpenPhase((current) => current === 'entrada' ? null : 'entrada')} roll={roll} saving={saving} onMark={setMark} onReason={setReason} onConsolidate={() => consolidate('entrada')} />

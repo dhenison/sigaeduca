@@ -201,9 +201,31 @@ function calendarEvents(days: Record<string, {type?: string; label?: string}>): 
     }));
 }
 
+export async function hasTeacherCloudSession() {
+  const {data} = await sb().auth.getSession();
+  return !!data.session;
+}
+
+export async function signInTeacher(email: string, password: string) {
+  const res = await sb().auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  });
+  if (res.error || !res.data.session) {
+    const message = String(res.error?.message || '');
+    if (/invalid login|invalid credentials/i.test(message)) throw new Error('E-mail ou senha incorretos.');
+    throw new Error(message || 'Não foi possível confirmar o acesso.');
+  }
+}
+
 export async function loadTeacherPortal(): Promise<TeacherSnapshot | null> {
   const session = readStaffSession();
   if (!session || portalAudience() !== 'professor') return null;
+  if (!await hasTeacherCloudSession()) {
+    const expired = new Error('Sessão do aplicativo expirada.');
+    expired.name = 'TeacherAuthError';
+    throw expired;
+  }
   const schoolId = await resolveTeacherSchool(session.email || '', schoolIdOf(session));
   const record = await loadTeacherRecord(session.email || '', schoolId);
   const teacher: TeacherProfile = {
@@ -242,7 +264,16 @@ async function loadClasses(schoolId: string): Promise<ClassOption[]> {
     .filter((item) => item.code);
   if (!schoolId) return local;
   const res = await sb().from('classes').select('code,serie,turno,status,year_label').eq('school_id', schoolId).eq('status', 'Ativo');
-  if (res.error || !res.data?.length) return local;
+  if (res.error) {
+    const denied = res.error.code === '42501' || /permission|jwt|not authorized/i.test(res.error.message);
+    if (denied) {
+      const expired = new Error('Sessão do aplicativo expirada.');
+      expired.name = 'TeacherAuthError';
+      throw expired;
+    }
+    throw new Error(res.error.message);
+  }
+  if (!res.data?.length) return local;
   const rows = res.data.filter((row) => row.year_label === YEAR);
   const source = rows.length ? rows : res.data;
   return source
