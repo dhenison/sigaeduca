@@ -64,12 +64,21 @@ test('entrada não grava saída; rascunhos sobrevivem à recarga; saída salva s
   assert.equal(roll.saida.F.status, 'F');
   assert.equal(roll.saida.FJ.justification, 'Atestado');
   assert.equal(roll.saida.F.hasMark, false);
+  roll.entrada.P = {...roll.entrada.P, status: 'F', hasMark: true};
+  h.writes.length = 0;
+  roll = await t.consolidateRoll('school', 'class', '2026-09-28', 'entrada', roll, 'Professor');
+  assert.equal(roll.entradaConsolidada, true);
+  assert.equal(roll.saidaConsolidada, false);
+  assert.equal(h.writes.find(row => row.student_id === 'P' && row.phase === 'entrada').status, 'F');
+  assert.ok(h.writes.every(row => row.phase === 'entrada'));
   h.writes.length = 0;
   roll = await t.consolidateRoll('school', 'class', '2026-09-28', 'saida', roll, 'Professor');
   assert.equal(h.writes.length, 3);
   assert.ok(h.writes.every(row => row.phase === 'saida' && row.locked));
   assert.equal(roll.saidaConsolidada, true);
-  assert.equal(h.student.localAttendance('class', 'P', 2026)['2026-09-28'].saida.status, 'P');
+  assert.equal(h.student.localAttendance('class', 'P', 2026)['2026-09-28'].saida.status, 'F');
+  await assert.rejects(() => t.consolidateRoll('school', 'class', '2026-09-28', 'entrada', roll, 'Professor'), /consolidada/);
+  await assert.rejects(() => t.consolidateRoll('school', 'class', '2026-09-28', 'saida', roll, 'Professor'), /consolidada/);
 });
 
 test('cópia preserva saída facial e marcação já feita', () => {

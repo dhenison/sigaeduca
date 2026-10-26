@@ -377,6 +377,7 @@ function mirrorLocal(classCode: string, day: string, roll: ClassRoll) {
 }
 
 export async function consolidateRoll(schoolId: string, classCode: string, day: string, phase: PhaseName, roll: ClassRoll, teacherName: string) {
+  if (roll.saidaConsolidada) throw new Error('A chamada do dia já foi consolidada.');
   const ids = roll.students.map((student) => student.id);
   const current = phase === 'entrada' ? roll.entrada : roll.saida;
   const missing = missingJustification(ids, current);

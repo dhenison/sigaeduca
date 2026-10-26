@@ -373,28 +373,29 @@ function TeacherAttendance({data, notify}: {data: TeacherSnapshot; notify: (mess
   }
   function setMark(phase: PhaseName, studentId: string, status: MarkStatus) {
     setRoll((current) => {
-      if (!current) return current;
-      const locked = phase === 'entrada' ? current.entradaConsolidada : current.saidaConsolidada;
+      if (!current || current.saidaConsolidada) return current;
       const mark = current[phase][studentId] || blankMark();
-      if (locked || isFacialLocked(mark)) return current;
+      if (isFacialLocked(mark)) return current;
       return {...current, [phase]: {...current[phase], [studentId]: {...mark, status, hasMark: true, justification: status === 'FJ' ? mark.justification : ''}}};
     });
   }
   function setReason(phase: PhaseName, studentId: string, justification: string) {
     setRoll((current) => {
-      if (!current) return current;
+      if (!current || current.saidaConsolidada) return current;
       const mark = current[phase][studentId] || blankMark();
+      if (isFacialLocked(mark)) return current;
       return {...current, [phase]: {...current[phase], [studentId]: {...mark, justification, status: 'FJ', hasMark: true}}};
     });
   }
   async function consolidate(phase: PhaseName) {
-    if (!roll || !data.teacher.schoolId || !turma) return;
+    if (!roll || !data.teacher.schoolId || !turma || roll.saidaConsolidada) return;
     setSaving(true);
     try {
+      const editingEntrada = phase === 'entrada' && roll.entradaConsolidada;
       const next = await consolidateRoll(data.teacher.schoolId, turma, day, phase, roll, data.teacher.name);
       setRoll(next);
       setOpenPhase(null);
-      notify(phase === 'entrada' ? 'Entrada consolidada. A saída já pode ser feita.' : 'Saída consolidada. A chamada foi realizada.');
+      notify(phase === 'saida' ? 'Saída consolidada. A chamada do dia foi fechada.' : editingEntrada ? 'Entrada atualizada. A saída continua disponível.' : 'Entrada consolidada. A saída já pode ser feita.');
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Não foi possível salvar a chamada.');
     } finally {
@@ -430,20 +431,23 @@ function RollCard({title, phase, open, onToggle, roll, saving, onMark, onReason,
   onConsolidate: () => void;
 }) {
   const [zoom, setZoom] = useState<{nome: string; url: string} | null>(null);
-  const locked = phase === 'entrada' ? roll.entradaConsolidada : roll.saidaConsolidada;
+  const closed = roll.saidaConsolidada;
+  const done = phase === 'entrada' ? roll.entradaConsolidada : roll.saidaConsolidada;
+  const tone = closed ? 'done' : done ? 'adjust' : 'pending';
   const records = roll[phase];
   const marks: [MarkStatus, string][] = [['P', 'Presença'], ['F', 'Falta'], ['FJ', 'Falta justificada']];
+  const saveLabel = saving ? 'Salvando...' : phase === 'saida' ? 'Consolidar Saída' : done ? 'Salvar entrada' : 'Consolidar Entrada';
   return <section className="roll-slot">
-    <button type="button" className={`call-toggle ${locked ? 'done' : 'pending'}`} aria-expanded={locked ? false : open} onClick={() => { if (!locked) onToggle(); }}>
-      <span>{locked ? `${title} realizada` : `Realizar ${title.toLowerCase()}`}</span>
-      <span aria-hidden="true">{locked ? 'OK' : open ? '▴' : '▾'}</span>
+    <button type="button" className={`call-toggle ${tone}`} aria-expanded={closed ? false : open} onClick={() => { if (!closed) onToggle(); }}>
+      <span>{done ? `${title} realizada` : `Realizar ${title.toLowerCase()}`}</span>
+      <span aria-hidden="true">{closed ? 'OK' : open ? '▴' : '▾'}</span>
     </button>
-    {!locked && open && <div className="surface roll-card">
-    <p className="muted">Marque presença, falta ou falta justificada e consolide para salvar.</p>
+    {!closed && open && <div className="surface roll-card">
+    <p className="muted">{phase === 'entrada' && done ? 'Ajuste a entrada e salve. Ela permanece editável até a saída ser consolidada.' : 'Marque presença, falta ou falta justificada e consolide para salvar.'}</p>
     {!roll.students.length && <Empty title="Nenhum aluno ativo nesta turma." />}
     {roll.students.map((student) => {
       const mark = records[student.id] || blankMark();
-      const frozen = locked || isFacialLocked(mark);
+      const frozen = isFacialLocked(mark);
       return <article className="roll-student" key={student.id}>
         <div className="roll-line">
           <button type="button" className="roll-avatar" aria-label={student.avatarUrl ? `Ampliar foto de ${student.nome}` : `Foto de ${student.nome}`} disabled={!student.avatarUrl} onClick={() => student.avatarUrl && setZoom({nome: student.nome, url: student.avatarUrl})}>
@@ -457,7 +461,7 @@ function RollCard({title, phase, open, onToggle, roll, saving, onMark, onReason,
         {mark.status === 'FJ' && frozen && mark.justification && <p>{mark.justification}</p>}
       </article>;
     })}
-    <button className="primary" disabled={saving || !roll.students.length} onClick={onConsolidate}>{saving ? 'Salvando...' : phase === 'entrada' ? 'Consolidar Entrada' : 'Consolidar Saída'}</button>
+    <button className="primary" disabled={saving || !roll.students.length} onClick={onConsolidate}>{saveLabel}</button>
     </div>}
     {zoom && <div className="photo-zoom" role="dialog" aria-label={`Foto de ${zoom.nome}`}>
       <button type="button" className="photo-zoom-close" aria-label="Fechar foto" onClick={() => setZoom(null)}>×</button>
